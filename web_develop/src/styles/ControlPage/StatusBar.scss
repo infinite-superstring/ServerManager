@@ -1,0 +1,37 @@
+.StatusBar {
+  width: 100%;
+  height: 35px;
+  display: flex;
+  justify-content: end;
+  padding: 10px 0;
+  background-color: #1c1c1c;
+  .StatusBar-Content {
+    height: 100%;
+    width: 230px;
+    min-width: 230px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .divider {
+    height: 100%;
+    border: 1px solid white;
+    margin: 0 5px;
+  }
+  .led-status span {
+    color: white;
+    font-size: 12px;
+  }
+
+  .v-icon {
+    color: white;
+  }
+
+  #power-led .v-icon {
+    color: green;
+  }
+
+  #harddisk-led .v-icon {
+    color: red;
+  }
+}

@@ -1,0 +1,11 @@
+/db.sqlite3
+/test.py
+/qodana.yaml
+/USBFile/
+/logs/
+/temp/
+/avatar/
+/configs/
+/*/migrations/
+/static/
+/dumpdata.json

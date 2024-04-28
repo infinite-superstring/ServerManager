@@ -1,0 +1,17 @@
+opencv-python~=4.8.1.78
+opencv-python-headless
+numpy~=1.26.2
+requests
+pyserial~=3.5
+loguru~=0.7.2
+django~=4.2.7
+daphne
+channels~=4.0.0
+chardet~=5.2.0
+tomli >= 1.1.0 ; python_version < "3.11"
+identicon~=1.0
+pymysql
+gpio
+wiringpi
+pillow
+msgpack
