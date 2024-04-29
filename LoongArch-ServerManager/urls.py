@@ -20,7 +20,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 import auth.api.auth as auth
-import file_manager.api.fileManager as fileManager
 import user_manager.api.user_management as user_management
 import permission_manager.api.permission as permission_management
 import audit.api.auditAndLogger as auditAndLogger
@@ -59,8 +58,6 @@ urlpatterns = [
     path('userInfo/api/uploadAvatar', userInfo.uploadAvatar),  # 头像上传（POST）
     path('userInfo/api/getAvatar', userInfo.getAvatar),  # 获取头像（GET）
     path("userInfo/api/setPassword", userInfo.setPassword),  # 设置密码（POST）
-    # 下载
-    path('files/download/<token>', fileManager.temporary_link_download),  # 使用临时链接下载文件（GET）
     # 静态页面
     re_path('.*', TemplateView.as_view(template_name="index.html")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

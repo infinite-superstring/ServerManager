@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     'permission_manager',  # 权限管理器
     'audit',  # 审计
     'auth',  # 认证
-    'file_manager',  # 文件管理器
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.staticfiles',

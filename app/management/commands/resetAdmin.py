@@ -1,7 +1,7 @@
 from django.core.management import BaseCommand
 from user_manager.models import User
 from util.logger import Log
-from passwordUtils import GeneratePassword, PasswordToMd5
+from util.passwordUtils import GeneratePassword, PasswordToMd5
 
 class Command(BaseCommand):
     help = 'Reset admin user'

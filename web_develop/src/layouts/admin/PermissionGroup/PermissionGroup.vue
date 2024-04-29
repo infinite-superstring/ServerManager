@@ -25,35 +25,6 @@ export default {
         flag: false,
         gid: null,
       }
-      // newPermissionGroupDialog: {
-      //   flag: false,
-      //   permissionList: {},
-      //   newGroupName: null,
-      //   newGroupStatus: true,
-      //   selected: []
-      // },
-      // editPermissionGroupDialog: {
-      //   flag: false,
-      //   gid: null,
-      //   name: null,
-      //   status: true,
-      //   permissionList: {},
-      //   selected: []
-      // },
-      // updateGroupStatusDialog: {
-      //   flag: false,
-      //   gid: null,
-      //   value: null
-      // },
-      // inputDialog: {
-      //   flag: false,
-      //   input: null,
-      //   uid: null,
-      //   title: null,
-      //   label: null,
-      //   type: null,
-      //   callback: null
-      // },
     }
   },
   methods: {
