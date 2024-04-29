@@ -6,8 +6,8 @@
 
 ```shell
     # 克隆源码到本地
-    git clone https://github.com/Pigeon-Server/PigeonKVM.git
-    cd PigeonKVM
+    git clone https://github.com/hhhfsj/LoongArch-Server-Manager.git
+    cd LoongArch-Server-Manager
 ```
 
 **编译用户界面**
