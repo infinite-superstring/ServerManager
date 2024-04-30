@@ -12,8 +12,9 @@ from user_manager.util.userUtils import get_user_by_username, verify_username_an
 
 config: config = apps.get_app_config('setting').get_config()
 
-# 登录
+
 def AuthLogin(req):
+    """用户登录"""
     if req.session.get("user"):
         return ResponseJson({"status": 1, "msg": "当前账户已登录"})
     if req.method == 'POST':
@@ -40,11 +41,15 @@ def AuthLogin(req):
         return ResponseJson({"status": -1, "msg": "请求方法不正确"})
 
 
-# 登出
 def AuthOutLog(req):
+    """用户登出"""
     if req.session.get("user"):
         write_audit(req.session.get("userID"), "Outlog", "Auth", getClientIp(req))
         req.session.clear()
         return ResponseJson({"status": 1, "msg": "登出成功"})
     else:
         return ResponseJson({"status": 0, "msg": "您未登录"})
+
+
+def node_auth(req):
+    """节点认证"""

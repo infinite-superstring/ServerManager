@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'setting',  # 配置与设置
     'user_manager',  # 用户管理器
     'permission_manager',  # 权限管理器
+    'node_manager',  # 节点管理器
     'audit',  # 审计
     'auth',  # 认证
     'django.contrib.contenttypes',
