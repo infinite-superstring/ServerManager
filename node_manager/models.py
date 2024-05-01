@@ -13,9 +13,7 @@ class Node(models.Model):
     name = models.CharField(max_length=100, unique=True, null=False)
     # 节点Token
     token = models.CharField(max_length=256, unique=True, null=False)
-    # 节点系统信息
-    info = models.ForeignKey('Node_BaseInfo', on_delete=models.DO_NOTHING, null=False)
-    # 节点介绍
+    # 节点简介
     description = models.CharField(max_length=100, null=True)
     # 节点标签列表
     tags = models.ManyToManyField('Node_Tag', related_name='tags')
@@ -25,7 +23,7 @@ class Node(models.Model):
 
 class Node_BaseInfo(models.Model):
     """节点信息"""
-    id = models.AutoField(primary_key=True)
+    node = models.OneToOneField(Node, on_delete=models.CASCADE, null=False)
     # 操作系统
     system = models.CharField(max_length=100, unique=False, null=True)
     # 操作系统版本

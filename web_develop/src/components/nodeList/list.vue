@@ -11,10 +11,10 @@
         <v-sheet class="ma-2">
           <v-card>
             <v-card-title class="machine-name">
-              实例名
+              节点名
               <div class="machine-action">
-                <v-btn size="x-small">修改Token</v-btn>
-                <v-btn size="x-small">删除节点</v-btn>
+                <v-btn size="x-small">重置Token</v-btn>
+                <v-btn size="x-small" color="red">删除节点</v-btn>
               </div>
             </v-card-title>
             <v-card-text>

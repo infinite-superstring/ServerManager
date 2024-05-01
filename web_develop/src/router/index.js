@@ -3,8 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import login from "@/views/Login.vue";
 import UserInfo from "@/views/UserInfo.vue";
 import Dashboard from "@/views/Dashboard.vue"
-import MachineList from "@/views/machine/MachineList.vue";
-import NodeControl from "@/views/machine/NodeControl.vue";
+import nodeList from "@/views/Node/NodeList.vue";
+import NodeControl from "@/views/Node/NodeControl.vue";
 import userManagementPage from "@/views/admin/User.vue"
 import permissionManagementPage from "@/views/admin/Permission.vue"
 import auditAndLoggerPage from "@/views/admin/Audit.vue"
@@ -31,10 +31,10 @@ const routes = [
   },
   // 机器列表
   {
-    path: '/machineList',
-    name: "machineList",
+    path: '/nodeList',
+    name: "nodeList",
     components: {
-      default: MachineList
+      default: nodeList
     }
   },
   // 节点控制（暂定名）

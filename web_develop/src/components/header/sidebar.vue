@@ -55,7 +55,7 @@ export default {
     <v-list-item :to="{name: 'dashboard'}" title="仪表盘" prepend-icon="mdi:mdi-view-dashboard"></v-list-item>
     <v-divider/>
     <v-list-item subtitle="运维"></v-list-item>
-    <v-list-item :to="{name: 'machineList'}" title="机器列表" prepend-icon="mdi:mdi-monitor" v-if="UserPermissions.all || UserPermissions.viewDevice"></v-list-item>
+    <v-list-item :to="{name: 'nodeList'}" title="节点列表" prepend-icon="mdi:mdi-monitor" v-if="UserPermissions.all || UserPermissions.viewDevice"></v-list-item>
     <v-list-item title="网站监控" prepend-icon="mdi:mdi-web-check" v-if="UserPermissions.all || UserPermissions.controllingDevice"></v-list-item>
     <v-divider/>
     <v-list-item subtitle="管理"></v-list-item>
