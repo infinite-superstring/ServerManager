@@ -57,8 +57,8 @@ export default {
       <div class="status-name">
         在线状态
       </div>
-      <div class="status-value">
-        在线
+      <div class="status-value" style="color: green">
+        <v-icon icon="mdi:mdi-check-circle-outline" size="x-small" />在线
       </div>
     </div>
   </v-col>
@@ -84,7 +84,7 @@ export default {
         节点ID
       </div>
       <div class="status-value">
-        <v-icon icon="mdi:mdi-clipboard-text-outline" size="small"/>
+        <v-icon icon="mdi:mdi-clipboard-text-outline" size="small" color="primary" @click=""/>
       </div>
     </div>
   </v-col>

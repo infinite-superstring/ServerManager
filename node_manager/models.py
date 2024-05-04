@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.utils import timezone
 
@@ -7,8 +8,8 @@ from django.utils import timezone
 
 class Node(models.Model):
     """节点列表"""
-    # 节点ID
-    id = models.AutoField(primary_key=True)
+    # id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # 节点名称
     name = models.CharField(max_length=100, unique=True, null=False)
     # 节点Token

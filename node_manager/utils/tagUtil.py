@@ -25,5 +25,5 @@ def get_tag_by_name(tag_name: str) -> list[str]:
 @Log.catch
 def get_node_tags(node_id: int) -> list[str]:
     """根据节点获取所有Tag"""
-    node = Node.objects.get(id=node_id)
+    node = Node.objects.get(uuid=node_id)
     return node.tags.all().values_list('tag_name', flat=True)

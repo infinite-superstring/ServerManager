@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from django.db.models import QuerySet
 from django.shortcuts import HttpResponse
@@ -13,6 +14,8 @@ class ComplexEncoder(json.JSONEncoder):
             return obj.strftime('%Y-%m-%d')
         elif isinstance(obj, QuerySet):
             return list(obj)
+        elif isinstance(obj, uuid.UUID):
+            return str(obj)
         else:
             return json.JSONEncoder.default(self, obj)
 

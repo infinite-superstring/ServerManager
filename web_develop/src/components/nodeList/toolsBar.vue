@@ -3,6 +3,12 @@
 export default {
   name: "toolsBar",
   emits: ['action:search', 'action:addNode'],
+  props: {
+    search: {
+      type: String,
+      required: true
+    }
+  },
   data() {
     return {
     }
@@ -26,6 +32,7 @@ export default {
       variant="solo-filled"
       single-line
       hide-details
+      :model-value="search"
       @input="$emit('action:search', $event.target.value)"
     >
     </v-text-field>

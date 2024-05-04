@@ -53,10 +53,23 @@ export default {
 </script>
 
 <template>
-  <tools-bar @action:addNode="add_node=true" @action:search="args => {search=args}"/>
-  <node-list :nodeList="nodeListData"/>
+  <tools-bar
+    @action:addNode="add_node=true"
+    @action:search="args => {search=args}"
+    :search="search"
+  />
+  <node-list
+    :nodeList="nodeListData"
+    @action:click_tag="args => search = `tag:${args}`"
+    @action:del_node=""
+    @action:reset_token=""
+  />
   <div class="dialogs">
-    <add-node :flag="add_node" @close="add_node = false" @success="args => $emit('show_token', 'new_node', args)"/>
+    <add-node
+      :flag="add_node"
+      @close="add_node = false"
+      @success="args => $emit('show_token', 'new_node', args)"
+    />
   </div>
   <v-pagination
     v-model="currentPage"

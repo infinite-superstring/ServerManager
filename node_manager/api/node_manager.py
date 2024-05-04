@@ -62,11 +62,11 @@ def del_node(req):
             Log.error(e)
             return ResponseJson({"status": -1, "msg": "JSON解析失败"})
         else:
-            node_id = req_json.get('id')
+            node_id = req_json.get('uuid')
             if node_id is None:
                 return ResponseJson({"status": -1, "msg": "参数不完整"})
-            if Node.objects.filter(id=node_id).exists():
-                Node.objects.filter(id=node_id).delete()
+            if Node.objects.filter(uuid=node_id).exists():
+                Node.objects.filter(uuid=node_id).delete()
                 return ResponseJson({"status": 1, "msg": "节点已删除"})
             else:
                 return ResponseJson({"status": 0, "msg": "节点不存在"})
@@ -87,9 +87,9 @@ def reset_node_token(req):
             node_id = req_json.get('id')
             if node_id is None:
                 return ResponseJson({"status": -1, "msg": "参数不完整"})
-            if Node.objects.filter(id=node_id).exists():
+            if Node.objects.filter(uuid=node_id).exists():
                 token = secrets.token_hex(32)
-                node = Node.objects.get(id=node_id)
+                node = Node.objects.get(uuid=node_id)
                 node.token = PasswordToMd5(token)
                 node.save()
                 return ResponseJson({
@@ -128,10 +128,10 @@ def get_node_list(req):
             if pageQuery:
                 for item in pageQuery:
                     PageContent.append({
-                        "id": item.get("id"),
+                        "uuid": item.get("uuid"),
                         "name": item.get("name"),
                         "description": item.get("description"),
-                        "tags": get_node_tags(item.get("id")),
+                        "tags": get_node_tags(item.get("uuid")),
                         "baseData": {
                             "platform": None,
                             "hostname": None,
