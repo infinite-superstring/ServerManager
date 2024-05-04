@@ -2,7 +2,6 @@
 import InputTag from "@/components/inputTag.vue";
 import axios from "axios";
 import message from "@/scripts/utils/message";
-import {el} from "vuetify/locale";
 
 export default {
   name: "addNode",
@@ -13,7 +12,7 @@ export default {
       required: true,
     }
   },
-  emits: ['close'],
+  emits: ['close', 'success'],
   data() {
     return {
       nodeName: null,
@@ -25,17 +24,17 @@ export default {
   },
   methods: {
     search_tag(tag_name) {
-      if(tag_name) {
-        axios.post("/node_tag/search_tag", {tag: tag_name}).then(res=>{
+      if (tag_name) {
+        axios.post("/node_tag/search_tag", {tag: tag_name}).then(res => {
           const apiStatus = res.data.status
           if (apiStatus === 1) {
             this.tag_items = res.data.data.tags
           } else {
-            message.showError(this, res.data.msg)
+            return message.showError(this, res.data.msg)
           }
-        }).catch(err=>{
+        }).catch(err => {
           console.log(err)
-          message.showApiErrorMsg(this, err.message)
+          return message.showApiErrorMsg(this, err.message)
         })
       }
     },
@@ -48,24 +47,25 @@ export default {
     },
     submit() {
       if (!this.nodeName) {
-        message.showError(this, "节点名未填写")
+        return message.showWarning(this, "节点名未填写")
       }
       axios.post('/node_manager/addNode', {
         node_name: this.nodeName,
         node_description: this.description,
         node_tags: this.tags,
         node_group: this.group
-      }).then(res=>{
+      }).then(res => {
         const status = res.data.status
         if (status !== 1) {
-          message.showError(this, res.data.msg)
+          return message.showError(this, res.data.msg)
         } else {
-          message.showSuccess(this, `节点添加成功,Token:${res.data.data.token}`, 10000)
+          // message.showSuccess(this, `节点添加成功,Token:${res.data.data.token}`, 10000)
+          this.$emit('success', res.data.data.token)
           this.close()
         }
-      }).catch(err=>{
+      }).catch(err => {
         console.error(err)
-        message.showApiErrorMsg(this, err.message)
+        return message.showApiErrorMsg(this, err.message)
       })
     }
   }
@@ -94,7 +94,12 @@ export default {
           <div class="text-caption">
             节点标签
           </div>
-          <input-tag label="" :items="tag_items" @update:chips="args => {tags = args}" @input="args => {search_tag(args)}"/>
+          <input-tag
+            label=""
+            :items="tag_items"
+            @update:chips="args => {tags = args}"
+            @input="args => {search_tag(args)}"
+          />
         </div>
         <div>
           <div class="text-caption">

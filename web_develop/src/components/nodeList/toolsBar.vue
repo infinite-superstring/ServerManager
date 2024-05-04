@@ -1,19 +1,10 @@
 <script>
-import {NULL} from "sass";
-import AddNode from "@/components/dialogs/node/addNode.vue";
 
 export default {
   name: "toolsBar",
-  components: {AddNode},
+  emits: ['action:search', 'action:addNode'],
   data() {
     return {
-      search: null,
-      add_node: false
-    }
-  },
-  watch: {
-    search(val) {
-      // TODO 搜索节点
     }
   }
 }
@@ -24,7 +15,7 @@ export default {
     <v-btn
       id="addUser"
       color="success"
-      @click="add_node = true">
+      @click="$emit('action:addNode')">
       添加节点
     </v-btn>
     <v-text-field
@@ -35,12 +26,11 @@ export default {
       variant="solo-filled"
       single-line
       hide-details
-      v-model="search">
+      @input="$emit('action:search', $event.target.value)"
+    >
     </v-text-field>
   </div>
-  <div class="dialogs">
-    <add-node :flag="add_node" @close="add_node = false"/>
-  </div>
+
 </template>
 
 <style scoped>

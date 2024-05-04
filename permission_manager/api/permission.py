@@ -36,7 +36,7 @@ def getPermissionGroupsList(req):
             return ResponseJson({
                 "status": 1,
                 "data": {
-                    "maxPage": get_max_page(Permission_groups.objects.all().count(), 20),
+                    "maxPage": get_max_page(result.all().count(), 20),
                     "currentPage": page,
                     "PageContent": PageContent
                 }

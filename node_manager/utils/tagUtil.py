@@ -1,4 +1,5 @@
-from node_manager.models import Node_Tag
+from node_manager.models import Node_Tag, Node
+from util.logger import Log
 
 
 def add_tags(tags: list) -> list[Node_Tag]:
@@ -19,3 +20,10 @@ def get_tag_by_name(tag_name: str) -> list[str]:
         for tag in tags:
             temp.append(tag.tag_name)
     return temp
+
+
+@Log.catch
+def get_node_tags(node_id: int) -> list[str]:
+    """根据节点获取所有Tag"""
+    node = Node.objects.get(id=node_id)
+    return node.tags.all().values_list('tag_name', flat=True)
