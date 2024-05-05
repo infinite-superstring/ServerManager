@@ -4,7 +4,6 @@ from django.apps import apps
 
 from util.Response import ResponseJson
 from util.Request import RequestLoadJson, getClientIp
-from util.passwordUtils import PasswordToMd5
 from util.logger import Log
 from audit.util.auditTools import write_audit
 from setting.entity.Config import config
@@ -20,7 +19,7 @@ def AuthLogin(req):
     if req.method == 'POST':
         req_json = RequestLoadJson(req)
         user = req_json.get("username")
-        password = PasswordToMd5(req_json.get("password"))
+        password = req_json.get("password")
         if verify_username_and_password(user, password):
             user = get_user_by_username(user)
             if not user.disable:

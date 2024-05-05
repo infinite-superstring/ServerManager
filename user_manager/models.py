@@ -13,6 +13,7 @@ class User(models.Model):
     lastLoginTime = models.DateTimeField("上次登录时间", null=True, auto_now=True)
     lastLoginIP = models.GenericIPAddressField("上次登录IP", null=True)
     password = models.CharField("密码(md5)", max_length=128)
+    passwordSalt = models.CharField("密码盐", max_length=128, null=False, unique=True)
     avatar = models.CharField("头像hash", max_length=64, null=True)
     permission = models.ForeignKey("permission_manager.Permission_groups", on_delete=models.DO_NOTHING, null=True)
     disable = models.BooleanField("是否禁用", default=False, null=True)

@@ -5,8 +5,9 @@ import os
 
 from django.http import FileResponse
 # from app.models import Users
-from user_manager.util.userUtils import get_user_by_id
-from util.passwordUtils import PasswordToMd5, verifyPasswordRules
+from user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, \
+    verify_username_and_password
+from util.passwordUtils import verifyPasswordRules
 from util.Request import RequestLoadJson, getClientIp
 from util.Response import ResponseJson
 from util.logger import Log
@@ -30,7 +31,7 @@ def setPassword(req):
         else:
             userId = req.session.get("userID")
             data = req_json.get("data")
-            oldPassword = PasswordToMd5(data.get("oldPassword"))
+            oldPassword = data.get("oldPassword")
             newPassword = data.get("newPassword")
             if not (userId or data or oldPassword or newPassword):
                 return ResponseJson({"status": -1, "msg": "参数不完整"})
@@ -38,14 +39,12 @@ def setPassword(req):
             Log.debug(User.id)
             if not verifyPasswordRules(newPassword):
                 return ResponseJson({"status": 0, "msg": "新密码格式不合规（至少6字符，必须含有数字，小写字母，大写字母，特殊字符）"})
-            if oldPassword != User.password:
+            if not verify_username_and_password(User, oldPassword):
                 return ResponseJson({"status": 0, "msg": "原密码不正确"})
-
-            User.password = PasswordToMd5(newPassword)
-            User.save()
+            write_user_new_password_to_database(userId, newPassword)
             write_audit(userId, "Set Password(设置密码)",
                        "User Info(用户信息)",
-                       "None")
+                       "")
             return ResponseJson({"status": 1, "msg": "密码修改成功"})
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"})

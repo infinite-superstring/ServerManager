@@ -1,7 +1,7 @@
 from django.test import TestCase
 from user_manager.models import *
 from setting.models import *
-from passwordUtils import PasswordToMd5, GeneratePassword
+from util.passwordUtils import *
 from permission_manager.util.permission import *
 
 
@@ -239,11 +239,14 @@ class AppTest(TestCase):
 
         defaultPassword = GeneratePassword(16)
 
+        hashed_password, salt = encrypt_password(defaultPassword)
+
         adminUser = {
             'username': 'admin',
             'realName': 'admin',
             'email': 'admin@localhost.com',
-            'password': PasswordToMd5(defaultPassword),
+            'password': hashed_password,
+            'passwordSalt': salt,
             'permission_id': '1'
         }
 
@@ -252,6 +255,7 @@ class AppTest(TestCase):
             realName=adminUser['realName'],
             email=adminUser['email'],
             password=adminUser['password'],
+            passwordSalt=adminUser['passwordSalt'],
             permission_id=Permission_Item.objects.filter(id=1).first().id
         )
 
@@ -279,3 +283,10 @@ class AppTest(TestCase):
 
     def test_get_all_permission_item_info(self):
         print(get_all_permission_item_info())
+
+    def test_password_tools(self):
+        defaultPassword = GeneratePassword(16)
+
+        hashed_password, salt = encrypt_password(defaultPassword)
+
+        print(verify_password(hashed_password, defaultPassword, salt))

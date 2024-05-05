@@ -1,5 +1,5 @@
 from user_manager.models import User
-from user_manager.util.userUtils import get_user_by_id
+from user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database
 from permission_manager.models import Permission_groups
 from audit.util.auditTools import write_access_log, write_audit
 from util.pageUtils import get_max_page, get_page_content
@@ -255,13 +255,13 @@ def setUserInfo(req):
                                 "msg": "密码不符合安全要求（至少6字符，必须含有数字，小写字母，大写字母，特殊字符）"
                             }
                         )
+                    write_user_new_password_to_database(User, password)
                     write_audit(
                         req.session.get("userID"),
                         "Edit User Info(编辑用户): Update RealName(更新密码)",
                         "User Manager(用户管理)",
-                        PasswordToMd5(password)
+                        ""
                     )
-                    User.password = PasswordToMd5(password)
                 if permission and permission != User.permission_id:
                     if Permission_groups.objects.filter(id=permission):
                         newPermission = Permission_groups.objects.filter(id=permission).first()

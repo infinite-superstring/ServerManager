@@ -3,7 +3,7 @@ from permission_manager.models import Permission_groups, Permission_Item
 from user_manager.models import User
 from setting.models import Settings
 from util.logger import Log
-from util.passwordUtils import GeneratePassword, PasswordToMd5
+from util.passwordUtils import GeneratePassword, encrypt_password
 
 
 class Command(BaseCommand):
@@ -244,11 +244,14 @@ class Command(BaseCommand):
 
         defaultPassword = GeneratePassword(16)
 
+        hashed_password, salt = encrypt_password(defaultPassword)
+
         adminUser = {
             'username': 'admin',
             'realName': 'admin',
             'email': 'admin@localhost.com',
-            'password': PasswordToMd5(defaultPassword),
+            'password': hashed_password,
+            'passwordSalt': salt,
             'permission_id': '1'
         }
 
@@ -257,6 +260,7 @@ class Command(BaseCommand):
             realName=adminUser['realName'],
             email=adminUser['email'],
             password=adminUser['password'],
+            passwordSalt=adminUser['passwordSalt'],
             permission_id=Permission_Item.objects.filter(id=1).first().id
         )
         Log.success("用户初始化成功")
