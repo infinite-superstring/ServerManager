@@ -19,7 +19,7 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 
-import auth.api.auth as auth
+import auth.api.user_auth as auth
 import user_manager.api.user_management as user_management
 import permission_manager.api.permission as permission_management
 import node_manager.api.node_manager as node_manager

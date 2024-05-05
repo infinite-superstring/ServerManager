@@ -25,12 +25,13 @@ def AuthLogin(req):
             if not user.disable:
                 req.session["user"] = user.userName
                 req.session["userID"] = user.id
+                req.session["authMethod"] = "User Auth"
                 req.session.set_expiry(int(config.base.sessionExpiry) * 60)
                 Log.success(f"用户[{user.userName}]已登陆")
                 user.lastLoginIP = getClientIp(req)
                 user.lastLoginTime = datetime.datetime.now()
                 user.save()
-                write_audit(user.id, "Login", "Auth", user.lastLoginIP)
+                write_audit(user.id, "Login", "User Auth", user.lastLoginIP)
                 return ResponseJson({"status": 1, "msg": "登录成功"})
             else:
                 return ResponseJson({"status": 0, "msg": "账户被禁用，请联系管理员"})

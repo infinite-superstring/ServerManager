@@ -8,14 +8,11 @@ from django.utils import timezone
 
 class Node(models.Model):
     """节点列表"""
-    # id = models.AutoField(primary_key=True)
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # 节点名称
-    name = models.CharField(max_length=100, unique=True, null=False)
-    # 节点Token
-    token = models.CharField(max_length=256, unique=True, null=False)
-    # 节点简介
-    description = models.CharField(max_length=100, null=True)
+    uuid = models.UUIDField("节点UUID", primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField("节点名称", max_length=100, unique=True, null=False)
+    token_hash = models.CharField("节点Token Hash值", max_length=256, unique=True, null=False)
+    token_salt = models.CharField("节点Token盐值", max_length=256, unique=True, null=False)
+    description = models.CharField("节点简介", max_length=100, null=True)
     # 节点标签列表
     tags = models.ManyToManyField('Node_Tag', related_name='tags')
     # 节点分组
@@ -25,30 +22,26 @@ class Node(models.Model):
 class Node_BaseInfo(models.Model):
     """节点信息"""
     node = models.OneToOneField(Node, on_delete=models.CASCADE, null=False)
-    # 操作系统
-    system = models.CharField(max_length=100, unique=False, null=True)
-    # 操作系统版本
-    system_release = models.CharField(max_length=100, unique=False, null=True)
-    # 操作系统编译版本
-    system_build_version = models.CharField(max_length=100, unique=False, null=True)
-    # 主机名
-    hostname = models.CharField(max_length=100, unique=False, null=True)
-    # 启动时间
-    boot_time = models.CharField(max_length=100, unique=False, null=True)
-    # 在线状态
-    online = models.BooleanField(default=False, null=False)
+    node_version = models.CharField("节点版本", max_length=256, null=True)
+    system = models.CharField("节点操作系统类型", max_length=100, unique=False, null=True)
+    system_release = models.CharField("节点操作系统版本", max_length=100, unique=False, null=True)
+    system_build_version = models.CharField("节点操作系统编译版本", max_length=100, unique=False, null=True)
+    hostname = models.CharField("节点主机名", max_length=100, unique=False, null=True)
+    boot_time = models.DateTimeField("节点系统运行时间", null=True)
+    auth_ip = models.CharField("认证IP", max_length=100, unique=False, null=False)
+    online = models.BooleanField("节点在线状态", default=False, null=False)
 
 
 class Node_Tag(models.Model):
     """节点标签"""
-    id = models.AutoField(primary_key=True)
-    tag_name = models.CharField(max_length=100, unique=True, null=True)
+    id = models.AutoField("标签ID", primary_key=True)
+    tag_name = models.CharField("标签名", max_length=100, unique=True, null=True)
 
 
 class Node_Group(models.Model):
     """节点组"""
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, unique=True, null=False)
+    id = models.AutoField("组ID", primary_key=True)
+    name = models.CharField("组名", max_length=100, unique=True, null=False)
 
 
 class Node_UsageData(models.Model):

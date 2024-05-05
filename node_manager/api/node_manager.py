@@ -7,7 +7,7 @@ from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
-from util.passwordUtils import PasswordToMd5
+from util.passwordUtils import PasswordToMd5, encrypt_password
 
 
 def add_node(req):
@@ -27,11 +27,12 @@ def add_node(req):
                 if Node.objects.filter(name=node_name).exists():
                     return ResponseJson({"status": 0, "msg": "节点已存在"})
                 token = secrets.token_hex(32)
-
+                hashed_token, salt = encrypt_password(token)
                 node = Node.objects.create(
                     name=node_name,
                     description=node_description,
-                    token=PasswordToMd5(token),
+                    token_hash=hashed_token,
+                    token_salt=salt,
                 )
                 if node_tags is not None:
                     tags = add_tags(node_tags)
