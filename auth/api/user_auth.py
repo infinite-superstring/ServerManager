@@ -25,7 +25,7 @@ def AuthLogin(req):
             if not user.disable:
                 req.session["user"] = user.userName
                 req.session["userID"] = user.id
-                req.session["authMethod"] = "User Auth"
+                req.session["auth_method"] = "User Auth"
                 req.session.set_expiry(int(config.base.sessionExpiry) * 60)
                 Log.success(f"用户[{user.userName}]已登陆")
                 user.lastLoginIP = getClientIp(req)

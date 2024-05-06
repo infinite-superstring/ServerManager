@@ -25,9 +25,10 @@ def node_auth(req):
             return ResponseJson({"status": -1, "msg": "参数不完整"})
         node = Node.objects.get(name=node_name)
         if node and verify_node_token(node, node_token):
+            # TODO 服务端Token认证，等待设置部分
             req.session["node_uuid"] = node.uuid
             req.session["node_name"] = node.name
-            req.session["authMethod"] = "Node Auth"
+            req.session["auth_method"] = "Node Auth"
             if not Node_BaseInfo.objects.filter(node=node).exists():
                 Node_BaseInfo.objects.create(node=node, online=True)
             else:

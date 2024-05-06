@@ -1,7 +1,10 @@
 import secrets
 
+from django.db.models import Q
+
 from audit.util.auditTools import write_audit
-from node_manager.models import Node
+from node_manager.models import Node, Node_Tag
+from node_manager.utils.searchUtil import extract_search_info
 from node_manager.utils.tagUtil import add_tags, get_node_tags
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
@@ -124,7 +127,17 @@ def get_node_list(req):
             page = req_json.get("page", 1)
             pageSize = req_json.get("pageSize", 20)
             search = req_json.get("search", "")
-            result = Node.objects.filter(name__icontains=search if search else "")
+            normal_search_info, tags, groups = extract_search_info(search)
+            query = Q(name__icontains=normal_search_info) if search else Q()
+            # 如果tags非空，则添加tags的过滤条件
+            if tags:
+                query &= Q(tags__tag_name__in=tags)
+            # 如果groups非空，则添加groups的过滤条件
+            if groups:
+                query &= Q(group__name__in=groups)
+
+            result = Node.objects.filter(query)
+            print(result)
             pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
             if pageQuery:
                 for item in pageQuery:
