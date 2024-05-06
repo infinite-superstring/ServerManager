@@ -33,12 +33,8 @@ export default {
       /**
        * 保存设置信息
        */
-      axios.post('/admin/api/settings/editSettings', this.settings).then(res => {
-        if (res.data.status === 1) {
-          message.showSuccess(this, "设置已保存")
-        } else {
-         message.showWarning(this, res.data.msg)
-        }
+      axios.post('/admin/api/settings/editSettings', this.settings).then(() => {
+        message.showSuccess(this, "设置已保存")
       }).catch(err => {
         console.error(err)
         message.showApiErrorMsg(this, err.message)

@@ -16,7 +16,7 @@ export default {
     <div class="text-caption">
       服务器Token
     </div>
-<!--    TODO 样式问题 继承问题-->
+    <!-- TODO 样式问题 继承问题 -->
     <v-text-field type="text" v-model="setting_data.base.server_token" disabled density="compact">
       <template v-slot:append>
         <v-btn icon>

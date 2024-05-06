@@ -16,6 +16,8 @@ class PermissionsMiddleware(MiddlewareMixin):
         Ignore = [
             "/login",
             "/auth/login",
+            "/auth/nodeAuth",
+            "/node_manager/websocket/node_cilent",
             "/error/403"
         ]
 

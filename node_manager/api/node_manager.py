@@ -3,7 +3,7 @@ import secrets
 from django.db.models import Q
 
 from audit.util.auditTools import write_audit
-from node_manager.models import Node, Node_Tag
+from node_manager.models import Node
 from node_manager.utils.searchUtil import extract_search_info
 from node_manager.utils.tagUtil import add_tags, get_node_tags
 from util.Request import RequestLoadJson
@@ -137,7 +137,6 @@ def get_node_list(req):
                 query &= Q(group__name__in=groups)
 
             result = Node.objects.filter(query)
-            print(result)
             pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
             if pageQuery:
                 for item in pageQuery:

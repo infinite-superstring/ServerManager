@@ -19,7 +19,8 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 
-import auth.api.user_auth as auth
+import auth.api.user_auth as user_auth
+import auth.api.node_auth as node_auth
 import user_manager.api.user_management as user_management
 import permission_manager.api.permission as permission_management
 import node_manager.api.node_manager as node_manager
@@ -30,8 +31,9 @@ import user_manager.api.userInfo as userInfo
 
 urlpatterns = [
     # 认证
-    path('auth/login', auth.AuthLogin),  # 登入（POST）
-    path('auth/logout', auth.AuthOutLog),  # 登出（ALL）
+    path('auth/login', user_auth.AuthLogin),  # 用户登入（POST）
+    path('auth/logout', user_auth.AuthOutLog),  # 用户登出（ALL）
+    path('auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
     # 用户管理
     path('admin/api/getUserList', user_management.getUserList),  # 获取用户列表（ALL）
     path('admin/api/addUser', user_management.addUser),  # 新增用户（POST）

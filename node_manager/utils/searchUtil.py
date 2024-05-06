@@ -5,7 +5,6 @@ def extract_search_info(search_string):
     # 定义标签、组和搜索关键词的正则表达式模式
     tag_pattern = r'tag:(\w+)'
     group_pattern = r'group:(\w+)'
-    keyword_pattern = r'\b(\w+)\b'  # 使用 \b 匹配单词边界
 
     # 使用正则表达式找到所有的标签、组和搜索关键词
     tags = re.findall(tag_pattern, search_string)

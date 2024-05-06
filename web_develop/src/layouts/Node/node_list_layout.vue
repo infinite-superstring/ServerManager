@@ -4,9 +4,15 @@ import nodeList from "@/components/tables/node/nodeList.vue";
 import addNode from "@/components/dialogs/node/addNode.vue";
 import axios from "axios";
 import message from "@/scripts/utils/message";
+import node_manager from "@/scripts/node/node_manager";
 
 export default {
   name: "node_list_layout",
+  computed: {
+    node_manager() {
+      return node_manager
+    }
+  },
   components: {ToolsBar, nodeList, addNode},
   emits: ['show_token'],
   data() {
@@ -61,14 +67,14 @@ export default {
   <node-list
     :nodeList="nodeListData"
     @action:click_tag="args => search = `tag:${args}`"
-    @action:del_node=""
+    @action:del_node="args => node_manager.del_node(this, args)"
     @action:reset_token=""
   />
   <div class="dialogs">
     <add-node
       :flag="add_node"
       @close="add_node = false"
-      @success="args => $emit('show_token', 'new_node', args)"
+      @success="args => {$emit('show_token', 'new_node', args); getNodeList()}"
     />
   </div>
   <v-pagination
