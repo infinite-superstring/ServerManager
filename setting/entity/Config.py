@@ -1,65 +1,50 @@
-
 class config:
     base = None
-    camera = None
-    record = None
-    gpio = None
+    node = None
+    message = None
 
     def __init__(self):
         self.base = base()
-        self.camera = camera()
-        self.record = record()
-        self.gpio = gpio()
+        self.node = node()
+        self.message = message()
 
 
 # 基础配置
 class base:
-    # HID设备串口
-    HID_Serial: str = None
-    # USB磁盘设备
-    USB_Device: str = None
-    # USB磁盘设备挂载地址
-    USB_MountDirectory: str = None
-    # 采集卡ID
-    camera: int = None
-    # 启动录制
-    record: bool = None
+    # 服务器Token
+    server_token: str = None
     # Session超时时间
-    sessionExpiry: int = None
+    session_expiry: int = None
+    # 数据存储时间（天）
+    data_storage_time: int = None
 
-# 采集卡配置
-class camera:
-    # 亮度
-    brightness: int = None
-    # 饱和度
-    colorfulness: int = None
-    # 曝光
-    exposure: int = None
-    # 帧率
-    fps: int = None
-    # 高度
-    height: int = None
-    # 色调
-    tonal: int = None
-    # 更新阈值
-    updateDisplayChange: float = None
-    # 宽度
-    width: int = None
-    
 
-# GPIO配置
-class gpio:
-    HDD_LED: int = None
-    Power_Btn: int = None
-    Power_LED: int = None
-    Restart_Btn: int = None
-    UsbDisk_EN: int = None
-    UsbDisk_Switch: int = None
-    mode: str = None
-    pollingRate: float = None
-    
+# 节点配置
+class node:
+    # 超时下线时间（毫秒）
+    timeout: int = None
+    # 心跳包时间（毫秒）
+    heartbeat_time: int = None
+    # 运行数据提交间隔（秒）
+    upload_data_interval: int = None
 
-# 录制配置
-class record:
-    fps: int = None
-    maxFile: int = None
+
+# 消息设置
+class message:
+    message_send_type: str = None
+    # 邮件发送方式
+    email_method: str = None
+    # 邮件服务器地址
+    email_host: str = None
+    # 邮件服务器端口
+    email_port: int = None
+    # 邮件用户名
+    email_username: str = None
+    # 邮件密码
+    email_password: str = None
+    # 是否使用SSL
+    email_ssl: bool = None
+    # 邮件发件地址
+    email_from_address: str = None
+    # 邮件发件人
+    email_from_name: str = None

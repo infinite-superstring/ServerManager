@@ -1,3 +1,5 @@
+import secrets
+
 from django.core.management.base import BaseCommand
 from permission_manager.models import Permission_groups, Permission_Item
 from user_manager.models import User
@@ -141,101 +143,65 @@ class Command(BaseCommand):
 
         defaultSetting = [
             {
-                'Settings': "base.record",
+                'Settings': "base.server_token",
+                'value': secrets.token_hex(32)
+            },
+            {
+                'Settings': "base.session_expiry",
+                'value': 0
+            },
+            {
+                'Settings': "base.data_storage_time",
+                'value': 180
+            },
+            {
+                'Settings': "node.timeout",
+                'value': 16000
+            },
+            {
+                'Settings': "node.heartbeat_time",
+                'value': 3000
+            },
+            {
+                'Settings': "node.upload_data_interval",
+                'value': 3
+            },
+            {
+                'Settings': "message.message_send_type",
+                'value': "email"
+            },
+            {
+                'Settings': "message.email_method",
+                'value': "stp"
+            },
+            {
+                'Settings': "message.email_host",
+                'value': ""
+            },
+            {
+                'Settings': "message.email_port",
+                'value': 8080
+            },
+            {
+                'Settings': "message.email_username",
+                'value': ""
+            },
+            {
+                'Settings': "message.email_password",
+                'value': ""
+            },
+            {
+                'Settings': "message.email_ssl",
                 'value': True
             },
             {
-                'Settings': "camera.width",
-                'value': 1920
+                'Settings': "message.email_from_address",
+                'value': ""
             },
             {
-                'Settings': "camera.height",
-                'value': 1080
-            },
-            {
-                'Settings': "camera.fps",
-                'value': 30
-            },
-            {
-                'Settings': "camera.brightness",
-                'value': -14
-            },
-            {
-                'Settings': "camera.exposure",
-                'value': -4
-            },
-            {
-                'Settings': "camera.colorfulness",
-                'value': 164
-            },
-            {
-                'Settings': "camera.tonal",
-                'value': -4
-            },
-            {
-                'Settings': "camera.updateDisplayChange",
-                'value': 0.01
-            },
-            {
-                'Settings': "record.fps",
-                'value': 15
-            },
-            {
-                'Settings': "record.maxFile",
-                'value': 16
-            },
-            {
-                'Settings': "base.sessionExpiry",
-                'value': 0
-            },
-            {
-                'Settings': "base.HID_Serial",
-                'value': "/dev/ttyS5"
-            },
-            {
-                'Settings': "base.camera",
-                'value': 0
-            },
-            {
-                'Settings': "base.USB_Device",
-                'value': "/dev/sdb"
-            },
-            {
-                'Settings': "base.USB_MountDirectory",
-                'value': "/"
-            },
-            {
-                'Settings': "gpio.mode",
-                'value': "OrangePi GPIO"
-            },
-            {
-                'Settings': "gpio.pollingRate",
-                'value': 0.5
-            },
-            {
-                'Settings': "gpio.Power_LED",
-                'value': 9
-            },
-            {
-                'Settings': "gpio.HDD_LED",
-                'value': 8
-            },
-            {
-                'Settings': "gpio.Restart_Btn",
-                'value': 5
-            },
-            {
-                'Settings': "gpio.Power_Btn",
-                'value': 6
-            },
-            {
-                'Settings': "gpio.UsbDisk_EN",
-                'value': 18
-            },
-            {
-                'Settings': "gpio.UsbDisk_Switch",
-                'value': 17
-            },
+                "Settings": "message.email_from_name",
+                'value': ""
+            }
         ]
 
         for item in defaultSetting:

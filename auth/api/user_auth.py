@@ -26,7 +26,7 @@ def AuthLogin(req):
                 req.session["user"] = user.userName
                 req.session["userID"] = user.id
                 req.session["auth_method"] = "User Auth"
-                req.session.set_expiry(int(config.base.sessionExpiry) * 60)
+                req.session.set_expiry(int(config.base.session_expiry) * 60)
                 Log.success(f"用户[{user.userName}]已登陆")
                 user.lastLoginIP = getClientIp(req)
                 user.lastLoginTime = datetime.datetime.now()
