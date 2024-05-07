@@ -1,11 +1,12 @@
 import json
 import uuid
+from datetime import datetime
 
 from channels.exceptions import StopConsumer
 from channels.generic.websocket import WebsocketConsumer
 from django.apps import apps
 
-from node_manager.models import Node, Node_BaseInfo
+from node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from setting.entity import Config
 
 from util.logger import Log
@@ -16,13 +17,13 @@ links = {}
 class node_client(WebsocketConsumer):
     __auth: bool = False
     __config: Config
+    __node: Node
     __node_base_info: Node_BaseInfo
 
     def connect(self):
         # 在建立连接时执行的操作
         node_uuid = self.scope["session"].get("node_uuid")
         node_name = self.scope["session"].get("node_name")
-        print(node_uuid, node_name)
         if (node_uuid or node_name) is None:
             Log.error("Node uuid or node name is empty")
             return self.close(-1)
@@ -32,6 +33,7 @@ class node_client(WebsocketConsumer):
             return self.close(-1)
 
         node = node.first()
+        self.__node = node
         self.__config = apps.get_app_config('setting').get_config()
         self.__node_base_info = Node_BaseInfo.objects.get(node=node)
         self.__node_base_info.online = True
@@ -68,11 +70,28 @@ class node_client(WebsocketConsumer):
             else:
                 action = json_data.get('action')
                 data = json_data.get('data')
+                memory_data = data.get('memory')
+                cpu_data = data.get('cpu')
+                print(data)
                 match action:
                     case 'upload_running_data':
-                        print(data)
+                        core_usage = [Node_UsageData.Cpu_Usage.objects.create(core_index=index, usage=data) for index, data in enumerate(cpu_data["core_usage"])]
+                        usage_data = Node_UsageData.objects.create(
+                            node=self.__node,
+                            total_memory=memory_data['total'],
+                            available_memory=memory_data['available'],
+                            used_memory=memory_data['used'],
+                        )
+                        for core_usage_item in core_usage:
+                            usage_data.cpu_usage.add(core_usage_item)
+                        usage_data.save()
                     case 'refresh_node_info':
-                        print(data)
+                        self.__node_base_info.system = data['system']
+                        self.__node_base_info.system_release = data['system_release']
+                        self.__node_base_info.system_build_version = data['system_build_version']
+                        self.__node_base_info.hostname = data['hostname']
+                        self.__node_base_info.boot_time = datetime.fromtimestamp(data['boot_time'])
+                        self.__node_base_info.save()
                     case 'ping':
                         pass
                     case _:

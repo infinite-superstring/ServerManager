@@ -1,3 +1,6 @@
+from datetime import datetime
+from time import time
+
 from django.apps import apps
 
 from node_manager.models import Node, Node_BaseInfo
@@ -34,6 +37,8 @@ def node_auth(req):
             req.session.set_expiry = 0
             if not Node_BaseInfo.objects.filter(node=node).exists():
                 Node_BaseInfo.objects.create(node=node, node_version="")
+            node_info = Node_BaseInfo.objects.filter(node=node)
+            node_info.update(auth_ip=node_ip)
             return ResponseJson({"status": 1, "msg": "节点认证成功"})
         else:
             return ResponseJson({"status": 0, "msg": "节点认证失败"})

@@ -51,21 +51,25 @@ class Node_UsageData(models.Model):
     # 更新时间
     timestamp = models.DateTimeField(auto_now_add=True)
     # CPU使用率
-    cpu_usage = models.FloatField()
+    cpu_usage = models.ManyToManyField('Cpu_Usage', related_name='cpu_cores_usage')
     # 总内存
     total_memory = models.BigIntegerField()
     # 可用内存
     available_memory = models.BigIntegerField()
     # 已用内存
     used_memory = models.BigIntegerField()
-    # 磁盘IO - 写字节数
-    disk_read_bytes = models.BigIntegerField()
-    # 磁盘IO - 读字节数
-    disk_write_bytes = models.BigIntegerField()
-    # 网络 - 发送字节数
-    network_bytes_sent = models.BigIntegerField()
-    # 网络 - 接收字节数
-    network_bytes_recv = models.BigIntegerField()
+    # # 磁盘IO - 写字节数
+    # disk_read_bytes = models.BigIntegerField()
+    # # 磁盘IO - 读字节数
+    # disk_write_bytes = models.BigIntegerField()
+    # # 网络 - 发送字节数
+    # network_bytes_sent = models.BigIntegerField()
+    # # 网络 - 接收字节数
+    # network_bytes_recv = models.BigIntegerField()
+
+    class Cpu_Usage(models.Model):
+        core_index = models.IntegerField()
+        usage = models.FloatField()
 
 
 # 动态创建按月份分表的模型类
