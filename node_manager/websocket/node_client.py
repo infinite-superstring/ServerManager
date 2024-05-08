@@ -6,7 +6,7 @@ from channels.exceptions import StopConsumer
 from channels.generic.websocket import WebsocketConsumer
 from django.apps import apps
 
-from node_manager.models import Node, Node_BaseInfo, Node_UsageData
+from node_manager.models import Node, Node_BaseInfo, Node_UsageData, Node_Disk
 from setting.entity import Config
 
 from util.logger import Log
@@ -75,22 +75,38 @@ class node_client(WebsocketConsumer):
                 print(data)
                 match action:
                     case 'upload_running_data':
-                        core_usage = [Node_UsageData.Cpu_Usage.objects.create(core_index=index, usage=data) for index, data in enumerate(cpu_data["core_usage"])]
-                        usage_data = Node_UsageData.objects.create(
-                            node=self.__node,
-                            total_memory=memory_data['total'],
-                            available_memory=memory_data['available'],
-                            used_memory=memory_data['used'],
-                        )
-                        for core_usage_item in core_usage:
-                            usage_data.cpu_usage.add(core_usage_item)
-                        usage_data.save()
+                        pass
+                        # core_usage = [Node_UsageData.Cpu_Usage.objects.create(core_index=index, usage=data) for
+                        #               index, data in enumerate(cpu_data["core_usage"])]
+                        # usage_data = Node_UsageData.objects.create(
+                        #     node=self.__node,
+                        #     total_memory=memory_data['total'],
+                        #     available_memory=memory_data['available'],
+                        #     used_memory=memory_data['used'],
+                        # )
+                        # for core_usage_item in core_usage:
+                        #     usage_data.cpu_usage.add(core_usage_item)
+                        # usage_data.save()
                     case 'refresh_node_info':
                         self.__node_base_info.system = data['system']
                         self.__node_base_info.system_release = data['system_release']
                         self.__node_base_info.system_build_version = data['system_build_version']
                         self.__node_base_info.hostname = data['hostname']
                         self.__node_base_info.boot_time = datetime.fromtimestamp(data['boot_time'])
+                        disks = data['disks']  # 客户端发送的磁盘数据
+                        node_disk_list = Node_Disk.objects.filter(node=self.__node).all()
+                        Node_Disk.objects.filter(node=self.__node).exclude(device__in=[i['device'] for i in disks]).delete()
+                        for index, disk_data in enumerate(disks):
+                            if not node_disk_list.filter(device=disk_data['device']).exists():
+                                disk = Node_Disk.objects.create(node=self.__node, device=disk_data['device'])
+                                self.__node_base_info.disk_list.add(disk)
+                            else:
+                                disk = node_disk_list.filter(device=disk_data['device']).first()
+                            disk.mount_point = disk_data['mount_point']
+                            disk.fs_type = disk_data['fs_type']
+                            disk.total = disk_data['total']
+                            disk.used = disk_data['used'] if disk_data.get("used") else 0
+                            disk.save()
                         self.__node_base_info.save()
                     case 'ping':
                         pass

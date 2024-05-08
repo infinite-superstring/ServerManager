@@ -28,6 +28,8 @@ def node_auth(req):
         server_token = req_json.get("server_token")  # 服务器Token
         if not (node_name or node_token or node_ip or server_token):
             return ResponseJson({"status": -1, "msg": "参数不完整"})
+        if not Node.objects.filter(name=node_name).exists():
+            return ResponseJson({"status": 0, "msg": "节点不存在"})
         node = Node.objects.get(name=node_name)
         if node and verify_node_token(node, node_token) and server_token == apps.get_app_config(
                 'setting').get_config().base.server_token:
