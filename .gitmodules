@@ -1,0 +1,3 @@
+[submodule "web_develop"]
+	path = web_develop
+	url = https://github.com/infinite-superstring/ServerManager-UI.git
