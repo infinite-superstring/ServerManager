@@ -19,15 +19,15 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 
-import auth.api.user_auth as user_auth
-import auth.api.node_auth as node_auth
-import user_manager.api.user_management as user_management
-import permission_manager.api.permission as permission_management
-import node_manager.api.node_manager as node_manager
-import node_manager.api.node_tag as node_tag
-import audit.api.auditAndLogger as auditAndLogger
-import setting.api.settings as setting
-import user_manager.api.userInfo as userInfo
+import apps.auth.api.user_auth as user_auth
+import apps.auth.api.node_auth as node_auth
+import apps.user_manager.api.user_management as user_manager
+import apps.permission_manager.api.permission as permission_manager
+import apps.node_manager.api.node_manager as node_manager
+import apps.node_manager.api.node_tag as node_tag
+import apps.audit.api.auditAndLogger as auditAndLogger
+import apps.setting.api.settings as setting
+import apps.user_manager.api.userInfo as userInfo
 
 urlpatterns = [
     # 认证
@@ -35,19 +35,19 @@ urlpatterns = [
     path('auth/logout', user_auth.AuthOutLog),  # 用户登出（ALL）
     path('auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
     # 用户管理
-    path('admin/api/getUserList', user_management.getUserList),  # 获取用户列表（ALL）
-    path('admin/api/addUser', user_management.addUser),  # 新增用户（POST）
-    path('admin/api/delUser', user_management.delUser),  # 删除用户（POST）
-    path('admin/api/getUserPermission', user_management.getUserPermission),  # 获取用户权限（POST）
-    path('admin/api/getUserInfo', user_management.getUserInfo),  # 获取用户信息（POST）
-    path('admin/api/setUserInfo', user_management.setUserInfo),  # 设置用户信息（POST）
+    path('admin/api/getUserList', user_manager.getUserList),  # 获取用户列表（ALL）
+    path('admin/api/addUser', user_manager.addUser),  # 新增用户（POST）
+    path('admin/api/delUser', user_manager.delUser),  # 删除用户（POST）
+    path('admin/api/getUserPermission', user_manager.getUserPermission),  # 获取用户权限（POST）
+    path('admin/api/getUserInfo', user_manager.getUserInfo),  # 获取用户信息（POST）
+    path('admin/api/setUserInfo', user_manager.setUserInfo),  # 设置用户信息（POST）
     # 权限管理
-    path('admin/api/getPermissionGroups', permission_management.getPermissionGroupsList),  # 获取权限组列表（ALL）
-    path('admin/api/getPermissionList', permission_management.getPermissionList),  # 获取权限列表（ALL）
-    path('admin/api/addPermissionGroup', permission_management.addPermissionGroup),  # 新增权限组列表 （POST）
-    path('admin/api/delPermissionGroup', permission_management.delPermissionGroup),  # 删除权限组 （POST）
-    path('admin/api/getPermissionGroupInfo', permission_management.getPermissionGroupInfo),  # 获取权限组信息 （POST）
-    path('admin/api/setPermissionGroup', permission_management.setPermissionGroup),  # 设置权限组 （POST）
+    path('admin/api/getPermissionGroups', permission_manager.getPermissionGroupsList),  # 获取权限组列表（ALL）
+    path('admin/api/getPermissionList', permission_manager.getPermissionList),  # 获取权限列表（ALL）
+    path('admin/api/addPermissionGroup', permission_manager.addPermissionGroup),  # 新增权限组列表 （POST）
+    path('admin/api/delPermissionGroup', permission_manager.delPermissionGroup),  # 删除权限组 （POST）
+    path('admin/api/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),  # 获取权限组信息 （POST）
+    path('admin/api/setPermissionGroup', permission_manager.setPermissionGroup),  # 设置权限组 （POST）
     # 节点管理器
     path('node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
     path('node_manager/delNode', node_manager.del_node),  # 删除节点(POST)

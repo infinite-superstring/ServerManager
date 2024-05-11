@@ -10,10 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
+import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# sys.path.insert(0,os.path.join(BASE_DIR,'apps'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -31,13 +34,13 @@ ALLOWED_HOSTS = ["*"]
 INSTALLED_APPS = [
     'daphne',
     'channels',
-    'app',  # 主应用
-    'setting',  # 配置与设置
-    'user_manager',  # 用户管理器
-    'permission_manager',  # 权限管理器
-    'node_manager',  # 节点管理器
-    'audit',  # 审计
-    'auth',  # 认证
+    'apps.command_tool',  # 命令工具
+    'apps.setting',  # 配置与设置
+    'apps.user_manager',  # 用户管理器
+    'apps.permission_manager',  # 权限管理器
+    'apps.node_manager',  # 节点管理器
+    'apps.audit',  # 审计
+    'apps.auth',  # 认证
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.staticfiles',

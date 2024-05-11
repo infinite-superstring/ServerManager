@@ -1,8 +1,8 @@
 from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import redirect
-from user_manager.util.userUtils import get_user_by_id
+from apps.user_manager.util.userUtils import get_user_by_id
 from util.Response import ResponseJson
-from permission_manager.util.permission import groupPermission
+from apps.permission_manager.util.permission import groupPermission
 
 class PermissionsMiddleware(MiddlewareMixin):
     """

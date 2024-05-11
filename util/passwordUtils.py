@@ -7,7 +7,7 @@ import string
 # import app.util.Config
 from django.apps import apps
 
-from user_manager.models import User
+from apps.user_manager.models import User
 
 
 def PasswordToMd5(password: str):

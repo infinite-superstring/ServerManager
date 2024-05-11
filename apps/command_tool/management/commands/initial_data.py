@@ -1,0 +1,234 @@
+import secrets
+
+from django.core.management.base import BaseCommand
+from apps.permission_manager import Permission_groups, Permission_Item
+from apps.user_manager.models import User
+from apps.setting.models import Settings
+from util.logger import Log
+from util.passwordUtils import GeneratePassword, encrypt_password
+
+
+class Command(BaseCommand):
+    help = 'Creates initial data'
+
+    def handle(self, *args, **options):
+        Log.info("开始初始化数据库~")
+        PermissionItem = [
+            {
+                'id': 1,
+                'permission': 'all',
+                'description': '所有权限，拥有该权限的组无需指定其他权限',
+                'translate': '所有权限'
+            },
+            {
+                'id': 2,
+                'permission': 'viewDevice',
+                'description': '允许观看设备屏幕，不可控制设备',
+                'translate': '观看被控设备'
+            },
+            {
+                'id': 3,
+                'permission': 'controllingDevice',
+                'description': '允许用户控制设备',
+                'translate': '控制被控设备'
+            },
+            {
+                'id': 4,
+                'permission': 'changeDevicePowerState',
+                'description': '允许用户操作设备按钮，可实现强制关机与重启',
+                'translate': '控制被控电源'
+            },
+            {
+                'id': 5,
+                'permission': 'changeSettings',
+                'description': '允许用户更改LoongArch-Server-Manager设置',
+                'translate': '更改设备设置'
+            },
+            {
+                'id': 6,
+                'permission': 'manageUsers',
+                'description': '允许用户管理LoongArch-Server-Manager用户',
+                'translate': '管理用户'
+            },
+            {
+                'id': 7,
+                'permission': 'managePermissionGroups',
+                'description': '允许用户管理权限设定',
+                'translate': '管理权限组'
+            },
+            {
+                'id': 8,
+                'permission': 'viewAudit',
+                'description': '允许用户浏览审计信息',
+                'translate': '查看审计数据'
+            },
+            {
+                'id': 9,
+                'permission': 'editAudit',
+                'description': '允许用户清除审计数据',
+                'translate': '管理审计数据'
+            }
+        ]
+
+        for item in PermissionItem:
+            Permission_Item.objects.get_or_create(**item)
+        Log.success("权限项初始化完成")
+
+        all = Permission_Item.objects.get(id=1)
+        viewDevice = Permission_Item.objects.get(id=2)
+        controllingDevice = Permission_Item.objects.get(id=3)
+        changeDevicePowerState = Permission_Item.objects.get(id=4)
+        changeSettings = Permission_Item.objects.get(id=5)
+        manageUsers = Permission_Item.objects.get(id=6)
+        managePermissionGroups = Permission_Item.objects.get(id=7)
+        viewAudit = Permission_Item.objects.get(id=8)
+        editAudit = Permission_Item.objects.get(id=9)
+
+        PermissionGroup = [
+            {
+                'id': 1,
+                'name': '超级管理员(super_admin)',
+                'permissions': [
+                    all,
+                    viewDevice,
+                    controllingDevice,
+                    changeDevicePowerState,
+                    changeSettings,
+                    manageUsers,
+                    managePermissionGroups,
+                    viewAudit,
+                    editAudit
+                ]
+            },
+            {
+                'id': 2,
+                'name': '管理员(admin)',
+                'permissions': [
+                    viewDevice,
+                    controllingDevice,
+                    changeDevicePowerState,
+                    changeSettings,
+                    manageUsers,
+                    managePermissionGroups,
+                    viewAudit,
+                ]
+            },
+            {
+                'id': 3,
+                'name': '运维(O&M)',
+                'permissions': [
+                    viewDevice,
+                    controllingDevice,
+                    changeDevicePowerState,
+                    changeSettings,
+                    viewAudit,
+                ]
+            },
+            {
+                'id': 4,
+                'name': '开发(dev)',
+                'permissions': [
+                    viewDevice,
+                    controllingDevice,
+                ]
+            }
+        ]
+
+        for item in PermissionGroup:
+            group, status = Permission_groups.objects.get_or_create(id=item['id'], name=item['name'])
+            if status:
+                for permission in item['permissions']:
+                    group.permissions.add(permission)
+        Log.success("权限组初始化完成")
+
+        defaultSetting = [
+            {
+                'Settings': "base.server_token",
+                'value': secrets.token_hex(32)
+            },
+            {
+                'Settings': "base.session_expiry",
+                'value': 0
+            },
+            {
+                'Settings': "base.data_storage_time",
+                'value': 180
+            },
+            {
+                'Settings': "node.timeout",
+                'value': 16000
+            },
+            {
+                'Settings': "node.heartbeat_time",
+                'value': 3000
+            },
+            {
+                'Settings': "node.upload_data_interval",
+                'value': 3
+            },
+            {
+                'Settings': "message.message_send_type",
+                'value': "email"
+            },
+            {
+                'Settings': "message.email_method",
+                'value': "stp"
+            },
+            {
+                'Settings': "message.email_host",
+                'value': ""
+            },
+            {
+                'Settings': "message.email_port",
+                'value': 8080
+            },
+            {
+                'Settings': "message.email_username",
+                'value': ""
+            },
+            {
+                'Settings': "message.email_password",
+                'value': ""
+            },
+            {
+                'Settings': "message.email_ssl",
+                'value': True
+            },
+            {
+                'Settings': "message.email_from_address",
+                'value': ""
+            },
+            {
+                "Settings": "message.email_from_name",
+                'value': ""
+            }
+        ]
+
+        for item in defaultSetting:
+            Settings.objects.get_or_create(**item)
+        Log.success("初始化设置成功")
+
+        defaultPassword = GeneratePassword(16)
+
+        hashed_password, salt = encrypt_password(defaultPassword)
+
+        adminUser = {
+            'username': 'admin',
+            'realName': 'admin',
+            'email': 'admin@localhost.com',
+            'password': hashed_password,
+            'passwordSalt': salt,
+            'permission_id': '1'
+        }
+
+        User.objects.get_or_create(
+            userName=adminUser['username'],
+            realName=adminUser['realName'],
+            email=adminUser['email'],
+            password=adminUser['password'],
+            passwordSalt=adminUser['passwordSalt'],
+            permission_id=Permission_Item.objects.filter(id=1).first().id
+        )
+        Log.success("用户初始化成功")
+
+        print("*"*10+"默认账户"+"*"*10+"\n"+f"用户名：{adminUser['username']}\n密码：{defaultPassword}")
