@@ -1,7 +1,7 @@
 import secrets
 
 from django.core.management.base import BaseCommand
-from apps.permission_manager import Permission_groups, Permission_Item
+from apps.permission_manager.models import Permission_groups, Permission_Item
 from apps.user_manager.models import User
 from apps.setting.models import Settings
 from util.logger import Log

@@ -11,8 +11,11 @@ class NodeManagerConfig(AppConfig):
         Log.info("Node Manager: Initializing start")
 
     def ready(self):
-        for i in apps.get_model("node_manager", "Node_BaseInfo").objects.all():
-            i.online = False
-            i.save()
+        try:
+            for i in apps.get_model("node_manager", "Node_BaseInfo").objects.all():
+                i.online = False
+                i.save()
+        except Exception as e:
+            Log.warning("重置节点在线状态失败!")
         Log.success("Node Manager: Initialization complete")
 
