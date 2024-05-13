@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'apps.node_manager',  # 节点管理器
     'apps.audit',  # 审计
     'apps.auth',  # 认证
+    'apps.message',  # 消息
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.staticfiles',

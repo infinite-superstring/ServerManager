@@ -28,6 +28,7 @@ import apps.node_manager.api.node_tag as node_tag
 import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
 import apps.user_manager.api.userInfo as userInfo
+import apps.message.api.message as message
 
 urlpatterns = [
     # 认证
@@ -69,6 +70,8 @@ urlpatterns = [
     path('userInfo/api/uploadAvatar', userInfo.uploadAvatar),  # 头像上传（POST）
     path('userInfo/api/getAvatar', userInfo.getAvatar),  # 获取头像（GET）
     path("userInfo/api/setPassword", userInfo.setPassword),  # 设置密码（POST）
+    # 消息
+    path('message/api/message', message.get_message_list),  # 获取消息列表（GET）
     # 静态页面
     re_path('.*', TemplateView.as_view(template_name="index.html")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
