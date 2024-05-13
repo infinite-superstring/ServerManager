@@ -27,7 +27,10 @@ def get_node_by_tag_name(tag_name: str):
 
 
 @Log.catch
-def get_node_tags(node_id: int) -> list[str]:
+def get_node_tags(node) -> list[str]:
     """根据节点获取所有Tag"""
-    node = Node.objects.get(uuid=node_id)
+    if isinstance(node, int):
+        node = Node.objects.get(uuid=node)
+    elif not isinstance(node, Node):
+        raise TypeError(f"Unknown Parameter type: {type(node)}")
     return node.tags.all().values_list('tag_name', flat=True)

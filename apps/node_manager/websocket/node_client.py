@@ -37,6 +37,7 @@ class node_client(WebsocketConsumer):
         self.__config = apps.get_app_config('setting').get_config()
         self.__node_base_info = Node_BaseInfo.objects.get(node=node)
         self.__node_base_info.online = True
+        self.__node_base_info.save()
         self.accept()
         self.__auth = True
         self.send_json({

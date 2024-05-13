@@ -49,12 +49,12 @@ urlpatterns = [
     path('admin/api/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),  # 获取权限组信息 （POST）
     path('admin/api/setPermissionGroup', permission_manager.setPermissionGroup),  # 设置权限组 （POST）
     # 节点管理器
-    path('node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
-    path('node_manager/delNode', node_manager.del_node),  # 删除节点(POST)
-    path('node_manager/editNode', node_manager.edit_node),  # 编辑节点(POST)
-    path('node_manager/getNodeList', node_manager.get_node_list),  # 获取节点列表(POST)
-    path('node_manager/getNodeInfo', node_manager.get_node_info),  # 获取节点信息(POST)
-    path('node_tag/search_tag', node_tag.search_tag),  # 搜索TAG(POST)
+    path('node_manager/api/addNode', node_manager.add_node),  # 添加节点(POST)
+    path('node_manager/api/delNode', node_manager.del_node),  # 删除节点(POST)
+    path('node_manager/api/editNode', node_manager.edit_node),  # 编辑节点(POST)
+    path('node_manager/api/getNodeList', node_manager.get_node_list),  # 获取节点列表(POST)
+    path('node_manager/api/getNodeInfo', node_manager.get_node_info),  # 获取节点信息(POST)
+    path('node_manager/api/node_tag/search_tag', node_tag.search_tag),  # 搜索TAG(POST)
     # 审计
     path('admin/api/auditAndLogger/audit', auditAndLogger.getAudit),  # 获取审计日志（POST）
     path('admin/api/auditAndLogger/accessLog', auditAndLogger.getAccessLog),  # 获取访问日志（POST）

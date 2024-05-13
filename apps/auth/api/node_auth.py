@@ -28,8 +28,11 @@ def node_auth(req):
         if not Node.objects.filter(name=node_name).exists():
             return ResponseJson({"status": 0, "msg": "节点不存在"})
         node = Node.objects.get(name=node_name)
-        if node and verify_node_token(node, node_token) and server_token == apps.get_app_config(
-                'setting').get_config().base.server_token:
+        if (
+            node and
+            verify_node_token(node, node_token) and
+            server_token == apps.get_app_config('setting').get_config().base.server_token
+        ):
             req.session["node_uuid"] = str(node.uuid)
             req.session["node_name"] = node.name
             req.session["auth_method"] = "Node Auth"

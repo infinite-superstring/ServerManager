@@ -2,7 +2,7 @@ import secrets
 
 from django.db.models import Q
 
-from apps.node_manager.models import Node
+from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from util.Request import RequestLoadJson
@@ -139,17 +139,23 @@ def get_node_list(req):
             pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
             if pageQuery:
                 for item in pageQuery:
+                    print(item)
+                    node = Node.objects.get(uuid=item.get("uuid"))
+                    node_base_info = Node_BaseInfo.objects.filter(node=node).first()
+                    node_usage = Node_UsageData.objects.filter(node=node).last()
+                    online = node_base_info.online if node_base_info else False
                     PageContent.append({
                         "uuid": item.get("uuid"),
                         "name": item.get("name"),
                         "description": item.get("description"),
                         "tags": get_node_tags(item.get("uuid")),
                         "baseData": {
-                            "platform": None,
-                            "hostname": None,
-                            "cpu_usage": None,
-                            "total_memory": None,
-                            "used_memory": None
+                            "platform": node_base_info.system if node_base_info else "未知",
+                            "hostname": node_base_info.hostname if node_base_info else "未知",
+                            "online": online,
+                            "cpu_usage": "0%",
+                            "memory_used": f"{round((node_usage.memory_used / node_base_info.memory_total) * 100, 1)}%" if online and node_base_info else "0%",
+                            # "swap_used": f"{round((node_usage.swap_used / node_base_info.swap_total) * 100, 1)}%" if online else None
                         }
                     })
             return ResponseJson({
