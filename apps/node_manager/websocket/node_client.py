@@ -6,6 +6,7 @@ from channels.generic.websocket import WebsocketConsumer
 from django.apps import apps
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
+from apps.node_manager.signals import node_usage_update_signal
 from apps.node_manager.utils.nodeUtil import update_disk_partition
 from apps.setting.entity import Config
 
@@ -75,17 +76,19 @@ class node_client(WebsocketConsumer):
                 memory_data = data.get('memory')
                 swap_data = data.get('swap')
                 disk_data = data.get('disk')
-                print(data)
+                loadavg = data.get('loadavg')
                 match action:
                     case 'upload_running_data':
                         core_usage = [Node_UsageData.Cpu_Usage.objects.create(core_index=index, usage=data) for
                                       index, data in enumerate(cpu_data["core_usage"])]
+                        loadavg = Node_UsageData.Loadavg.objects.create(one_minute=loadavg[0], five_minute=loadavg[1], fifteen_minute=loadavg[2])
                         usage_data = Node_UsageData.objects.create(
                             node=self.__node,
                             memory_used=memory_data['used'],
                             swap_used=swap_data['used'],
                             disk_io_read_bytes=disk_data['io']['read_bytes'],
-                            disk_io_write_bytes=disk_data['io']['write_bytes']
+                            disk_io_write_bytes=disk_data['io']['write_bytes'],
+                            system_loadavg=loadavg
                         )
                         for core_usage_item in core_usage:
                             usage_data.cpu.add(core_usage_item)
@@ -100,12 +103,16 @@ class node_client(WebsocketConsumer):
                         if flag:
                             self.__node_base_info.save()
                         update_disk_partition(self.__node, disk_data['partition_list'])
+                        node_usage_update_signal.send(sender=self.__node.uuid)
                     case 'refresh_node_info':
                         self.__node_base_info.system = data['system']
                         self.__node_base_info.system_release = data['system_release']
                         self.__node_base_info.system_build_version = data['system_build_version']
                         self.__node_base_info.hostname = data['hostname']
                         self.__node_base_info.boot_time = datetime.fromtimestamp(data['boot_time'])
+                        self.__node_base_info.architecture = data['cpu']['architecture']
+                        self.__node_base_info.core_count = data['cpu']['core']
+                        self.__node_base_info.processor_count = data['cpu']['processor']
                         disks = data['disks']  # 客户端发送的磁盘数据
                         update_disk_partition(self.__node, disks)
                     case 'ping':

@@ -1,4 +1,6 @@
 from django.apps import AppConfig, apps
+from django.core.signals import request_finished
+
 from util.logger import Log
 
 

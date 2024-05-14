@@ -32,6 +32,9 @@ class Node_BaseInfo(models.Model):
     system_build_version = models.CharField("节点操作系统编译版本", max_length=100, unique=False, null=True)
     memory_total = models.BigIntegerField("节点内存总量", null=True)
     swap_total = models.BigIntegerField("节点交换空间总量", null=True)
+    architecture = models.CharField("处理器架构", max_length=50, null=True)
+    core_count = models.IntegerField("处理器核心数", null=True)
+    processor_count = models.IntegerField("处理器线程数", null=True)
     hostname = models.CharField("节点主机名", max_length=100, unique=False, null=True)
     boot_time = models.DateTimeField("节点系统运行时间", null=True),
     disk_list = models.ManyToManyField("Node_DiskPartition", related_name='disk_list')
@@ -77,6 +80,8 @@ class Node_UsageData(models.Model):
     # 磁盘io
     disk_io_read_bytes = models.BigIntegerField("磁盘IO-读字节数(s/bytes)", null=False)
     disk_io_write_bytes = models.BigIntegerField("磁盘IO-写字节数(s/bytes)", null=False)
+    # 系统平均负载
+    system_loadavg = models.OneToOneField("Loadavg", on_delete=models.DO_NOTHING, null=False)
 
     class Meta:
         db_table = 'node_usage_data'
@@ -91,6 +96,14 @@ class Node_UsageData(models.Model):
             db_table = 'cpu_core_usage'
             db_table_comment = 'CPU核心使用率数据'
 
+    class Loadavg(models.Model):
+        one_minute = models.FloatField("一分钟平均负载")
+        five_minute = models.FloatField("5分钟平均负载")
+        fifteen_minute = models.FloatField("15分钟平均负载")
+
+        class Meta:
+            db_table = 'loadavg'
+            db_table_comment = '系统平均负载'
 
 class Node_DiskPartition(models.Model):
     """磁盘分区信息"""

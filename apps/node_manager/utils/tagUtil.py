@@ -1,3 +1,5 @@
+import uuid
+
 from apps.node_manager.models import Node_Tag, Node
 from util.logger import Log
 
@@ -29,7 +31,7 @@ def get_node_by_tag_name(tag_name: str):
 @Log.catch
 def get_node_tags(node) -> list[str]:
     """根据节点获取所有Tag"""
-    if isinstance(node, int):
+    if isinstance(node, uuid.UUID):
         node = Node.objects.get(uuid=node)
     elif not isinstance(node, Node):
         raise TypeError(f"Unknown Parameter type: {type(node)}")
