@@ -20,9 +20,9 @@ class node_control(AsyncWebsocketConsumer):
     __node_uuid: UUID = None
     __userID: int = None
     __clientIP: str = None
-    __config: Config
-    __node: Node
-    __node_base_info: Node_BaseInfo
+    __config: Config = None
+    __node: Node = None
+    __node_base_info: Node_BaseInfo = None
 
     async def connect(self):
         # 在建立连接时执行的操作
@@ -37,19 +37,35 @@ class node_control(AsyncWebsocketConsumer):
             Log.info("节点不存在")
             return self.disconnect(0)
         self.__node = await sync_to_async(Node.objects.get)(uuid=self.__node_uuid)
-        self.__node_base_info = await sync_to_async(Node_BaseInfo.objects.get)(node=self.__node)
         # 加入组
         await self.channel_layer.group_add(
             str(self.__node.uuid),
             self.channel_name
         )
         await self.accept()
-        usage_data = await sync_to_async(Node_UsageData.objects.filter(node=self.__node).last)()
-        if usage_data:
-            usage_data = {
+        usage_data = None
+        node_system_info = None
+        if await sync_to_async(Node_BaseInfo.objects.filter(node=self.__node).exists)():
+            self.__node_base_info = await sync_to_async(Node_BaseInfo.objects.get)(node=self.__node)
+            node_system_info = {
+                "hostname": self.__node_base_info.hostname,
+                "system_type": self.__node_base_info.system,
+                "system_version": self.__node_base_info.system_release,
+                "system_build_version": self.__node_base_info.system_build_version,
+                "system_boot_time": str(self.__node_base_info.boot_time),
+                "cpu_architecture": self.__node_base_info.architecture,
+                "memory_total": self.__node_base_info.memory_total,
+                "swap_total": self.__node_base_info.swap_total,
+                'core_count': self.__node_base_info.core_count,
+                'processor_count': self.__node_base_info.processor_count,
+            }
+        if node_system_info and await sync_to_async(Node_UsageData.objects.filter(node=self.__node).exists)():
+            usage_data: Node_UsageData = await sync_to_async(Node_UsageData.objects.filter(node=self.__node).last)()
+            loadavg_data = await sync_to_async(lambda: usage_data.system_loadavg)()
+            usage_data: dict = {
                 "timestamp": usage_data.timestamp,
-                'cpu_core': [{f"CPU {core.core_index}": core.usage} async for core in
-                             await sync_to_async(usage_data.cpu.all)()] if usage_data.cpu else [],
+                'cpu_core': {f"CPU {core.core_index}": core.usage async for core in
+                             await sync_to_async(usage_data.cpu.all)()} if usage_data.cpu else {},
                 "cpu_usage": 0,
                 'memory': usage_data.memory_used,
                 "memory_used": round((usage_data.memory_used / self.__node_base_info.memory_total) * 100, 1),
@@ -57,6 +73,11 @@ class node_control(AsyncWebsocketConsumer):
                 'disk_io': {
                     'read': usage_data.disk_io_read_bytes,
                     'write': usage_data.disk_io_write_bytes,
+                },
+                'loadavg': {
+                    "one_minute": loadavg_data.one_minute,
+                    "five_minute": loadavg_data.five_minute,
+                    "fifteen_minute": loadavg_data.fifteen_minute,
                 }
             }
         await self.send_json({
@@ -65,19 +86,10 @@ class node_control(AsyncWebsocketConsumer):
                 "base_info": {
                     "node_uuid": self.__node_uuid,
                     "node_name": self.__node.name,
-                    "node_online": self.__node_base_info.online,
+                    "node_online": self.__node_base_info.online if self.__node_base_info else False,
                     "node_description": self.__node.description,
                     "node_tags": get_node_tags(self.__node),
-                    "node_hostname": self.__node_base_info.hostname,
-                    "node_system_type": self.__node_base_info.system,
-                    "node_system_version": self.__node_base_info.system_release,
-                    "node_system_build_version": self.__node_base_info.system_build_version,
-                    "node_system_boot_time": str(self.__node_base_info.boot_time),
-                    "node_cpu_architecture": self.__node_base_info.architecture,
-                    "node_memory_total": self.__node_base_info.memory_total,
-                    "node_swap_total": self.__node_base_info.swap_total,
-                    'node_core_count': self.__node_base_info.core_count,
-                    'node_processor_count': self.__node_base_info.processor_count,
+                    "node_system_info": node_system_info,
                 },
                 "usage": usage_data if usage_data else None
             }
@@ -108,10 +120,11 @@ class node_control(AsyncWebsocketConsumer):
 
     async def update_node_usage_data(self, event):
         usage_data = await sync_to_async(Node_UsageData.objects.filter(node=self.__node).last)()
+        loadavg_data = await sync_to_async(lambda: usage_data.system_loadavg)()
         usage_data = {
             "timestamp": usage_data.timestamp,
-            'cpu_core': [{f"CPU {core.core_index}": core.usage} async for core in
-                         await sync_to_async(usage_data.cpu.all)()] if usage_data.cpu else [],
+            'cpu_core': {f"CPU {core.core_index}": core.usage async for core in
+                         await sync_to_async(usage_data.cpu.all)()} if usage_data.cpu else {},
             "cpu_usage": 0,
             'memory': usage_data.memory_used,
             "memory_used": round((usage_data.memory_used / self.__node_base_info.memory_total) * 100, 1),
@@ -119,6 +132,11 @@ class node_control(AsyncWebsocketConsumer):
             'disk_io': {
                 'read': usage_data.disk_io_read_bytes,
                 'write': usage_data.disk_io_write_bytes,
+            },
+            'loadavg': {
+                "one_minute": loadavg_data.one_minute,
+                "five_minute": loadavg_data.five_minute,
+                "fifteen_minute": loadavg_data.fifteen_minute,
             }
         }
         await self.send_json({
