@@ -9,7 +9,7 @@ from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
-from util.passwordUtils import PasswordToMd5, encrypt_password
+from util.passwordUtils import encrypt_password
 
 
 def add_node(req):
@@ -93,7 +93,9 @@ def reset_node_token(req):
             if Node.objects.filter(uuid=node_id).exists():
                 token = secrets.token_hex(32)
                 node = Node.objects.get(uuid=node_id)
-                node.token = PasswordToMd5(token)
+                hashed_token, salt = encrypt_password(token)
+                node.token_hash = hashed_token
+                node.token_salt = salt
                 node.save()
                 return ResponseJson({
                     "status": 1,
@@ -139,7 +141,6 @@ def get_node_list(req):
             pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
             if pageQuery:
                 for item in pageQuery:
-                    print(item)
                     node = Node.objects.get(uuid=item.get("uuid"))
                     node_base_info = Node_BaseInfo.objects.filter(node=node).first()
                     node_usage = Node_UsageData.objects.filter(node=node).last()
@@ -153,9 +154,8 @@ def get_node_list(req):
                             "platform": node_base_info.system if node_base_info else "未知",
                             "hostname": node_base_info.hostname if node_base_info else "未知",
                             "online": online,
-                            "cpu_usage": "0%",
+                            "cpu_usage": f"{node_usage.cpu_usage if node_usage else 0}%",
                             "memory_used": f"{round((node_usage.memory_used / node_base_info.memory_total) * 100, 1)}%" if online and node_base_info else "0%",
-                            # "swap_used": f"{round((node_usage.swap_used / node_base_info.swap_total) * 100, 1)}%" if online else None
                         }
                     })
             return ResponseJson({

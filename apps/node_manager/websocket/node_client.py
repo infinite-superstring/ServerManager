@@ -79,11 +79,12 @@ class node_client(WebsocketConsumer):
                 loadavg = data.get('loadavg')
                 match action:
                     case 'upload_running_data':
-                        core_usage = [Node_UsageData.Cpu_Usage.objects.create(core_index=index, usage=data) for
+                        core_usage = [Node_UsageData.CpuCoreUsage.objects.create(core_index=index, usage=data) for
                                       index, data in enumerate(cpu_data["core_usage"])]
                         loadavg = Node_UsageData.Loadavg.objects.create(one_minute=loadavg[0], five_minute=loadavg[1], fifteen_minute=loadavg[2])
                         usage_data = Node_UsageData.objects.create(
                             node=self.__node,
+                            cpu_usage=cpu_data['usage'],
                             memory_used=memory_data['used'],
                             swap_used=swap_data['used'],
                             disk_io_read_bytes=disk_data['io']['read_bytes'],
@@ -91,7 +92,7 @@ class node_client(WebsocketConsumer):
                             system_loadavg=loadavg
                         )
                         for core_usage_item in core_usage:
-                            usage_data.cpu.add(core_usage_item)
+                            usage_data.cpu_core_usage.add(core_usage_item)
                         usage_data.save()
                         flag = False
                         if self.__node_base_info.memory_total != memory_data['total']:

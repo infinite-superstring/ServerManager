@@ -6,7 +6,7 @@ from util.pageUtils import get_max_page, get_page_content
 from util.Response import ResponseJson
 from util.Request import RequestLoadJson, getClientIp
 from util.logger import Log
-from util.passwordUtils import verifyPasswordRules
+from util.passwordUtils import verifyPasswordRules, encrypt_password
 from apps.permission_manager.util.permission import groupPermission
 
 
@@ -83,11 +83,13 @@ def addUser(req):
                 if not verifyPasswordRules(password):
                     return ResponseJson(
                         {"status": 0, "msg": "密码不符合安全要求（至少6字符，必须含有数字，小写字母，大写字母，特殊字符）"})
+                hashed_password, salt = encrypt_password(password)
                 createUser = User.objects.create(
                     userName=userName,
                     realName=realName,
                     email=email,
-                    password=password,
+                    password=hashed_password,
+                    passwordSalt=salt,
                     disable=disable,
                     permission=Permission_groups.objects.get(id=permission) if permission else None
                 )
@@ -247,7 +249,7 @@ def setUserInfo(req):
                         "User Manager(用户管理)",
                         f"{User.email}-->{email}")
                     User.email = email
-                if password and password != User.password:
+                if password:
                     if not verifyPasswordRules(password):
                         return ResponseJson(
                             {

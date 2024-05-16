@@ -65,8 +65,8 @@ class node_control(AsyncWebsocketConsumer):
             usage_data: dict = {
                 "timestamp": usage_data.timestamp,
                 'cpu_core': {f"CPU {core.core_index}": core.usage async for core in
-                             await sync_to_async(usage_data.cpu.all)()} if usage_data.cpu else {},
-                "cpu_usage": 0,
+                             await sync_to_async(usage_data.cpu_core_usage.all)()} if usage_data.cpu_core_usage else {},
+                "cpu_usage": usage_data.cpu_usage,
                 'memory': usage_data.memory_used,
                 "memory_used": round((usage_data.memory_used / self.__node_base_info.memory_total) * 100, 1),
                 'swap': usage_data.swap_used,
@@ -124,8 +124,8 @@ class node_control(AsyncWebsocketConsumer):
         usage_data = {
             "timestamp": usage_data.timestamp,
             'cpu_core': {f"CPU {core.core_index}": core.usage async for core in
-                         await sync_to_async(usage_data.cpu.all)()} if usage_data.cpu else {},
-            "cpu_usage": 0,
+                         await sync_to_async(usage_data.cpu_core_usage.all)()} if usage_data.cpu_core_usage else {},
+            "cpu_usage": usage_data.cpu_usage,
             'memory': usage_data.memory_used,
             "memory_used": round((usage_data.memory_used / self.__node_base_info.memory_total) * 100, 1),
             'swap': usage_data.swap_used,

@@ -36,7 +36,6 @@ def setPassword(req):
             if not (userId or data or oldPassword or newPassword):
                 return ResponseJson({"status": -1, "msg": "参数不完整"})
             User = get_user_by_id(userId)
-            Log.debug(User.id)
             if not verifyPasswordRules(newPassword):
                 return ResponseJson({"status": 0, "msg": "新密码格式不合规（至少6字符，必须含有数字，小写字母，大写字母，特殊字符）"})
             if not verify_username_and_password(User, oldPassword):
@@ -101,13 +100,6 @@ def setUserInfo(req):
                                f"{User.userName}-->{userName}")
                     User.userName = userName
                     req.session["user"] = userName
-                # if realName and realName != User.realName:
-                #     if Users.objects.filter(realName=realName):
-                #         return ResponseJson({"status": 0, "msg": "该姓名用户已存在"})
-                #     writeAudit(userId, "Set User Info(设置用户信息): Update Real Name(更新用户姓名)",
-                #                "User Info(用户信息)",
-                #                f"{User.realName}-->{realName}")
-                #     User.realName = realName
                 if email and email != User.email:
                     if User.objects.filter(email=email):
                         return ResponseJson({"status": 0, "msg": "邮箱已被使用过啦"})
@@ -163,7 +155,7 @@ def uploadAvatar(req):
 
                 dataBytes = base64.b64decode(avatarImgBase64.split(",")[1])
 
-                with open(os.path.join("avatar", f"{avatarImgHash}"), "wb+") as f:
+                with open(os.path.join(os.getcwd(), "avatar", f"{avatarImgHash}"), "wb+") as f:
                     md5 = hashlib.md5()
                     md5.update(dataBytes)
 
@@ -200,13 +192,9 @@ def getAvatar(req):
     """
     userId = req.session.get("userID")
 
-    if (not userId):
-        return ResponseJson({"status": -1, "msg": "用户未登录"})
-
     User = get_user_by_id(userId)
     write_access_log(userId, getClientIp(req), "Get avatar")
-
     if not User.avatar:
-        return FileResponse(open(os.path.join("avatar", "fff.png"), "rb"), content_type="image/png")
+        return FileResponse(open(os.path.join(os.getcwd(), "avatar", "fff.png"), "rb"), content_type="image/png")
     if os.path.exists(os.path.join("avatar", User.avatar)):
-        return FileResponse(open(os.path.join("avatar", User.avatar), "rb"), content_type="image/webp")
+        return FileResponse(open(os.path.join(os.getcwd(), "avatar", User.avatar), "rb"), content_type="image/webp")

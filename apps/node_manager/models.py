@@ -72,7 +72,9 @@ class Node_UsageData(models.Model):
     # 更新时间
     timestamp = models.DateTimeField("更新时间", auto_now_add=True)
     # CPU
-    cpu = models.ManyToManyField('Cpu_Usage', related_name='cpu_cores_usage_mapping')
+    cpu_core_usage = models.ManyToManyField('CpuCoreUsage', related_name='cpu_cores_usage_mapping')
+    # Cpu总体使用率
+    cpu_usage = models.BigIntegerField("Cpu总体使用率", null=False, default=0)
     # 内存
     memory_used = models.BigIntegerField("内存使用量", null=False)
     # 交换空间
@@ -87,7 +89,7 @@ class Node_UsageData(models.Model):
         db_table = 'node_usage_data'
         db_table_comment = '节点使用率数据'
 
-    class Cpu_Usage(models.Model):
+    class CpuCoreUsage(models.Model):
         """CPU核心使用率"""
         core_index = models.IntegerField("核心")
         usage = models.FloatField("使用率")

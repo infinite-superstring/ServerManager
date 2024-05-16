@@ -10,12 +10,6 @@ from django.apps import apps
 from apps.user_manager.models import User
 
 
-def PasswordToMd5(password: str):
-    md5 = hashlib.md5(apps.get_app_config("setting").get_base_config().get("main").get("Cryptographic_salt").encode())
-    md5.update(password.encode('utf-8'))
-    return md5.hexdigest()
-
-
 def GeneratePassword(length=12):
     """随机生成密码"""
     characters = string.ascii_letters + string.digits + string.punctuation
