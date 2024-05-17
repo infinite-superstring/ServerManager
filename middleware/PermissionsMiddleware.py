@@ -15,9 +15,9 @@ class PermissionsMiddleware(MiddlewareMixin):
         # 忽略权限
         Ignore = [
             "/login",
-            "/auth/login",
-            "/auth/nodeAuth",
-            "/node_manager/websocket/node_cilent",
+            "/api/auth/login",
+            "/api/auth/nodeAuth",
+            "/ws/node/node_client",
             "/error/403"
         ]
 
@@ -30,23 +30,19 @@ class PermissionsMiddleware(MiddlewareMixin):
                 "/admin/settings": "changeSettings",
             },
             "api": {
-                "/control/api/fastInput": "controllingDevice",
-                "/control/api/buttonClick": "changeDevicePowerState",
-                "/control/api/getLedStatus": "viewDevice",
+                "/admin/api/userManager/getUserList": "manageUsers",
+                "/admin/api/userManager/addUser": "manageUsers",
+                "/admin/api/userManager/delUser": "manageUsers",
+                "/admin/api/userManager/getUserPermission": "manageUsers",
+                "/admin/api/userManager/getUserInfo": "manageUsers",
+                "/admin/api/userManager/setUserInfo": "manageUsers",
 
-                "/admin/api/getUserList": "manageUsers",
-                "/admin/api/addUser": "manageUsers",
-                "/admin/api/delUser": "manageUsers",
-                "/admin/api/getUserPermission": "manageUsers",
-                "/admin/api/getUserInfo": "manageUsers",
-                "/admin/api/setUserInfo": "manageUsers",
-
-                "/admin/api/getPermissionGroups": "managePermissionGroups",
-                "/admin/api/getPermissionList": "managePermissionGroups",
-                "/admin/api/addPermissionGroup": "managePermissionGroups",
-                "/admin/api/delPermissionGroup": "managePermissionGroups",
-                "/admin/api/getPermissionGroupInfo": "managePermissionGroups",
-                "/admin/api/setPermissionGroup": "managePermissionGroups",
+                "/admin/api/permissionManager/getPermissionGroups": "managePermissionGroups",
+                "/admin/api/permissionManager/getPermissionList": "managePermissionGroups",
+                "/admin/api/permissionManager/addPermissionGroup": "managePermissionGroups",
+                "/admin/api/permissionManager/delPermissionGroup": "managePermissionGroups",
+                "/admin/api/permissionManager/getPermissionGroupInfo": "managePermissionGroups",
+                "/admin/api/permissionManager/setPermissionGroup": "managePermissionGroups",
 
                 "/admin/api/auditAndLogger/audit": "viewAudit",
                 "/admin/api/auditAndLogger/accessLog": "viewAudit",

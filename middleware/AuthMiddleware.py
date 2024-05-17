@@ -10,7 +10,7 @@ class AuthMiddleware(MiddlewareMixin):
     登录验证中间件
     """
     def process_request(self, request):
-        if request.path_info in ["/login", "/auth/login", "/auth/nodeAuth"]:
+        if request.path_info in ["/login", "/api/auth/login", "/api/auth/nodeAuth"]:
             return
 
         # 清理非法会话
