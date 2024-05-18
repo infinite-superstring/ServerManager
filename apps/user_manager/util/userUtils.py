@@ -15,6 +15,10 @@ def get_user_by_username(username) -> User:
     return User.objects.get(userName=username)
 
 
+def username_exists(username) -> bool:
+    return User.objects.filter(userName=username).exists()
+
+
 def verify_username_and_password(user, password: str) -> bool:
     """
         验证用户密码

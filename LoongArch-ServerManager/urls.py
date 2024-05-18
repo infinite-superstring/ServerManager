@@ -37,7 +37,7 @@ urlpatterns = [
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
     # 用户管理
     path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（ALL）
-    path('api/admin/userManager/api/addUser', user_manager.addUser),  # 新增用户（POST）
+    path('api/admin/userManager/addUser', user_manager.addUser),  # 新增用户（POST）
     path('api/admin/userManager/delUser', user_manager.delUser),  # 删除用户（POST）
     path('api/admin/userManager/getUserPermission', user_manager.getUserPermission),  # 获取用户权限（POST）
     path('api/admin/userManager/getUserInfo', user_manager.getUserInfo),  # 获取用户信息（POST）

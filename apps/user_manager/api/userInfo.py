@@ -6,7 +6,7 @@ import os
 from django.http import FileResponse
 # from app.models import Users
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, \
-    verify_username_and_password
+    verify_username_and_password, username_exists
 from util.passwordUtils import verifyPasswordRules
 from util.Request import RequestLoadJson, getClientIp
 from util.Response import ResponseJson
@@ -90,16 +90,14 @@ def setUserInfo(req):
             if userId and data:
                 User = get_user_by_id(userId)
                 userName = data.get("userName")
-                realName = data.get("realName")
                 email = data.get("email")
-                if userName and userName != User.userName:
-                    if User.objects.filter(userName=userName):
-                        return ResponseJson({"status": 0, "msg": "用户名已存在"})
-                    write_audit(userId, "Set user info(设置用户信息): Update user name(更新用户名)",
-                               "User Info(用户信息)",
-                               f"{User.userName}-->{userName}")
-                    User.userName = userName
-                    req.session["user"] = userName
+                if (userName and userName != User.userName) and username_exists(userName):
+                    return ResponseJson({"status": 0, "msg": "用户名已存在"})
+                write_audit(userId, "Set user info(设置用户信息): Update user name(更新用户名)",
+                           "User Info(用户信息)",
+                           f"{User.userName}-->{userName}")
+                User.userName = userName
+                req.session["user"] = userName
                 if email and email != User.email:
                     if User.objects.filter(email=email):
                         return ResponseJson({"status": 0, "msg": "邮箱已被使用过啦"})
