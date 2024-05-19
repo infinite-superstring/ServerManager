@@ -36,7 +36,7 @@ class Node_BaseInfo(models.Model):
     core_count = models.IntegerField("处理器核心数", null=True)
     processor_count = models.IntegerField("处理器线程数", null=True)
     hostname = models.CharField("节点主机名", max_length=100, unique=False, null=True)
-    boot_time = models.DateTimeField("节点系统运行时间", null=True),
+    boot_time = models.DateTimeField("节点系统运行时间", null=True)
     disk_list = models.ManyToManyField("Node_DiskPartition", related_name='disk_list')
     online = models.BooleanField("节点在线状态", default=False, null=False)
 
