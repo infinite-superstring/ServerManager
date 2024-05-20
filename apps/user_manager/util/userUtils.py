@@ -25,10 +25,12 @@ def verify_username_and_password(user, password: str) -> bool:
         :param user: 用户实例或uid
         :param password: 密码
         """
+
     user_object: User
     if isinstance(user, int):
         user_object = User.objects.get(id=user)
     elif isinstance(user, str):
+        if not username_exists(user): return False
         user_object = User.objects.get(userName=user)
     elif isinstance(user, User):
         user_object = user
