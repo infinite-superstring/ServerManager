@@ -151,12 +151,16 @@ class Command(BaseCommand):
                 'value': 0
             },
             {
-                'Settings': "base.node_usage_data_storage_time",
+                'Settings': "node_usage.data_storage_time",
                 'value': 180
             },
             {
-                'Settings': "base.node_usage_data_save_interval",
+                'Settings': "node_usage.data_save_interval",
                 'value': 5
+            },
+            {
+                'Settings': "node_usage.upload_data_interval",
+                'value': 3
             },
             {
                 'Settings': "node.timeout",
@@ -165,10 +169,6 @@ class Command(BaseCommand):
             {
                 'Settings': "node.heartbeat_time",
                 'value': 3000
-            },
-            {
-                'Settings': "node.upload_data_interval",
-                'value': 3
             },
             {
                 'Settings': "message.message_send_type",
