@@ -1,4 +1,5 @@
 from django.apps import AppConfig, apps
+from django.core.cache import cache
 from django.core.signals import request_finished
 
 from util.logger import Log
@@ -17,7 +18,8 @@ class NodeManagerConfig(AppConfig):
             for i in apps.get_model("node_manager", "Node_BaseInfo").objects.all():
                 i.online = False
                 i.save()
+                cache.delete(f"node_{i.node.uuid}_usage_last_update_time")
         except Exception as e:
-            Log.warning("重置节点在线状态失败!")
+            Log.warning(f"重置节点在线状态失败!\n{e}")
         Log.success("Node Manager: Initialization complete")
 

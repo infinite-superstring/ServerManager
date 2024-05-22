@@ -151,8 +151,12 @@ class Command(BaseCommand):
                 'value': 0
             },
             {
-                'Settings': "base.data_storage_time",
+                'Settings': "base.node_usage_data_storage_time",
                 'value': 180
+            },
+            {
+                'Settings': "base.node_usage_data_save_interval",
+                'value': 5
             },
             {
                 'Settings': "node.timeout",

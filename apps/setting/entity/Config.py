@@ -6,6 +6,7 @@ class config:
     def __init__(self):
         self.base = base()
         self.node = node()
+        self.node_usage = node_usage()
         self.message = message()
 
 
@@ -15,8 +16,6 @@ class base:
     server_token: str = None
     # Session超时时间
     session_expiry: int = None
-    # 数据存储时间（天）
-    data_storage_time: int = None
 
 
 # 节点配置
@@ -25,9 +24,14 @@ class node:
     timeout: int = None
     # 心跳包时间（毫秒）
     heartbeat_time: int = None
+
+class node_usage:
     # 运行数据提交间隔（秒）
     upload_data_interval: int = None
-
+    # 存储粒度（分）
+    data_save_interval: int = None
+    # 使用数据存储时限（天）
+    data_storage_time: int = None
 
 # 消息设置
 class message:
