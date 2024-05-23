@@ -15,5 +15,5 @@ class Message(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.CharField('消息标题', max_length=100)
     content = models.TextField('消息内容')
+    read = models.BooleanField('是否已读', default=False)
     created_at = models.DateTimeField('新建时间', auto_now_add=True)
-    updated_at = models.DateTimeField('修改时间', auto_now=True)

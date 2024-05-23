@@ -45,3 +45,26 @@ def get_message_list(request):
         return ResponseJson({"status": 1, "msg": "获取成功", "data": mlist.values_list()})
     else:
         return ResponseJson({"status": 0, "msg": "请求方式错误"})
+
+def get_by_id(request):
+    """
+    根据id获取消息
+    """
+    if request.method == "POST":
+        id = request.POST.get("id")
+        msg = Message.objects.get(id=id)
+        return ResponseJson({"status": 1, "msg": "获取成功", "data": msg})
+    else:
+        return ResponseJson({"status": 0, "msg": "请求方式错误"})
+
+
+def delete_by_id(request):
+    """
+    根据id删除消息
+    """
+    if request.method == "POST":
+        id = request.POST.get("id")
+        Message.objects.filter(id__in=id).delete()
+        return ResponseJson({"status": 1, "msg": "删除成功"})
+    else:
+        return ResponseJson({"status": 0, "msg": "请求方式错误"})
