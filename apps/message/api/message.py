@@ -31,7 +31,7 @@ def send_email(message: MessageBody):
         """
         send_err_handle("邮件服务端口错误,请检查配置")
     else:
-        return ResponseJson({"status": 1, "msg": "发送成功"})
+        return True
 
 
 def get_message_list(request):
@@ -45,6 +45,7 @@ def get_message_list(request):
         return ResponseJson({"status": 1, "msg": "获取成功", "data": mlist.values_list()})
     else:
         return ResponseJson({"status": 0, "msg": "请求方式错误"})
+
 
 def get_by_id(request):
     """

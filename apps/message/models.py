@@ -5,6 +5,7 @@ from django.db import models
 class MessageBody:
     title: str = None
     content: str = None
+    recipient: str = None
 
     def __init__(self, title=None, content=None):
         self.title = title

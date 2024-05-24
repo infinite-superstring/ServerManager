@@ -34,6 +34,9 @@ def __get_all_user_contact_way(way: str) -> list:
 
 
 def __get_email_content(msg: MessageBody):
+    """
+    封装消息到HTML
+    """
     return f"""
 <!DOCTYPE html>
 <html lang="zh">
@@ -67,7 +70,7 @@ def __get_email_content(msg: MessageBody):
                 </div>
             </div>
             <div style="background: #fff; padding: 20px 15px; border-radius: 3px;">
-                <div><span style="font-size: 16px; font-weight: bold;">你好：</span>
+                <div><span style="font-size: 16px; font-weight: bold;">你好：{msg.recipient}</span>
                     <div style="line-height: 24px; margin-top: 10px;">
                         <div>
                             <!-- 内容 -->
@@ -120,7 +123,7 @@ def send(mes_obj: MessageBody):
             Message.objects.create(title=mes_obj.title, content=mes_obj.content)
             # 获取收件人
             recipients = __get_all_user_contact_way(message_config.message_send_type)
-            recipients = ['1101658312@qq.com']
+            recipients = ['1101658312@qq.com', '3072864687@qq.com']
 
             # 如果配置ssl连接 则开启 ssl连接
             if message_config.email_ssl:
@@ -132,18 +135,20 @@ def send(mes_obj: MessageBody):
             # 登录到服务器
             stp.login(message_config.email_username, message_config.email_password)
 
-            # 创建邮件实例
-            content = __get_email_content(mes_obj)  # 封装邮件内容
-            email = MIMEMultipart()
-            email.set_charset("UTF-8")
+            for recipient in recipients:
+                # 创建邮件实例
+                mes_obj.recipient = recipient
+                content = __get_email_content(mes_obj)  # 封装邮件内容
+                email = MIMEMultipart()
+                email.set_charset("UTF-8")
+                #  封装邮件
+                email.attach(MIMEText(content, 'html', 'utf-8'))
+                email['Subject'] = "龙芯测试平台消息通知" + mes_obj.title
+                email['From'] = message_config.email_from_address
+                email['To'] = recipient
+                # 发送邮件
+                stp.send_message(email)
 
-            #  封装邮件
-            email.attach(MIMEText(content, 'html', 'utf-8'))
-            email['Subject'] = "龙芯测试平台消息通知" + mes_obj.title
-            email['From'] = message_config.email_from_address
-            email['To'] = ",".join(recipients)
-            # 发送邮件
-            stp.send_message(email)
             stp.quit()
         except smtplib.SMTPException as e:
             Log.error(e)
