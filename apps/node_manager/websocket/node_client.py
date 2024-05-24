@@ -4,10 +4,11 @@ from datetime import datetime
 from channels.exceptions import StopConsumer
 from channels.generic.websocket import WebsocketConsumer
 from django.apps import apps
+from django.core.cache import cache
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.signals import *
-from apps.node_manager.utils.nodeUtil import update_disk_partition
+from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database
 from apps.setting.entity import Config
 from util.calculate import calculate_percentage
 
@@ -45,7 +46,7 @@ class node_client(WebsocketConsumer):
             'action': 'init_node_config',
             'data': {
                 'heartbeat_time': self.__config.node.heartbeat_time,
-                'upload_data_interval': self.__config.node.upload_data_interval,
+                'upload_data_interval': self.__config.node_usage.upload_data_interval,
             }
         })
         Log.success(f"节点：{node_name}已连接")
@@ -57,6 +58,7 @@ class node_client(WebsocketConsumer):
             node_name = self.scope["session"].get("node_name")
             self.__node_base_info.online = False
             self.__node_base_info.save()
+            cache.delete(f"node_{self.__node.uuid}_usage_last_update_time")
             Log.success(f"节点：{node_name}已断开({close_code})")
             node_offline_signal.send(sender=self.__node_uuid)
         raise StopConsumer
@@ -78,37 +80,22 @@ class node_client(WebsocketConsumer):
                 loadavg_data = data.get('loadavg')
                 match action:
                     case 'upload_running_data':
-                        core_usage = [Node_UsageData.CpuCoreUsage.objects.create(core_index=index, usage=data) for
-                                      index, data in enumerate(cpu_data["core_usage"])]
-                        loadavg = Node_UsageData.Loadavg.objects.create(one_minute=loadavg_data[0], five_minute=loadavg_data[1], fifteen_minute=loadavg_data[2])
-                        usage_data = Node_UsageData.objects.create(
-                            node=self.__node,
-                            cpu_usage=cpu_data['usage'],
-                            memory_used=memory_data['used'],
-                            swap_used=swap_data['used'],
-                            disk_io_read_bytes=disk_data['io']['read_bytes'],
-                            disk_io_write_bytes=disk_data['io']['write_bytes'],
-                            system_loadavg=loadavg
-                        )
-                        for core_usage_item in core_usage:
-                            usage_data.cpu_core_usage.add(core_usage_item)
-                        usage_data.save()
-                        flag = False
-                        if self.__node_base_info.memory_total != memory_data['total']:
-                            flag = True
-                            self.__node_base_info.memory_total = memory_data['total']
-                        if self.__node_base_info.swap_total != swap_data['total']:
-                            flag = True
-                            self.__node_base_info.swap_total = swap_data['total']
-                        if flag:
-                            self.__node_base_info.save()
+                        refresh_node_info(self.__node, data)
                         update_disk_partition(self.__node, disk_data['partition_list'])
+                        cache_key: str = f"node_{self.__node.uuid}_usage_last_update_time"
+                        # 检查存储粒度
+                        if cache.get(cache_key) is None:
+                            cache.add(cache_key, datetime.now().timestamp(), timeout=self.__config.node_usage.data_save_interval * 60)
+                            save_node_usage_to_database(self.__node, data)
                         usage_data = {
-                            "timestamp": usage_data.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-                            'cpu_core': {f'CPU {index}' : data for index, data in enumerate(cpu_data["core_usage"])},
+                            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                            'cpu_core': {f'CPU {index}': data for index, data in enumerate(cpu_data["core_usage"])},
                             "cpu_usage": cpu_data['usage'],
                             'memory': memory_data['used'],
-                            "memory_used": calculate_percentage(memory_data['used'], self.__node_base_info.memory_total),
+                            "memory_used": calculate_percentage(
+                                memory_data['used'],
+                                self.__node_base_info.memory_total
+                            ),
                             'swap': swap_data['used'],
                             'disk_io': {
                                 'read': disk_data['io']['read_bytes'],

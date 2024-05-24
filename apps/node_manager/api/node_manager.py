@@ -87,7 +87,7 @@ def reset_node_token(req):
             Log.error(e)
             return ResponseJson({"status": -1, "msg": "JSON解析失败"})
         else:
-            node_id = req_json.get('id')
+            node_id = req_json.get('uuid')
             if node_id is None:
                 return ResponseJson({"status": -1, "msg": "参数不完整"})
             if Node.objects.filter(uuid=node_id).exists():

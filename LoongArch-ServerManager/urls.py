@@ -53,6 +53,7 @@ urlpatterns = [
     path('api/node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
     path('api/node_manager/delNode', node_manager.del_node),  # 删除节点(POST)
     path('api/node_manager/editNode', node_manager.edit_node),  # 编辑节点(POST)
+    path('api/node_manager/resetToken', node_manager.reset_node_token),  # 重置节点Token(POST)
     path('api/node_manager/getNodeList', node_manager.get_node_list),  # 获取节点列表(POST)
     path('api/node_manager/getNodeInfo', node_manager.get_node_info),  # 获取节点信息(POST)
     path('api/node_manager/node_tag/search_tag', node_tag.search_tag),  # 搜索TAG(POST)
