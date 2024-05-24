@@ -51,8 +51,9 @@ def get_by_id(request):
     """
     根据id获取消息
     """
-    if request.method == "POST":
-        id = request.POST.get("id")
+    if request.method == "GET":
+        user = request.session.get("userID")
+        id = request.GET.get("id")
         msg = Message.objects.get(id=id)
         return ResponseJson({"status": 1, "msg": "获取成功", "data": msg})
     else:
