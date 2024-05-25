@@ -72,7 +72,7 @@ urlpatterns = [
     path('api/userInfo/getAvatar', userInfo.getAvatar),  # 获取头像（GET）
     path("api/userInfo/setPassword", userInfo.setPassword),  # 设置密码（POST）
     # 消息
-    path('api/message/message', message.get_message_list),  # 获取消息列表（GET）
+    path('api/message/list', message.get_message_list),  # 获取消息列表（GET）
     path('api/message/getById', message.get_by_id),  # 按ID获取消息(GET)
     # 静态页面
     re_path('.*', TemplateView.as_view(template_name="index.html")),
