@@ -158,12 +158,10 @@ class node_control(AsyncWebsocketConsumer):
 
     @Log.catch
     async def terminal_output(self, event):
-        print("terminal_output")
         await self.send_json({'action': 'terminal_output', 'data': event['output']})
 
     @Log.catch
     async def __connect_terminal(self):
-        print("Connect_terminal")
         if self.__connect_terminal is True:
             raise RuntimeError("Terminal is already connected")
         self.__connect_terminal_flag = True

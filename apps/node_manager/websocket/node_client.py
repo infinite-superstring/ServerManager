@@ -88,23 +88,26 @@ class node_client(AsyncWebsocketConsumer):
             else:
                 action = json_data.get('action')
                 data = json_data.get('data')
-                cpu_data = data.get('cpu')
-                memory_data = data.get('memory')
-                swap_data = data.get('swap')
-                disk_data = data.get('disk')
-                loadavg_data = data.get('loadavg')
                 match action:
                     case 'upload_running_data':
                         """上传节点数据"""
-                        sync_to_async(refresh_node_info)(self.__node, data)
-                        sync_to_async(update_disk_partition)(self.__node, disk_data['partition_list'])
+                        cpu_data = data.get('cpu')
+                        memory_data = data.get('memory')
+                        swap_data = data.get('swap')
+                        disk_data = data.get('disk')
+                        loadavg_data = data.get('loadavg')
+                        await refresh_node_info(self.__node, data)
+                        await update_disk_partition(self.__node, disk_data['partition_list'])
                         cache_key: str = f"node_{self.__node.uuid}_usage_last_update_time"
                         # 检查存储粒度
                         if cache.get(cache_key) is None:
-                            cache.add(cache_key, datetime.now().timestamp(),
-                                      timeout=self.__config.node_usage.data_save_interval * 60)
-                            sync_to_async(save_node_usage_to_database)(self.__node, data)
-                        usage_data = {
+                            cache.add(
+                                cache_key,
+                                datetime.now().timestamp(),
+                                timeout=self.__config.node_usage.data_save_interval * 60
+                            )
+                            await save_node_usage_to_database(self.__node, data)
+                        await self.__update_node_usage_update({
                             "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                             'cpu_core': {f'CPU {index}': data for index, data in enumerate(cpu_data["core_usage"])},
                             "cpu_usage": cpu_data['usage'],
@@ -123,8 +126,7 @@ class node_client(AsyncWebsocketConsumer):
                                 "five_minute": loadavg_data[1],
                                 "fifteen_minute": loadavg_data[2],
                             }
-                        }
-                        await self.__update_node_usage_update(usage_data)
+                        })
 
                     case 'refresh_node_info':
                         """刷新node信息"""
@@ -136,8 +138,7 @@ class node_client(AsyncWebsocketConsumer):
                         self.__node_base_info.architecture = data['cpu']['architecture']
                         self.__node_base_info.core_count = data['cpu']['core']
                         self.__node_base_info.processor_count = data['cpu']['processor']
-                        disks = data['disks']  # 客户端发送的磁盘数据
-                        sync_to_async(update_disk_partition)(self.__node, disks)
+                        await update_disk_partition(self.__node, data['disks'])
                         await self.__node_base_info.asave()
 
                     case 'create_terminal_session':
@@ -159,13 +160,11 @@ class node_client(AsyncWebsocketConsumer):
 
                     case "terminal_output":
                         """终端内容输出"""
-                        uuid = data['uuid']
-                        output = data['output']
-                        channel = get_key_by_value(self.__tty_uuid, uuid, True)
+                        channel = get_key_by_value(self.__tty_uuid, data['uuid'], True)
                         if channel:
                             await self.channel_layer.send(channel, {
                                 'type': "terminal_output",
-                                'output': output
+                                'output': data['output']
                             })
 
                     case 'ping':
@@ -179,7 +178,6 @@ class node_client(AsyncWebsocketConsumer):
 
     @Log.catch
     async def connect_terminal(self, event):
-        Log.debug("init terminal")
         index = uuid.uuid1()
         sender = event['sender']
         self.__init_tty_queue[index] = sender
