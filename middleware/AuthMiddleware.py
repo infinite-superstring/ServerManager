@@ -27,13 +27,10 @@ class AuthMiddleware(MiddlewareMixin):
                 return ResponseJson({'status': -1, "msg": "非法访问"}, 403)
 
         if request.session.get("user") and request.session.get("userID"):
-            if not url_pu.is_node_path():
-                return
-            else:
-                match(url_pu.is_api_path()):
-                    case True:
-                        return ResponseJson({'status': -1, 'msg': '账户未登录'}, 403)
-                    case False:
-                        return redirect("/error/403")
+            return
         else:
-            return redirect("/login")
+            match (url_pu.is_api_path()):
+                case True:
+                    return ResponseJson({'status': -1, 'msg': '账户未登录'}, 403)
+                case False:
+                    return redirect("/login")
