@@ -5,6 +5,7 @@ from django.db import models
 class MessageBody:
     title: str = None
     content: str = None
+    name: str = None
     recipient: list = None
     server_groups: int = None
     permission_id: int = None
@@ -13,6 +14,7 @@ class MessageBody:
             self,
             title=None,
             content=None,
+            name=None,
             recipient: list = None,
             server_groups: int = None,
             permission_id: int = None):
@@ -25,6 +27,7 @@ class MessageBody:
         """
         self.title = title
         self.content = content
+        self.name = name
 
         count = sum(1 for arg in [recipient, server_groups, permission_id] if arg is not None)
         if count != 1:
@@ -43,6 +46,6 @@ class Message(models.Model):
 
 class UserMessage(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
-    user_id = models.ForeignKey('user_manager.User', on_delete=models.DO_NOTHING)
-    message_id = models.ForeignKey('message.Message', on_delete=models.DO_NOTHING)
+    user = models.ForeignKey('user_manager.User', on_delete=models.DO_NOTHING)
+    message = models.ForeignKey('message.Message', on_delete=models.CASCADE)
     read = models.BooleanField('是否已读', default=False)

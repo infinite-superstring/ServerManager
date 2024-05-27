@@ -1,6 +1,8 @@
+from datetime import datetime
 from smtplib import SMTPServerDisconnected, SMTPAuthenticationError, SMTPException
 from apps.audit.util.auditTools import write_access_log
-from apps.message.models import MessageBody, Message
+from apps.message.models import MessageBody, Message, UserMessage
+from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_username
 from util.Request import getClientIp, RequestLoadJson
 from util.Response import ResponseJson
@@ -39,25 +41,26 @@ def get_message_list(request):
     """
     获取消息列表
     """
+
     if request.method != "GET":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     write_access_log(request.session.get("userID"), getClientIp(request),
                      f"Get message list")
 
     user = request.session.get('user')
-    user = get_user_by_username(user)
-    permission_id = user.permission_id
+    user: User = get_user_by_username(user)
     method = request.GET.get('method')
+    mlist = None
     if not method:
         method = 'all'
     if method == "unread":
-        mlist = Message.objects.filter(permission_id=permission_id, read=False)
+        mlist = UserMessage.objects.filter(user_id=user.id, read=False)
     elif method == "read":
-        mlist = Message.objects.filter(permission_id=permission_id, read=True)
+        mlist = UserMessage.objects.filter(user_id=user.id, read=True)
     elif method == "all":
-        mlist = Message.objects.filter(permission_id=permission_id)
-    mlist = [{"id": i.id, "title": i.title, "content": i.content, "permission_id": i.permission_id,
-              "read": i.read, "create_time": i.create_time} for i in mlist]
+        mlist = UserMessage.objects.filter(user_id=user.id)
+    mlist = [{"id": i.message.id, "title": i.message.title, "content": i.message.content,
+              "read": i.read, "create_time": i.message.create_time.strftime("%Y-%m-%d %H:%M:%S")} for i in mlist]
     return ResponseJson({"status": 1, "msg": "获取成功", "data": mlist})
 
 
@@ -71,10 +74,12 @@ def get_by_id(request):
     msg_id = request.GET.get('id')
     user = request.session.get("user")
     user = get_user_by_username(user)
-    msg = Message.objects.get(id=msg_id)
-    message = Message.objects.get(id=msg.id)
-    message.read = True
-    message.save()
+    msg = UserMessage.objects.get(user_id=user.id, message_id=msg_id)
+    if msg is None:
+        return ResponseJson({"status": 0, "msg": "消息不存在"})
+
+    msg.read = True
+    msg.save()
 
     name = None
     if user.realName:
@@ -85,9 +90,11 @@ def get_by_id(request):
         name = user.email
 
     msg = get_email_content(MessageBody(
-        title=msg.title,
-        content=msg.content,
-        recipient=list([name])),
+        title=msg.message.title,
+        content=msg.message.content,
+        name=name,
+        recipient=[user.email],
+    ),
         on_web_page=True)
     return ResponseJson({"status": 1, "msg": "获取成功", "data": msg})
 

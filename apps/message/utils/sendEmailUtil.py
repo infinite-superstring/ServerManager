@@ -37,7 +37,7 @@ def _message_to_database(msg: MessageBody) -> list:
     根据消息对象将消息存入数据库，并返回收件人列表
     """
 
-    if not msg.server_groups or not msg.permission_id or not msg.recipient:
+    if not msg.server_groups and not msg.permission_id and not msg.recipient:
         # 没指定发消息方式，不发送
         return []
 
@@ -45,7 +45,7 @@ def _message_to_database(msg: MessageBody) -> list:
 
     def create_recipient(us: QuerySet[User]) -> list:
         for u in us:
-            UserMessage.objects.create(user_id=u.id, message_id=message_obj.id, read=False)
+            UserMessage.objects.create(user=u, message=message_obj, read=False)
         return [u.email for u in us]
 
     # 指定用户
@@ -87,7 +87,7 @@ def get_email_content(msg: MessageBody, on_web_page=False):
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>您的邮件标题</title>
+    <title></title>
 </head>
 <body>
 <div style="font-size: 14px;">
@@ -99,14 +99,14 @@ def get_email_content(msg: MessageBody, on_web_page=False):
                        style="text-decoration: none;">
 
                         <div style="
-                        font-family: 'Arial Black', Gadget, sans-serif; /* 更换为更粗的字体 */
+                        font-family: 'Arial Black', Gadget, sans-serif;
                         font-size: 20px;
-                        color: white; /* 更深邃的蓝色 */
-                        letter-spacing: 2px; /* 字符间距，让文字更加清晰 */
-                        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25); /* 添加阴影效果 */
+                        color: white; 
+                        letter-spacing: 2px; 
+                        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25); 
                         display: inline-block;
-                        padding: 5px 10px; /* 添加内边距，提升质感 */
-                        border-radius: 5px; /* 圆角边缘 */
+                        padding: 5px 10px; 
+                        border-radius: 5px; 
                                 ">
                             Server Manager for LoongArch
                         </div>
@@ -114,7 +114,7 @@ def get_email_content(msg: MessageBody, on_web_page=False):
                 </div>
             </div>
             <div style="background: #fff; padding: 20px 15px; border-radius: 3px;">
-                <div><span style="font-size: 16px; font-weight: bold;">你好：{msg.recipient}</span>
+                <div><span style="font-size: 16px; font-weight: bold;">你好：{msg.name}</span>
                     <div style="line-height: 24px; margin-top: 10px;">
                         <div>
                             <!-- 内容 -->
@@ -154,7 +154,7 @@ def send(mes_obj: MessageBody):
             # 邮件写到数据库
             recipients = _message_to_database(mes_obj)
             # TODO 测试使用用户邮件
-            recipients = ['1101658312@qq.com', '3072864687@qq.com']
+            # recipients = ['1101658312@qq.com', '3072864687@qq.com']
 
             # 如果配置ssl连接 则开启 ssl连接
             if message_config.email_ssl:
