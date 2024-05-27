@@ -18,10 +18,10 @@ def editSetting(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             app_setting.update_config(saveConfig(dictToConfig(req_json)))
             return HttpResponse(json.dumps(apps.get_app_config("setting").get_config(), default=lambda o: o.__dict__, indent=2))
 
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)

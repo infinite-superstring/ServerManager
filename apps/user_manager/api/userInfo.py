@@ -133,8 +133,6 @@ def uploadAvatar(req):
         else:
             userId = req.session.get("userID")
             data = req_json.get("data")
-            if not userId:
-                return ResponseJson({"status": -1, "msg": "用户未登录"})
             if not data:
                 return ResponseJson({"status": -1, "msg": "参数不完整（无数据）"})
             avatarImgBase64 = data.get("avatarImg")

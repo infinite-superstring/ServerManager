@@ -11,7 +11,7 @@ def getAudit(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             PageContent = []
             page = req_json.get("page", 1)
@@ -37,7 +37,7 @@ def getAudit(req):
                 }
             })
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 def getAccessLog(req):
     if req.method == "POST":
@@ -45,7 +45,7 @@ def getAccessLog(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             PageContent = []
             page = req_json.get("page", 1)
@@ -70,7 +70,7 @@ def getAccessLog(req):
                 }
             })
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 def getFileChangeLog(req):
     if req.method == "POST":
@@ -78,7 +78,7 @@ def getFileChangeLog(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             PageContent = []
             page = req_json.get("page", 1)
@@ -103,7 +103,7 @@ def getFileChangeLog(req):
                 }
             })
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 def getSystemLog(req):
     if req.method == "POST":
@@ -111,7 +111,7 @@ def getSystemLog(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             PageContent = []
             page = req_json.get("page", 1)
@@ -136,4 +136,4 @@ def getSystemLog(req):
                 }
             })
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)

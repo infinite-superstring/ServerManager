@@ -38,7 +38,7 @@ def AuthLogin(req):
         else:
             return ResponseJson({"status": 0, "msg": "用户名或密码错误"})
     else:
-        return ResponseJson({"status": -1, "msg": "请求方法不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方法不正确"}, 405)
 
 
 def AuthOutLog(req):

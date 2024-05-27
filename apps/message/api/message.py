@@ -40,7 +40,7 @@ def get_message_list(request):
     获取消息列表
     """
     if request.method != "GET":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"})
+        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     write_access_log(request.session.get("userID"), getClientIp(request),
                      f"Get message list")
 
@@ -66,7 +66,7 @@ def get_by_id(request):
     根据id获取消息
     """
     if request.method != "GET":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"})
+        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
 
     msg_id = request.GET.get('id')
     user = request.session.get("user")
@@ -101,4 +101,4 @@ def delete_by_id(request):
         Message.objects.filter(id__in=id).delete()
         return ResponseJson({"status": 1, "msg": "删除成功"})
     else:
-        return ResponseJson({"status": 0, "msg": "请求方式错误"})
+        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)

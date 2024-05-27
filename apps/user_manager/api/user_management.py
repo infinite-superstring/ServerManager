@@ -18,7 +18,7 @@ def getUserList(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             PageContent = []
             page = req_json.get("page", 1)
@@ -53,7 +53,7 @@ def getUserList(req):
                 }
             })
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 # 新增用户
@@ -65,7 +65,7 @@ def addUser(req):
             Log.debug(req_json)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             userName = req_json.get("userName")
             realName = req_json.get("realName")
@@ -101,9 +101,9 @@ def addUser(req):
                 else:
                     return ResponseJson({"status": 0, "msg": "用户添加失败"})
             else:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 # 删除用户
@@ -114,11 +114,11 @@ def delUser(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             userId = req_json.get("id")
             if not userId:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
             if userId == req.session.get("userID"):
                 return ResponseJson({"status": 0, "msg": "不能删除当前登录用户"})
             if userId == 1:
@@ -137,7 +137,7 @@ def delUser(req):
             else:
                 return ResponseJson({"status": 0, "msg": "用户不存在"})
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 # 获取用户权限
@@ -148,11 +148,11 @@ def getUserPermission(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             userId = req_json.get("id")
             if not userId:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
             query = User.objects.filter(id=userId).first()
             if query:
                 write_access_log(req.session.get("userID"), getClientIp(req), f"Get User Permission(User ID: {userId})")
@@ -162,7 +162,7 @@ def getUserPermission(req):
                                         id=query.permission_id).first().name if query.permission_id else None,
                                     }})
             else:
-                return ResponseJson({"status": 0, "msg": "用户不存在"})
+                return ResponseJson({"status": 0, "msg": "用户不存在"}, 404)
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"})
 
@@ -175,11 +175,11 @@ def getUserInfo(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             userId = req_json.get("id")
             if not userId:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
             query = User.objects.filter(id=userId).first()
             if query:
                 write_access_log(req.session.get("userID"), getClientIp(req), f"Get user info(User ID: {userId})")
@@ -196,7 +196,7 @@ def getUserInfo(req):
             else:
                 return ResponseJson({"status": 0, "msg": "用户不存在"})
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 # 修改用户信息
@@ -208,7 +208,7 @@ def setUserInfo(req):
             Log.debug(req_json)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             userId = req_json.get("id")
             data = req_json.get("data")
@@ -298,6 +298,6 @@ def setUserInfo(req):
                     "disable": User.disable
                 }})
             else:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)

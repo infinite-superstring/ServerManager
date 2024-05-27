@@ -19,7 +19,7 @@ def add_node(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             node_name = req_json.get('node_name')
             node_description = req_json.get('node_description')
@@ -41,7 +41,6 @@ def add_node(req):
                     for tag in tags:
                         node.tags.add(tag)
                 node.save()
-                # write_audit()
                 return ResponseJson({
                     "status": 1,
                     "msg": "节点创建成功",
@@ -53,7 +52,7 @@ def add_node(req):
                 return ResponseJson({"status": -1, "msg": "参数不完整"})
 
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 def del_node(req):
@@ -63,7 +62,7 @@ def del_node(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             node_id = req_json.get('uuid')
             if node_id is None:
@@ -75,7 +74,7 @@ def del_node(req):
                 return ResponseJson({"status": 0, "msg": "节点不存在"})
 
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 def reset_node_token(req):
@@ -85,7 +84,7 @@ def reset_node_token(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             node_id = req_json.get('uuid')
             if node_id is None:
@@ -108,7 +107,7 @@ def reset_node_token(req):
                 return ResponseJson({"status": 0, "msg": "节点不存在"})
 
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 def edit_node(req):
@@ -122,7 +121,7 @@ def get_node_list(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             PageContent: list = []
             page = req_json.get("page", 1)
@@ -167,7 +166,7 @@ def get_node_list(req):
                 }
             })
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 

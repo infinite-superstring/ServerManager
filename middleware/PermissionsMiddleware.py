@@ -72,7 +72,7 @@ class PermissionsMiddleware(MiddlewareMixin):
         # 无权限时
         if not user.permission_id:
             if path_info in accessPermission.get("api").keys():
-                return ResponseJson({"status": -1, "msg": "未授权访问-账户无权限"})
+                return ResponseJson({"status": -1, "msg": "未授权访问-账户无权限"}, 403)
             elif path_info in accessPermission.get("page").keys():
                 return redirect("/error/403")
 
@@ -81,7 +81,7 @@ class PermissionsMiddleware(MiddlewareMixin):
         # 权限组被禁用时
         if gp.is_disable():
             if path_info in accessPermission.get("api").keys():
-                return ResponseJson({"status": -1, "msg": "未授权访问-组已禁用"})
+                return ResponseJson({"status": -1, "msg": "未授权访问-组已禁用"}, 403)
             elif path_info in accessPermission.get("page").keys():
                 return redirect("/error/403")
 
@@ -97,7 +97,7 @@ class PermissionsMiddleware(MiddlewareMixin):
                 if gp.check_group_permission(required):
                     return
                 else:
-                    return ResponseJson({"status": -1, "msg": "未授权访问-无权限访问该API"})
+                    return ResponseJson({"status": -1, "msg": "未授权访问-无权限访问该API"}, 403)
 
         # 检查页面权限
         elif path_info in accessPermission.get("page").keys():

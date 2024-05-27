@@ -12,12 +12,12 @@ def node_auth(req):
     节点认证
     """
     if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方法不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方法不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
         Log.debug(str(req_json))
     except Exception as e:
-        return ResponseJson({"status": -1, "msg": "Json解析失败"})
+        return ResponseJson({"status": -1, "msg": "Json解析失败"}, 400)
     else:
         node_name = req_json.get("node_name")  # 节点名
         node_token = req_json.get("node_token")  # 节点Token

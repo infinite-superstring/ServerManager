@@ -15,7 +15,7 @@ def getPermissionGroupsList(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"})
+            return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
         else:
             PageContent = []
             page = req_json.get("page", 1)
@@ -43,7 +43,7 @@ def getPermissionGroupsList(req):
             })
 
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 # 新建权限组
@@ -53,7 +53,7 @@ def addPermissionGroup(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             name = req_json.get("name")
             if Permission_groups.objects.filter(name=name):
@@ -70,14 +70,11 @@ def addPermissionGroup(req):
                 groupPermission(group.id).update_permissions_list(permission)
                 write_audit(req.session.get("userID"), "Add permission group(添加权限组)", "Permission Manager(权限管理)", f"Name:{name} Permission: {permission} Disable: {disable}")
                 return ResponseJson({"status": 1, "msg": "添加成功"})
-
-            elif not creator:
-                return ResponseJson({"status": -1, "msg": "未登录"})
             else:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
 
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 # 删除权限组
@@ -87,11 +84,11 @@ def delPermissionGroup(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             PermissionGroupId = req_json.get("id")
             if not PermissionGroupId:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
             query = Permission_groups.objects.filter(id=PermissionGroupId).first()
             if query:
                 if User.objects.filter(permission=query):
@@ -102,7 +99,7 @@ def delPermissionGroup(req):
             else:
                 return ResponseJson({"status": 0, "msg": "组不存在"})
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 # 获取权限组信息
@@ -113,11 +110,11 @@ def getPermissionGroupInfo(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             PermissionGroupId = req_json.get("id")
             if not PermissionGroupId:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
             query = Permission_groups.objects.filter(id=PermissionGroupId).first()
             if query:
                 write_access_log(req.session.get("userID"), getClientIp(req), f"Get permission group info: {query.name}")
@@ -132,7 +129,7 @@ def getPermissionGroupInfo(req):
             else:
                 return ResponseJson({"status": 0, "msg": "组不存在"})
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 # 修改权限组
@@ -142,7 +139,7 @@ def setPermissionGroup(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             GroupId = req_json.get("id")
             data = req_json.get("data")
@@ -180,9 +177,9 @@ def setPermissionGroup(req):
                     "Permission": groupPermission(Group.id).get_permissions_dict()
                 }})
             else:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 def getPermissionList(req):

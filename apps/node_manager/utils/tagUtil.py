@@ -36,3 +36,16 @@ def get_node_tags(node) -> list[str]:
     elif not isinstance(node, Node):
         raise TypeError(f"Unknown Parameter type: {type(node)}")
     return node.tags.all().values_list('tag_name', flat=True)
+
+
+@Log.catch
+async def aget_node_tags(node) -> list[str]:
+    """根据节点获取所有Tag"""
+    if isinstance(node, uuid.UUID):
+        node = Node.objects.aget(uuid=node)
+    elif not isinstance(node, Node):
+        raise TypeError(f"Unknown Parameter type: {type(node)}")
+    temp = []
+    async for tag in node.tags.all():
+        temp.append(tag.tag_name)
+    return temp

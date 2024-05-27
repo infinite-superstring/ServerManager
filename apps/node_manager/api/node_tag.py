@@ -19,7 +19,7 @@ def search_tag(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             tag = req_json.get('tag')
             if tag:
@@ -37,5 +37,5 @@ def search_tag(req):
                 })
 
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
