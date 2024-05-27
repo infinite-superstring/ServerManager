@@ -1,5 +1,7 @@
 # 面板端
 
+Copyright © Infinite Superstring
+
 ## 编译与部署
 
 **拉取源码**
@@ -43,9 +45,10 @@
     python manage.py migrate
     # 初始化数据库数据
     python manage.py initial_data
+    # ps: 忘记密码后可通过 python manage.py resetAdmin 重置密码
 ```
 
 ### 以Debug模式启动项目
 ```shell
-    python manage.py runserver 0.0.0.0:8080 --noreload
+    python manage.py runserver 0.0.0.0:8080
 ```
