@@ -24,6 +24,8 @@ RUN tar zxf rust-1.78.0-loongarch64-unknown-linux-gnu.tar.gz
 
 RUN ./rust-1.78.0-loongarch64-unknown-linux-gnu/install.sh
 
+RUN chmod +x ./bash/build-cpython.sh
+
 RUN ./bash/build-cpython.sh
 
 RUN pip3 install -r ./requirements.txt && \
