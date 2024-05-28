@@ -79,6 +79,7 @@ def get_email_content(msg: MessageBody, on_web_page=False):
         return html
 
 
+
 def send(mes_obj: MessageBody):
     """
     发送消息
@@ -92,6 +93,7 @@ def send(mes_obj: MessageBody):
 
             # 邮件写到数据库
             recipients = _message_to_database(mes_obj)
+
             # 如果配置ssl连接 则开启 ssl连接
             if message_config.email_ssl:
                 # 创建 stp服务器连接
