@@ -11,3 +11,8 @@ def get_key_by_value(dictionary, value, first=False):
             else:
                 keys.append(key)
     return keys
+
+
+def append_to_dict(dictionary, data):
+    dictionary.update(data)
+    return dictionary

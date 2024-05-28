@@ -4,6 +4,7 @@ from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, No
 from util.passwordUtils import verify_password
 from util.logger import Log
 
+
 def verify_node_token(node: Node, token):
     """
     验证节点Token
@@ -15,7 +16,6 @@ def verify_node_token(node: Node, token):
 
 
 async def refresh_node_info(node: Node, data):
-    Log.debug('refresh_node_info')
     memory_data = data.get('memory')
     swap_data = data.get('swap')
     node_info = await Node_BaseInfo.objects.aget(node=node)
@@ -33,11 +33,11 @@ async def refresh_node_info(node: Node, data):
 
 
 async def save_node_usage_to_database(node: Node, data):
-    Log.debug('save_node_usage_to_database')
     cpu_data = data.get('cpu')
     memory_data = data.get('memory')
     swap_data = data.get('swap')
     disk_data = data.get('disk')
+    network_data = data.get('network')
     loadavg_data = data.get('loadavg')
 
     loadavg = await Node_UsageData.Loadavg.objects.acreate(
@@ -55,11 +55,19 @@ async def save_node_usage_to_database(node: Node, data):
         system_loadavg=loadavg
     )
     for index, data in enumerate(cpu_data["core_usage"]):
-        # print(await sync_to_async(usage_data.cpu_core_usage)())
-        await sync_to_async(usage_data.cpu_core_usage.add)(await Node_UsageData.CpuCoreUsage.objects.acreate(core_index=index, usage=data))
-
-    # for core_usage_item in core_usage:
-    #     await usage_data.cpu_core_usage.add(core_usage_item)
+        await sync_to_async(usage_data.cpu_core_usage.add)(
+            await Node_UsageData.CpuCoreUsage.objects.acreate(
+                core_index=index,
+                usage=data
+            ))
+    for port_name in network_data["io"]:
+        await sync_to_async(usage_data.network_usage.add)(
+            await Node_UsageData.NetworkUsage.objects.acreate(
+                port_name=port_name,
+                bytes_sent=network_data["io"][port_name]["bytes_sent"],
+                bytes_recv=network_data["io"][port_name]["bytes_recv"],
+            )
+        )
     await usage_data.asave()
 
 
@@ -69,10 +77,10 @@ async def update_disk_partition(node: Node, disk_partition: list):
     :param node: 节点对象
     :param disk_partition: 分区列表
     """
-    Log.debug('update_disk_partition')
     node_info = await Node_BaseInfo.objects.aget(node=node)
     node_disk_list = Node_DiskPartition.objects.filter(node=node).all()
-    await Node_DiskPartition.objects.filter(node=node).exclude(device__in=[i['device'] for i in disk_partition]).adelete()
+    await Node_DiskPartition.objects.filter(node=node).exclude(
+        device__in=[i['device'] for i in disk_partition]).adelete()
     for index, disk_data in enumerate(disk_partition):
         if not await node_disk_list.filter(device=disk_data['device']).aexists():
             disk = await Node_DiskPartition.objects.acreate(node=node, device=disk_data['device'])

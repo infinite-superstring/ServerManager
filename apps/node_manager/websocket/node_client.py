@@ -14,7 +14,7 @@ from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database
 from apps.setting.entity import Config
 from util.calculate import calculate_percentage
-from util.dictUtils import get_key_by_value
+from util.dictUtils import get_key_by_value, append_to_dict
 from util.jsonEncoder import ComplexEncoder
 
 from util.logger import Log
@@ -33,6 +33,9 @@ class node_client(AsyncWebsocketConsumer):
         # 在建立连接时执行的操作
         self.__node_uuid = self.scope["session"].get("node_uuid")
         node_name = self.scope["session"].get("node_name")
+        if not (self.scope["session"]["node_uuid"] or self.scope["session"]["node_name"]):
+            Log.warning("node未认证")
+            await self.close()
         if (self.__node_uuid or node_name) is None:
             Log.error("Node uuid or node name is empty")
             return self.close(-1)
@@ -95,6 +98,7 @@ class node_client(AsyncWebsocketConsumer):
                         memory_data = data.get('memory')
                         swap_data = data.get('swap')
                         disk_data = data.get('disk')
+                        network_data = data.get('network')
                         loadavg_data = data.get('loadavg')
                         await refresh_node_info(self.__node, data)
                         await update_disk_partition(self.__node, disk_data['partition_list'])
@@ -121,6 +125,8 @@ class node_client(AsyncWebsocketConsumer):
                                 'read': disk_data['io']['read_bytes'],
                                 'write': disk_data['io']['write_bytes'],
                             },
+                            'disk_space': disk_data['partition_list'],
+                            "network_io": network_data['io'],
                             'loadavg': {
                                 "one_minute": loadavg_data[0],
                                 "five_minute": loadavg_data[1],
@@ -191,20 +197,38 @@ class node_client(AsyncWebsocketConsumer):
     @Log.catch
     async def close_terminal(self, event):
         sender = event['sender']
-        if sender in self.__init_tty_queue:
+        if sender in self.__tty_uuid:
             await self.send_json({
                 'action': 'close_terminal',
                 'data': {
                     'uuid': self.__tty_uuid[sender]
                 }
             })
-            self.__init_tty_queue.pop(sender)
+            self.__tty_uuid.pop(sender)
+        else:
+            Log.error(f"{sender} does not own a terminal session")
+
+    @Log.catch
+    async def input_command(self, event):
+        sender = event['sender']
+        command = event['command']
+        if sender in self.__tty_uuid:
+            await self.send_json({
+                'action': 'input_command',
+                'data': {
+                    'command': command,
+                    'uuid': self.__tty_uuid[sender]
+                }
+            })
         else:
             Log.error(f"{sender} does not own a terminal session")
 
     @Log.catch
     async def __update_node_usage_update(self, usage_data):
         """更新节点使用率数据"""
+        print(usage_data)
+        cache.set(f"NodeUsageData_{self.__node.uuid}", usage_data, timeout=self.__config.node_usage.upload_data_interval+3)
+        print(cache.get(f"NodeUsageData_{self.__node.uuid}"))
         await self.channel_layer.group_send(f"NodeControl_{self.__node.uuid}", {
             'type': 'update_node_usage_data',
             'usage_data': usage_data

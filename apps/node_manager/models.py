@@ -82,6 +82,8 @@ class Node_UsageData(models.Model):
     # 磁盘io
     disk_io_read_bytes = models.BigIntegerField("磁盘IO-读字节数(s/bytes)", null=False)
     disk_io_write_bytes = models.BigIntegerField("磁盘IO-写字节数(s/bytes)", null=False)
+    # 网络
+    network_usage = models.ManyToManyField("NetworkUsage", related_name='network_usage_mapping')
     # 系统平均负载
     system_loadavg = models.OneToOneField("Loadavg", on_delete=models.DO_NOTHING, null=False)
 
@@ -106,6 +108,15 @@ class Node_UsageData(models.Model):
         class Meta:
             db_table = 'loadavg'
             db_table_comment = '系统平均负载'
+
+    class NetworkUsage(models.Model):
+        port_name = models.CharField("网络端口名", max_length=100)
+        bytes_sent = models.BigIntegerField("发送的字节数")
+        bytes_recv = models.BigIntegerField("接收的字节数")
+
+        class Meta:
+            db_table = 'network_usage'
+            db_table_comment = "网络接口负载"
 
 class Node_DiskPartition(models.Model):
     """磁盘分区信息"""

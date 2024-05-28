@@ -9,8 +9,12 @@ class Permission_groups(models.Model):
     name = models.CharField("权限组名", max_length=30, unique=True)
     creator = models.ForeignKey("user_manager.User", on_delete=models.DO_NOTHING, null=True)
     createdAt = models.DateTimeField("创建时间", auto_now_add=True)
-    permissions = models.ManyToManyField('Permission_Item', related_name='groups')
+    permissions = models.ManyToManyField('Permission_Item', related_name='groups_permission_mapping')
     disable = models.BooleanField("是否禁用", null=True)
+
+    class Meta:
+        db_table = 'permission_group_list'
+        db_table_comment = "权限组列表"
 
 
 class Permission_Item(models.Model):
@@ -19,3 +23,7 @@ class Permission_Item(models.Model):
     permission = models.CharField("权限名", max_length=30, unique=True)
     description = models.CharField("权限项介绍", max_length=100, null=True)
     translate = models.CharField("权限翻译", max_length=30, unique=True, null=True)
+
+    class Meta:
+        db_table = "permission_item"
+        db_table_comment = "权限项"

@@ -12,6 +12,10 @@ class Audit(models.Model):
     module = models.CharField("模块", max_length=256)
     content = models.CharField("数据", max_length=4096)
 
+    class Meta:
+        db_table = "audit"
+        db_table_comment = "审计"
+
 
 # 系统日志
 class System_Log(models.Model):
@@ -22,6 +26,10 @@ class System_Log(models.Model):
     module = models.CharField("模块", max_length=256)
     content = models.CharField("日志内容", max_length=1024)
 
+    class Meta:
+        db_table = "system_log"
+        db_table_comment = "系统日志"
+
 
 # 访问日志
 class Access_Log(models.Model):
@@ -31,6 +39,10 @@ class Access_Log(models.Model):
     time = models.DateTimeField("操作时间", auto_now_add=True)
     module = models.CharField("访问的模块", max_length=512)
 
+    class Meta:
+        db_table = "access_log"
+        db_table_comment = "访问日志"
+
 
 # 文件修改日志
 class FileChange_Log(models.Model):
@@ -39,3 +51,7 @@ class FileChange_Log(models.Model):
     time = models.DateTimeField("操作时间", auto_now_add=True)
     action = models.CharField("动作", max_length=512)
     filepath = models.CharField("目标文件", max_length=4096)
+
+    class Meta:
+        db_table = "file_change_log"
+        db_table_comment = "文件修改记录"

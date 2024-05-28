@@ -10,3 +10,7 @@ class Settings(models.Model):
     value = models.CharField("值", max_length=4096)
     lastModifiedTime = models.DateTimeField("上次修改时间", null=True, auto_now=True)
     lastModifiedUser = models.ForeignKey("user_manager.User", on_delete=models.DO_NOTHING, null=True)
+
+    class Meta:
+        db_table = 'setting'
+        db_table_comment = "设置"

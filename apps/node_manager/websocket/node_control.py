@@ -6,6 +6,7 @@ from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.apps import apps
+from django.core.cache import cache
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.tagUtil import get_node_tags, aget_node_tags
@@ -28,13 +29,17 @@ class node_control(AsyncWebsocketConsumer):
     async def connect(self):
         # 在建立连接时执行的操作
         self.__clientIP = self.scope["client"][0]
+        if (not (self.scope["session"].get("userID") or self.scope["session"].get("user")) and
+            self.scope["session"].get("auth_method") != 'Node Auth'):
+            Log.warning("非法访问：用户未登录")
+            await self.close(0)
         if not self.scope['url_route']['kwargs']['node_uuid']:
             Log.debug("参数不完整")
-            return self.disconnect(-1)
+            return self.close(-1)
         self.__node_uuid = UUID(self.scope['url_route']['kwargs']['node_uuid'])
         if not await Node.objects.filter(uuid=self.__node_uuid).aexists():
             Log.info(f"节点{self.__node_uuid}不存在")
-            return self.disconnect(0)
+            return self.close(0)
         self.__node = await Node.objects.aget(uuid=self.__node_uuid)
         # 加入组
         await self.channel_layer.group_add(
@@ -72,9 +77,9 @@ class node_control(AsyncWebsocketConsumer):
                     case 'close_terminal':
                         await self.__close_terminal()
 
-                    case 'send_command_to_terminal':
+                    case 'terminal_input':
                         if self.__connect_terminal:
-                            pass
+                            await self.terminal_input(json_data['data'])
 
     @Log.catch
     async def send_json(self, data):
@@ -101,25 +106,10 @@ class node_control(AsyncWebsocketConsumer):
                 'processor_count': self.__node_base_info.processor_count,
             }
         if node_system_info and await Node_UsageData.objects.filter(node=self.__node).aexists():
-            usage_data: Node_UsageData = await Node_UsageData.objects.filter(node=self.__node).alast()
-            loadavg_data = await sync_to_async(lambda: usage_data.system_loadavg)()
-            usage_data: dict = {
-                "timestamp": usage_data.timestamp,
-                'cpu_core': {f"CPU {core.core_index}": core.usage async for core in usage_data.cpu_core_usage.all()} if usage_data.cpu_core_usage else {},
-                "cpu_usage": usage_data.cpu_usage,
-                'memory': usage_data.memory_used,
-                "memory_used": round((usage_data.memory_used / self.__node_base_info.memory_total) * 100, 1),
-                'swap': usage_data.swap_used,
-                'disk_io': {
-                    'read': usage_data.disk_io_read_bytes,
-                    'write': usage_data.disk_io_write_bytes,
-                },
-                'loadavg': {
-                    "one_minute": loadavg_data.one_minute,
-                    "five_minute": loadavg_data.five_minute,
-                    "fifteen_minute": loadavg_data.fifteen_minute,
-                }
-            }
+            # usage_data: Node_UsageData = await Node_UsageData.objects.filter(node=self.__node).alast()
+            # loadavg_data = await sync_to_async(lambda: usage_data.system_loadavg)()
+            usage_data: dict = cache.get(f"NodeUsageData_{self.__node.uuid}")
+            print(usage_data)
         await self.send_json({
             "action": "init",
             "data": {
@@ -159,6 +149,14 @@ class node_control(AsyncWebsocketConsumer):
     @Log.catch
     async def terminal_output(self, event):
         await self.send_json({'action': 'terminal_output', 'data': event['output']})
+
+    @Log.catch
+    async def terminal_input(self, command):
+        await self.channel_layer.group_send(f"NodeClient_{self.__node.uuid}", {
+            "type": "input_command",
+            "command": command,
+            'sender': self.channel_name,
+        })
 
     @Log.catch
     async def __connect_terminal(self):
