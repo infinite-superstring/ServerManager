@@ -24,9 +24,23 @@ RUN tar zxf rust-1.78.0-loongarch64-unknown-linux-gnu.tar.gz
 
 RUN ./rust-1.78.0-loongarch64-unknown-linux-gnu/install.sh
 
-RUN chmod +x ./bash/build-cpython.sh
-
-RUN ./bash/build-cpython.sh
+ARG ARCH
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+        apt-get update && apt-get install -y python3.10 python3.10-venv python3.10-dev && \
+        apt-get clean && rm -rf /var/lib/apt/lists/*; \
+    elif [ "$ARCH" = "loongarch64" ]; then \
+        wget https://github.com/loongarch64/cpython/archive/refs/tags/v3.10.2.zip && \
+        unzip v3.10.2.zip && \
+        cd cpython-3.10.2 && \
+        ./configure && \
+        make && \
+        make install && \
+        cd .. && \
+        rm -rf cpython-3.10.2 v3.10.2.zip; \
+    else \
+        echo "Unsupported architecture" && exit 1; \
+    fi
 
 RUN pip3 install -r ./requirements.txt && \
     python3 manage.py makemigrations && \
