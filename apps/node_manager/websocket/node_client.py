@@ -226,9 +226,7 @@ class node_client(AsyncWebsocketConsumer):
     @Log.catch
     async def __update_node_usage_update(self, usage_data):
         """更新节点使用率数据"""
-        print(usage_data)
         cache.set(f"NodeUsageData_{self.__node.uuid}", usage_data, timeout=self.__config.node_usage.upload_data_interval+3)
-        print(cache.get(f"NodeUsageData_{self.__node.uuid}"))
         await self.channel_layer.group_send(f"NodeControl_{self.__node.uuid}", {
             'type': 'update_node_usage_data',
             'usage_data': usage_data

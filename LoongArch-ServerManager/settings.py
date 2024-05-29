@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'apps.auth',  # 认证
     'apps.message',  # 消息
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
+    # 'django.contrib.sessions',
     'django.contrib.staticfiles',
 ]
 
@@ -133,13 +133,7 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer"
-#     }
-# }
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 
 CHANNEL_LAYERS = {
     'default': {

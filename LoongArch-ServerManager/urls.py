@@ -34,6 +34,7 @@ urlpatterns = [
     # 认证
     path('api/auth/login', user_auth.AuthLogin),  # 用户登入（POST）
     path('api/auth/logout', user_auth.AuthOutLog),  # 用户登出（ALL）
+    path('api/auth/getUserLoginStatus', user_auth.getLoginStatus),  # 获取用户登录状态 (ALL)
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
     # 用户管理
     path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（ALL）

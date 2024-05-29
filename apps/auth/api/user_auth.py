@@ -44,12 +44,15 @@ def AuthLogin(req):
 def AuthOutLog(req):
     """用户登出"""
     if req.session.get("user"):
-        write_audit(req.session.get("userID"), "Outlog", "Auth", getClientIp(req))
+        # write_audit(req.session.get("userID"), "Outlog", "Auth", getClientIp(req))
         req.session.clear()
         return ResponseJson({"status": 1, "msg": "登出成功"})
     else:
         return ResponseJson({"status": 0, "msg": "您未登录"})
 
 
-def node_auth(req):
-    """节点认证"""
+def getLoginStatus(req):
+    """获取用户登录状态"""
+    if req.session["user"] and req.session["userID"]:
+        return ResponseJson({"status": 1, "msg": "已登录"})
+    return ResponseJson({"status": 0, "msg": "未登录"})

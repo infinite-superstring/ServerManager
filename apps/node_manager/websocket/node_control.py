@@ -106,10 +106,7 @@ class node_control(AsyncWebsocketConsumer):
                 'processor_count': self.__node_base_info.processor_count,
             }
         if node_system_info and await Node_UsageData.objects.filter(node=self.__node).aexists():
-            # usage_data: Node_UsageData = await Node_UsageData.objects.filter(node=self.__node).alast()
-            # loadavg_data = await sync_to_async(lambda: usage_data.system_loadavg)()
             usage_data: dict = cache.get(f"NodeUsageData_{self.__node.uuid}")
-            print(usage_data)
         await self.send_json({
             "action": "init",
             "data": {
