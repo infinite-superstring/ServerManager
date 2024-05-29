@@ -205,7 +205,6 @@ def setUserInfo(req):
     if req.method == 'POST':
         try:
             req_json = RequestLoadJson(req)
-            Log.debug(req_json)
         except Exception as e:
             Log.error(e)
             return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
@@ -220,7 +219,6 @@ def setUserInfo(req):
                 password: str = data.get("password")
                 permission: int = data.get("permission")
                 disable: bool = data.get("disable")
-                print(disable, type(disable))
                 if userName and userName != User.userName:
                     if User.objects.filter(userName=userName):
                         return ResponseJson({"status": 0, "msg": "用户已存在"})
