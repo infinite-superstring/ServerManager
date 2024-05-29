@@ -67,7 +67,7 @@ def getUserInfo(req):
             "realName": User.realName,
             "email": User.email,
             "group": User_Permission.get_group_name() if User_Permission else None,
-            "permissions": User_Permission.get_permissions_dict() if User_Permission else None,
+            "permissions": User_Permission.get_permissions_list() if User_Permission else None,
         }})
     else:
         return ResponseJson({"status": -1, "msg": "未登录"})
@@ -83,7 +83,7 @@ def setUserInfo(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             userId = req.session.get("userID")
             data = req_json.get("data")
@@ -112,9 +112,9 @@ def setUserInfo(req):
                     "email": User.email,
                 }})
             else:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 
 # 头像上传
@@ -129,12 +129,12 @@ def uploadAvatar(req):
             req_json = RequestLoadJson(req)
         except Exception as e:
             Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
         else:
             userId = req.session.get("userID")
             data = req_json.get("data")
             if not data:
-                return ResponseJson({"status": -1, "msg": "参数不完整（无数据）"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
             avatarImgBase64 = data.get("avatarImg")
             avatarImgHash = data.get("avatarHash")
             if avatarImgBase64 and avatarImgHash:
@@ -174,11 +174,11 @@ def uploadAvatar(req):
                             os.remove(os.path.join("avatar", f"{avatarImgHash}"))
                         except Exception as err:
                             Log.error(err)
-                        return ResponseJson({"status": 0, "msg": f"Md5验证失败(发送时：{avatarImgHash} 接收时：{saveFileMd5})"})
+                        return ResponseJson({"status": 0, "msg": f"Md5验证失败(发送时：{avatarImgHash} 接收时：{saveFileMd5})"}, 400)
             else:
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
+                return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 def getAvatar(req):
     """
