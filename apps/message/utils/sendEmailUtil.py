@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Tuple, List, Any
 
 from django.db.models import QuerySet
 
@@ -8,6 +9,8 @@ from django.apps import apps
 from apps.message.models import MessageBody, UserMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+from apps.user_manager.util.userUtils import get_user_by_id
 from util.logger import Log
 import smtplib
 from apps.message.models import Message
@@ -22,6 +25,20 @@ SMS 方法
 SMS_METHOD = 'SMS'
 
 
+def byUserGetUsername(user: User) -> str:
+    """
+    根据用户对象获取用户名
+    """
+    name = None
+    if user.realName:
+        name = user.realName
+    elif user.userName:
+        name = user.userName
+    else:
+        name = user.email
+    return name
+
+
 def __get_all_user_contact_way(way: str) -> list:
     """
     获取所有用户联系方式
@@ -32,21 +49,22 @@ def __get_all_user_contact_way(way: str) -> list:
         return [user.phone for user in User.objects.all()]
 
 
-def _message_to_database(msg: MessageBody) -> list:
+def _message_to_database(msg: MessageBody):
     """
     根据消息对象将消息存入数据库，并返回收件人列表
     """
 
     if not msg.server_groups and not msg.permission_id and not msg.recipient:
         # 没指定发消息方式，不发送
-        return []
+        return {}
 
     message_obj = Message.objects.create(title=msg.title, content=msg.content, create_time=datetime.now())
 
-    def create_recipient(us: QuerySet[User]) -> list:
+    def create_recipient(us: QuerySet[User]):
         for u in us:
             UserMessage.objects.create(user=u, message=message_obj, read=False)
-        return [u.email for u in us]
+        maps = {'emails': [u.email for u in us], 'ids': [u.id for u in us]}
+        return maps
 
     # 指定用户
     if msg.recipient:
@@ -54,9 +72,9 @@ def _message_to_database(msg: MessageBody) -> list:
         return create_recipient(us=users)
     # 指定服务器组
     if msg.server_groups:
-        return []
+        return {}
     # 指定权限组
-    if msg.server_groups:
+    if msg.permission_id:
         users = User.objects.filter(permission_id=msg.permission_id)
         return create_recipient(us=users)
 
@@ -79,7 +97,6 @@ def get_email_content(msg: MessageBody, on_web_page=False):
         return html
 
 
-
 def send(mes_obj: MessageBody):
     """
     发送消息
@@ -92,7 +109,11 @@ def send(mes_obj: MessageBody):
         try:
 
             # 邮件写到数据库
-            recipients = _message_to_database(mes_obj)
+            maps = _message_to_database(mes_obj)
+            if not maps['emails']:
+                return
+            recipients = maps['emails']
+            user_id_list = maps['ids']
 
             # 如果配置ssl连接 则开启 ssl连接
             if message_config.email_ssl:
@@ -104,9 +125,11 @@ def send(mes_obj: MessageBody):
             # 登录到服务器
             stp.login(message_config.email_username, message_config.email_password)
 
+            count = 0
             for recipient in recipients:
                 # 创建邮件实例
                 mes_obj.recipient = recipient
+                mes_obj.name = byUserGetUsername(user=get_user_by_id(user_id_list[count]))
                 content = get_email_content(mes_obj)  # 封装邮件内容
                 email = MIMEMultipart()
                 email.set_charset("UTF-8")
@@ -118,6 +141,7 @@ def send(mes_obj: MessageBody):
                 email['To'] = recipient
                 # 发送邮件
                 stp.send_message(email)
+                count += 1
 
             stp.quit()
         except smtplib.SMTPException as e:
