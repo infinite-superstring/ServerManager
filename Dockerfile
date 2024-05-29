@@ -5,7 +5,7 @@ LABEL maintainer="fsj,yf"
 EXPOSE 80
 
 RUN apt-get update && \
-    apt-get install -y wget git unzip build-essential gdb lcov pkg-config \
+    apt-get install -y wget git unzip nodejs npm build-essential gdb lcov pkg-config \
     libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev \
     libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev \
     lzma lzma-dev tk-dev uuid-dev zlib1g-dev libmpdec-dev && \
@@ -42,9 +42,16 @@ RUN ARCH=$(uname -m) && \
         echo "Unsupported architecture" && exit 1; \
     fi
 
+RUN npm config set registry https://registry.npmmirror.com
+
+RUN cd ./web_develop && \
+         npm i && \
+         npm run buildToStatic &&\
+         cd ../
+
 RUN pip3 install -r ./requirements.txt && \
-    python3 manage.py makemigrations && \
-    python3 manage.py migrate && \
-    python3 manage.py initial_data
+         python3 manage.py makemigrations && \
+         python3 manage.py migrate && \
+         python3 manage.py initial_data
 
 CMD ["python3", "manage.py", "runserver", "127.0.0.1:80"]
