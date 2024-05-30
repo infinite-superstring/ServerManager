@@ -2,18 +2,15 @@ import json
 from datetime import datetime
 from uuid import UUID, uuid1
 
-from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.apps import apps
 from django.core.cache import cache
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
-from apps.node_manager.utils.tagUtil import get_node_tags, aget_node_tags
+from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
 from util.jsonEncoder import ComplexEncoder
 from util.logger import Log
-from apps.node_manager.signals import connect_terminal
 
 
 class node_control(AsyncWebsocketConsumer):

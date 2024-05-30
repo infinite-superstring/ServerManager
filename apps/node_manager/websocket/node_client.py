@@ -3,8 +3,6 @@ import uuid
 from uuid import UUID
 from datetime import datetime
 
-from asgiref.sync import sync_to_async
-from cffi.backend_ctypes import unicode
 from channels.exceptions import StopConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.apps import apps
@@ -14,7 +12,7 @@ from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database
 from apps.setting.entity import Config
 from util.calculate import calculate_percentage
-from util.dictUtils import get_key_by_value, append_to_dict
+from util.dictUtils import get_key_by_value
 from util.jsonEncoder import ComplexEncoder
 
 from util.logger import Log

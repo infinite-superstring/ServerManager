@@ -23,11 +23,6 @@ def get_tag_by_name(tag_name: str) -> list[str]:
             temp.append(tag.tag_name)
     return temp
 
-
-def get_node_by_tag_name(tag_name: str):
-    """按Tag搜索节点"""
-
-
 @Log.catch
 def get_node_tags(node) -> list[str]:
     """根据节点获取所有Tag"""
