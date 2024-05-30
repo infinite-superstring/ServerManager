@@ -75,6 +75,8 @@ urlpatterns = [
     # 消息
     path('api/message/list', message.get_message_list),  # 获取消息列表（GET）
     path('api/message/getById', message.get_by_id),  # 按ID获取消息(GET)
+    path('api/message/deleteAll', message.delete_all),  # 删除所有消息(DELETE)
+    path('api/message/readAll', message.read_all),  # 已读所有消息(PUT)
     # 静态页面
     re_path('.*', TemplateView.as_view(template_name="index.html")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
