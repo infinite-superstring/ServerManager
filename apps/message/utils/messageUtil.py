@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Tuple, List, Any
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.db.models import QuerySet
 
 from apps.audit.util.auditTools import write_system_log
@@ -51,10 +53,10 @@ def __get_all_user_contact_way(way: str) -> list:
 
 def _message_to_database(msg: MessageBody):
     """
-    根据消息对象将消息存入数据库，并返回收件人列表
+    根据消息对象将消息存入数据库，并返回用户
     """
 
-    if not msg.server_groups and not msg.permission_id and not msg.recipient:
+    if not msg.server_groups and not msg.permission and not msg.recipient:
         # 没指定发消息方式，不发送
         return {}
 
@@ -63,19 +65,17 @@ def _message_to_database(msg: MessageBody):
     def create_recipient(us: QuerySet[User]):
         for u in us:
             UserMessage.objects.create(user=u, message=message_obj, read=False)
-        maps = {'emails': [u.email for u in us], 'ids': [u.id for u in us]}
-        return maps
+        return us
 
     # 指定用户
     if msg.recipient:
-        users = User.objects.filter(id__in=msg.recipient)
-        return create_recipient(us=users)
+        return create_recipient(us=msg.recipient)
     # 指定服务器组
     if msg.server_groups:
         return {}
     # 指定权限组
-    if msg.permission_id:
-        users = User.objects.filter(permission_id=msg.permission_id)
+    if msg.permission:
+        users = User.objects.filter(permission_id__in=[p.id for p in msg.permission])
         return create_recipient(us=users)
 
 
@@ -109,11 +109,9 @@ def send(mes_obj: MessageBody):
         try:
 
             # 邮件写到数据库
-            maps = _message_to_database(mes_obj)
-            if not maps['emails']:
+            users: QuerySet[User] = _message_to_database(mes_obj)
+            if not users:
                 return
-            recipients = maps['emails']
-            user_id_list = maps['ids']
 
             # 如果配置ssl连接 则开启 ssl连接
             if message_config.email_ssl:
@@ -125,11 +123,10 @@ def send(mes_obj: MessageBody):
             # 登录到服务器
             stp.login(message_config.email_username, message_config.email_password)
 
-            count = 0
-            for recipient in recipients:
+            for u in users:
                 # 创建邮件实例
-                mes_obj.recipient = recipient
-                mes_obj.name = byUserGetUsername(user=get_user_by_id(user_id_list[count]))
+                mes_obj.recipient = u.email
+                mes_obj.name = byUserGetUsername(user=u)
                 content = get_email_content(mes_obj)  # 封装邮件内容
                 email = MIMEMultipart()
                 email.set_charset("UTF-8")
@@ -138,12 +135,12 @@ def send(mes_obj: MessageBody):
                 # TODO 测试使用
                 email['Subject'] = "龙芯测试平台消息通知" + mes_obj.title
                 email['From'] = message_config.email_from_address
-                email['To'] = recipient
+                email['To'] = u.email
                 # 发送邮件
                 stp.send_message(email)
-                count += 1
 
             stp.quit()
+            return users
         except smtplib.SMTPException as e:
             Log.error(e)
             raise smtplib.SMTPException
@@ -154,6 +151,20 @@ def send(mes_obj: MessageBody):
     # 发送短信
     elif message_config.message_send_type == SMS_METHOD:
         return
+
+
+def send_ws(user: QuerySet[User], data='hello'):
+    """
+    向客户端发送套接字
+    """
+    if not user:
+        return
+    for u in user:
+        # 获取未读消息数量
+        u_msg = UserMessage.objects.filter(user=u, read=False)
+        channel_layer = get_channel_layer()
+        sync_send = async_to_sync(channel_layer.group_send)
+        sync_send(f"message_client_{u.id}", {"type": "newMessage", "data": u_msg.count()})
 
 
 def send_err_handle(mes: str):

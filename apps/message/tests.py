@@ -1,11 +1,15 @@
-import datetime
+from datetime import datetime
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.test import TestCase
 
 from apps.message.api.message import get_message_list
 from apps.message.models import Message, MessageBody
-from apps.message.utils.sendEmailUtil import send
+from apps.message.utils.messageUtil import send
+from apps.user_manager.models import User
 from util.passwordUtils import encrypt_password
+from apps.message.webSockets.message_client import MessageClient
 
 
 # Create your tests here.
@@ -13,10 +17,12 @@ from util.passwordUtils import encrypt_password
 class MessageTest(TestCase):
 
     def test(self):
-        send(MessageBody(title="这是一封测试邮件",
-                         content="我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容我是内容"))
+        pass
 
     def test1(self):
         password, salt = encrypt_password("123456")
         print(password)
         print(salt)
+
+    def test2(self):
+        pass
