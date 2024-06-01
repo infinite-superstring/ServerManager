@@ -1,4 +1,8 @@
 from django.db import models
+from django.db.models import QuerySet
+
+from apps.permission_manager.models import Permission_groups
+from apps.user_manager.models import User
 
 
 # Create your models here.
@@ -6,21 +10,21 @@ class MessageBody:
     title: str = None
     content: str = None
     name: str = None
-    recipient: list = None
-    server_groups: int = None
-    permission_id: int = None
+    recipient: QuerySet[User] = None
+    server_groups: QuerySet = None
+    permission: QuerySet[Permission_groups] = None
 
     def __init__(
             self,
             title=None,
             content=None,
             name=None,
-            recipient: list = None,
-            server_groups: int = None,
-            permission_id: int = None):
+            recipient: QuerySet[User] = None,
+            server_groups: QuerySet = None,
+            permission: QuerySet[Permission_groups] = None):
         """
         封装消息信息
-        recipient 收件人ID
+        recipient 用户列表
         server_groups 服务器群
         permission_id 权限组
         指定其中一个发件方式
@@ -29,12 +33,12 @@ class MessageBody:
         self.content = content
         self.name = name
 
-        count = sum(1 for arg in [recipient, server_groups, permission_id] if arg is not None)
+        count = sum(1 for arg in [recipient, server_groups, permission] if arg is not None)
         if count != 1:
             raise ValueError("请指定一个发件方式")
         self.recipient = recipient
         self.server_groups = server_groups
-        self.permission_id = permission_id
+        self.permission = permission
 
 
 class Message(models.Model):
@@ -49,3 +53,7 @@ class UserMessage(models.Model):
     user = models.ForeignKey('user_manager.User', on_delete=models.DO_NOTHING)
     message = models.ForeignKey('message.Message', on_delete=models.CASCADE)
     read = models.BooleanField('是否已读', default=False)
+
+    class Meta:
+        db_table = 'user_message'
+        db_table_comment = '用户消息'
