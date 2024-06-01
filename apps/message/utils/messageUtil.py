@@ -153,7 +153,7 @@ def send(mes_obj: MessageBody):
         return
 
 
-def send_ws(user: QuerySet[User], data='hello'):
+def send_ws(user: QuerySet[User]):
     """
     向客户端发送套接字
     """
