@@ -15,56 +15,62 @@ class Command(BaseCommand):
         Log.info("开始初始化数据库~")
         PermissionItem = [
             {
-                'id': 1,
                 'permission': 'all',
                 'description': '所有权限，拥有该权限的组无需指定其他权限',
                 'translate': '所有权限'
             },
             {
-                'id': 2,
-                'permission': 'viewDevice',
-                'description': '允许观看设备屏幕，不可控制设备',
-                'translate': '观看被控设备'
+                'permission': 'visitAllNodes',
+                'description': '允许用户访问所有节点',
+                'translate': '访问所有节点'
             },
             {
-                'id': 3,
-                'permission': 'controllingDevice',
-                'description': '允许用户控制设备',
-                'translate': '控制被控设备'
+                'permission': 'addNode',
+                'description': '允许用户新增节点',
+                'translate': '新增节点'
             },
             {
-                'id': 4,
-                'permission': 'changeDevicePowerState',
-                'description': '允许用户操作设备按钮，可实现强制关机与重启',
-                'translate': '控制被控电源'
+                'permission': 'editNodeGroup',
+                'description': '允许用户编排节点组',
+                'translate': '编辑节点组'
             },
             {
-                'id': 5,
+                'permission': 'clusterExecuteCommand',
+                'description': '允许用户执行集群命令',
+                'translate': '集群命令'
+            },
+            {
+                'permission': 'clusterTask',
+                'description': '允许用户添加/修改/删除集群任务',
+                'translate': '集群任务'
+            },
+            {
+                'permission': 'allocateNode',
+                'description': '允许用户分配节点',
+                'translate': '分配节点'
+            },
+            {
                 'permission': 'changeSettings',
                 'description': '允许用户更改LoongArch-Server-Manager设置',
                 'translate': '更改设备设置'
             },
             {
-                'id': 6,
-                'permission': 'manageUsers',
+                'permission': 'manageUser',
                 'description': '允许用户管理LoongArch-Server-Manager用户',
                 'translate': '管理用户'
             },
             {
-                'id': 7,
-                'permission': 'managePermissionGroups',
+                'permission': 'managePermissionGroup',
                 'description': '允许用户管理权限设定',
                 'translate': '管理权限组'
             },
             {
-                'id': 8,
                 'permission': 'viewAudit',
                 'description': '允许用户浏览审计信息',
                 'translate': '查看审计数据'
             },
             {
-                'id': 9,
-                'permission': 'editAudit',
+                'permission': 'clearAudit',
                 'description': '允许用户清除审计数据',
                 'translate': '管理审计数据'
             }
@@ -104,32 +110,9 @@ class Command(BaseCommand):
                 'id': 2,
                 'name': '管理员(admin)',
                 'permissions': [
-                    viewDevice,
-                    controllingDevice,
-                    changeDevicePowerState,
                     changeSettings,
                     manageUsers,
                     managePermissionGroups,
-                    viewAudit,
-                ]
-            },
-            {
-                'id': 3,
-                'name': '运维(O&M)',
-                'permissions': [
-                    viewDevice,
-                    controllingDevice,
-                    changeDevicePowerState,
-                    changeSettings,
-                    viewAudit,
-                ]
-            },
-            {
-                'id': 4,
-                'name': '开发(dev)',
-                'permissions': [
-                    viewDevice,
-                    controllingDevice,
                 ]
             }
         ]
