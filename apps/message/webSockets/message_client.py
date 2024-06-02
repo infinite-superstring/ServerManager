@@ -1,5 +1,6 @@
 import json
 
+from apps.user_manager.util.userUtils import get_user_by_id
 from util.jsonEncoder import ComplexEncoder
 from util.logger import Log
 
@@ -19,6 +20,13 @@ class MessageClient(AsyncWebsocketConsumer):
 
     async def connect(self):
         userId = self.scope['session']['userID']
+        by_id = get_user_by_id(userId)
+        if by_id is None:
+            await self.close(0)
+            return
+        if not by_id.disable:
+            await self.close(0)
+            return
         if userId is None:
             await self.close(0)
             return
@@ -41,10 +49,10 @@ class MessageClient(AsyncWebsocketConsumer):
         )
         await self.close()
 
-    async def receive(self, text_data=None, bytes_data=None):
+    async def receive(self):
         await self.send_json({
             "type": "receive",
-            "data": text_data
+            "data": "over!"
         })
 
     async def newMessage(self, event):
