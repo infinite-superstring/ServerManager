@@ -18,6 +18,8 @@ def get_user_by_username(username) -> User:
 def username_exists(username) -> bool:
     return User.objects.filter(userName=username).exists()
 
+def uid_exists(uid) -> bool:
+    return User.objects.filter(id=uid).exists()
 
 def verify_username_and_password(user, password: str) -> bool:
     """

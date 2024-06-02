@@ -1,9 +1,34 @@
 from asgiref.sync import sync_to_async
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData
+from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
 from util.passwordUtils import verify_password
 from util.logger import Log
 
+
+def node_name_exists(node_name):
+    return Node.objects.filter(name=node_name).exists()
+
+def node_uuid_exists(node_uuid):
+    return Node.objects.filter(uuid=node_uuid).exists()
+
+def get_node_by_uuid(node_uuid):
+    return Node.objects.get(uuid=node_uuid)
+
+def get_node_by_name(node_name):
+    return Node.objects.get(name=node_name)
+
+def node_set_group(node_uuid, group_id):
+    if not node_group_id_exists(group_id):
+        Log.error('Node Group does not exist')
+        return False
+    if not node_uuid_exists(node_uuid):
+        Log.error("Node UUID does not exist")
+        return False
+    node = Node.objects.get(uuid=node_uuid)
+    node.group = get_node_group_by_id(group_id)
+    node.save()
+    return True
 
 def verify_node_token(node: Node, token):
     """

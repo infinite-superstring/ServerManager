@@ -61,9 +61,8 @@ class Node_Group(models.Model):
     name = models.CharField("组名", max_length=100, unique=True, null=False)
     description = models.CharField("节点组简介", max_length=100, null=True)
     leader = models.ForeignKey("user_manager.User", on_delete=models.DO_NOTHING)
-    node_list = models.ManyToManyField("Node", related_name='node_group_mappings')
     time_slot_recipient = models.ManyToManyField(
-        "Node_MessageRecipient",
+        "Node_MessageRecipientRule",
         related_name='time_slot_recipient_mappings'
     )
 
@@ -72,8 +71,9 @@ class Node_Group(models.Model):
         db_table_comment = '节点组列表'
 
 
-class Node_MessageRecipient(models.Model):
+class Node_MessageRecipientRule(models.Model):
     """消息接收人"""
+    id = models.AutoField("ID", primary_key=True)
     monday = models.BooleanField("星期一", null=False)
     tuesday = models.BooleanField("星期二", null=False)
     wednesday = models.BooleanField("星期三", null=False)

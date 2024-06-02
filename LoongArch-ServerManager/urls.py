@@ -25,6 +25,7 @@ import apps.user_manager.api.user_management as user_manager
 import apps.permission_manager.api.permission as permission_manager
 import apps.node_manager.api.node_manager as node_manager
 import apps.node_manager.api.node_tag as node_tag
+import apps.node_manager.api.node_group as node_group
 import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
 import apps.user_manager.api.userInfo as userInfo
@@ -56,8 +57,11 @@ urlpatterns = [
     path('api/node_manager/editNode', node_manager.edit_node),  # 编辑节点(POST)
     path('api/node_manager/resetToken', node_manager.reset_node_token),  # 重置节点Token(POST)
     path('api/node_manager/getNodeList', node_manager.get_node_list),  # 获取节点列表(POST)
+    path('api/node_manager/getBaseNodeList', node_manager.get_base_node_list),  # 获取基础节点列表(POST)
     path('api/node_manager/getNodeInfo', node_manager.get_node_info),  # 获取节点信息(POST)
     path('api/node_manager/node_tag/search_tag', node_tag.search_tag),  # 搜索TAG(POST)
+    path('api/node_manager/node_group/getGroupList', node_group.get_group_list),  # 获取组列表(POST)
+    path('api/node_manager/node_group/createGroup', node_group.create_group),  # 创建组(POST)
     # 审计
     path('api/admin/auditAndLogger/audit', auditAndLogger.getAudit),  # 获取审计日志（POST）
     path('api/admin/auditAndLogger/accessLog', auditAndLogger.getAccessLog),  # 获取访问日志（POST）

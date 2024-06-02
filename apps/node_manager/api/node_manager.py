@@ -168,6 +168,43 @@ def get_node_list(req):
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
+def get_base_node_list(req):
+    if req.method != 'POST':
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
+    PageContent: list = []
+    page = req_json.get("page", 1)
+    pageSize = req_json.get("pageSize", 20)
+    search = req_json.get("search", "")
+    normal_search_info, tags, groups = extract_search_info(search)
+    query = Q(name__icontains=normal_search_info) if search else Q()
+    # 如果tags非空，则添加tags的过滤条件
+    if tags:
+        query &= Q(tags__tag_name__in=tags)
+    # 如果groups非空，则添加groups的过滤条件
+    if groups:
+        query &= Q(group__name__in=groups)
+    result = Node.objects.filter(query)
+    pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
+    if pageQuery:
+        for item in pageQuery:
+            PageContent.append({
+                "uuid": item.get("uuid"),
+                "name": item.get("name"),
+            })
+    return ResponseJson({
+        "status": 1,
+        "data": {
+            "maxPage": get_max_page(result.all().count(), 20),
+            "currentPage": page,
+            "PageContent": PageContent
+        }
+    })
+
 
 
 def get_node_info(req):
