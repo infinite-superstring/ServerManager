@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import HttpResponse, redirect
 from util.Response import ResponseJson
@@ -27,6 +28,9 @@ class AuthMiddleware(MiddlewareMixin):
                 return ResponseJson({'status': -1, "msg": "非法访问"}, 403)
 
         if request.session.get("user") and request.session.get("userID"):
+            if request.session.get("userID") in apps.get_app_config("user_manager").disable_user_list:
+                request.session.clear()
+                return redirect("/login")
             return
         else:
             match (url_pu.is_api_path()):

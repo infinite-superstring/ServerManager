@@ -1,3 +1,5 @@
+from django.apps import apps
+
 from apps.permission_manager.util.permissionGroupUtils import group_id_exists, get_group_by_id
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, username_exists, \
@@ -98,16 +100,17 @@ def addUser(req):
         disable=disable,
         permission=Permission_groups.objects.get(id=permission) if permission else None
     )
-    if createUser:
-        write_audit(
-            req.session.get("userID"),
-            "创建用户",
-            "用户管理",
-            f"用户名:{userName} 真实姓名: {realName} 邮箱: {email} 禁用: {disable}"
-        )
-        return ResponseJson({"status": 1, "msg": "用户创建成功"})
-    else:
+    if not createUser:
         return ResponseJson({"status": 0, "msg": "用户创建失败"})
+    write_audit(
+        req.session.get("userID"),
+        "创建用户",
+        "用户管理",
+        f"用户名:{userName} 真实姓名: {realName} 邮箱: {email} 禁用: {disable}"
+    )
+    if disable: apps.get_app_config("user_manager").disable_user_list.append(createUser.id)
+    return ResponseJson({"status": 1, "msg": "用户创建成功"})
+
 
 
 # 删除用户
@@ -138,6 +141,7 @@ def delUser(req):
         "User Manager(用户管理)",
         f"User Id: {query.id} User Name: {query.userName}")
     query.delete()
+    apps.get_app_config("user_manager").disable_user_list.remove(userId)
     return ResponseJson({"status": 1, "msg": "用户已删除"})
 
 
@@ -268,6 +272,8 @@ def setUserInfo(req):
         )
         User.permission_id = newPermission
     if disable is not None and disable != User.disable:
+        if User.id == 1:
+            return ResponseJson({'status': 0, 'msg': "无法禁用id为1的账户"})
         write_audit(
             req.session.get("userID"),
             "编辑用户 : 禁用用户",
@@ -275,6 +281,7 @@ def setUserInfo(req):
             f"{User.disable}-->{disable}"
         )
         User.disable = disable
+        apps.get_app_config("user_manager").disable_user_list.append(userId) if disable else apps.get_app_config("user_manager").disable_user_list.remove(userId)
     User.save()
     return ResponseJson({"status": 1, "msg": "成功", "data": {
         "id": User.id,

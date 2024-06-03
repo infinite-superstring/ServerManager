@@ -2,11 +2,6 @@ from django.apps import AppConfig
 from util.logger import Log
 from apps.setting.entity.Config import config
 
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
-
 class SettingConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.setting'
