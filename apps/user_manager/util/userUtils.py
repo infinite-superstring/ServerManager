@@ -1,13 +1,17 @@
 from apps.user_manager.models import User
 from util.passwordUtils import verify_password, encrypt_password
+from util.logger import Log
 
 
-def get_user_by_id(uid) -> User:
+def get_user_by_id(uid) -> bool | User:
     """
     根据用户id获取用户实例
     :param uid:
     :return: User
     """
+    if not uid_exists(uid):
+        Log.error(f'User ID {uid} does not exist')
+        return False
     return User.objects.get(id=uid)
 
 
@@ -15,11 +19,28 @@ def get_user_by_username(username) -> User:
     return User.objects.get(userName=username)
 
 
+def user_id_exist(user_id) -> bool:
+    return User.objects.filter(id=user_id).exists()
+
+
 def username_exists(username) -> bool:
     return User.objects.filter(userName=username).exists()
 
+
+def real_name_exists(real_name) -> bool:
+    return User.objects.filter(realName=real_name).exists()
+
+
+def email_exists(email) -> bool:
+    return User.objects.filter(email=email).exists()
+
+
 def uid_exists(uid) -> bool:
     return User.objects.filter(id=uid).exists()
+
+async def uid_aexists(uid) -> bool:
+    return await User.objects.filter(id=uid).aexists()
+
 
 def verify_username_and_password(user, password: str) -> bool:
     """
