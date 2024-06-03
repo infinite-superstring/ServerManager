@@ -20,13 +20,6 @@ class MessageClient(AsyncWebsocketConsumer):
 
     async def connect(self):
         userId = self.scope['session']['userID']
-        by_id = get_user_by_id(userId)
-        if by_id is None:
-            await self.close(0)
-            return
-        if not by_id.disable:
-            await self.close(0)
-            return
         if userId is None:
             await self.close(0)
             return
