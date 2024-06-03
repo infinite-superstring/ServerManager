@@ -1,4 +1,5 @@
 from django.apps import apps
+from django.http import HttpRequest
 
 from apps.permission_manager.util.permissionGroupUtils import group_id_exists, get_group_by_id
 from apps.user_manager.models import User
@@ -16,7 +17,7 @@ from apps.permission_manager.util.permission import groupPermission
 
 # 获取用户列表
 @Log.catch
-def getUserList(req):
+def getUserList(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
@@ -63,7 +64,7 @@ def getUserList(req):
 
 # 新增用户
 @Log.catch
-def addUser(req):
+def addUser(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
@@ -115,7 +116,7 @@ def addUser(req):
 
 # 删除用户
 @Log.catch
-def delUser(req):
+def delUser(req: HttpRequest):
     if req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
@@ -147,7 +148,7 @@ def delUser(req):
 
 # 获取用户权限
 @Log.catch
-def getUserPermission(req):
+def getUserPermission(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"})
     try:
@@ -170,7 +171,7 @@ def getUserPermission(req):
 
 # 获取用户信息
 @Log.catch
-def getUserInfo(req):
+def getUserInfo(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
@@ -198,7 +199,7 @@ def getUserInfo(req):
 
 # 修改用户信息
 @Log.catch
-def setUserInfo(req):
+def setUserInfo(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
@@ -222,7 +223,7 @@ def setUserInfo(req):
             return ResponseJson({"status": 0, "msg": "用户已存在"})
         write_audit(
             req.session.get("userID"),
-            "编辑用户 : 更新用户名",
+            "编辑用户: 更新用户名",
             "用户管理",
             f"{User.userName}-->{userName}"
         )
@@ -232,7 +233,7 @@ def setUserInfo(req):
             return ResponseJson({"status": 0, "msg": "用户已存在"})
         write_audit(
             req.session.get("userID"),
-            "编辑用户 : 更新真实姓名",
+            "编辑用户: 更新真实姓名",
             "用户管理",
             f"{User.realName}-->{realName}")
         User.realName = realName
@@ -241,7 +242,7 @@ def setUserInfo(req):
             return ResponseJson({"status": 0, "msg": "邮箱已使用"})
         write_audit(
             req.session.get("userID"),
-            "编辑用户 : 更新邮箱",
+            "编辑用户: 更新邮箱",
             "用户管理",
             f"{User.email}-->{email}")
         User.email = email
@@ -256,7 +257,7 @@ def setUserInfo(req):
         write_user_new_password_to_database(User, password)
         write_audit(
             req.session.get("userID"),
-            "编辑用户 : 更新密码",
+            "编辑用户: 更新密码",
             "用户管理",
             ""
         )
@@ -266,7 +267,7 @@ def setUserInfo(req):
         newPermission = get_group_by_id(permission)
         write_audit(
             req.session.get("userID"),
-            "编辑用户 : 更新权限组",
+            "编辑用户: 更新权限组",
             "用户管理",
             f"{get_group_by_id(User.permission_id).name if User.permission_id else 'None'}-->{newPermission.name}"
         )
@@ -276,7 +277,7 @@ def setUserInfo(req):
             return ResponseJson({'status': 0, 'msg': "无法禁用id为1的账户"})
         write_audit(
             req.session.get("userID"),
-            "编辑用户 : 禁用用户",
+            "编辑用户: 禁用用户" if disable else "编辑用户: 启用用户",
             "用户管理",
             f"{User.disable}-->{disable}"
         )
