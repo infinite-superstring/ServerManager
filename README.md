@@ -50,5 +50,5 @@ Copyright © Infinite Superstring
 
 ### 以Debug模式启动项目
 ```shell
-    python manage.py runserver 0.0.0.0:8080
+    python manage.py runserver 0.0.0.0:8000
 ```

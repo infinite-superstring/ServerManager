@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'apps.message',  # 消息
     'django.contrib.contenttypes',
     # 'django.contrib.sessions',
-    'django.contrib.staticfiles',
+    # 'django.contrib.staticfiles',
 ]
 
 MIDDLEWARE = [
@@ -59,21 +59,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'LoongArch-ServerManager.urls'
-
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['static'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
 
 WSGI_APPLICATION = 'LoongArch-ServerManager.wsgi.application'
 ASGI_APPLICATION = 'LoongArch-ServerManager.asgi.application'
@@ -121,11 +106,6 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'assets/'
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static/assets"),
-]
 # STATIC_ROOT = os.path.join(BASE_DIR, 'static/assets')
 
 # Default primary key field type

@@ -84,5 +84,4 @@ urlpatterns = [
     path('api/message/deleteById', message.delete_by_id),  # 按ID删除消息(DELETE)
     path('api/message/getUnread',message.get_unread),  # 获取未读消息数量
     # 静态页面
-    re_path('.*', TemplateView.as_view(template_name="index.html")),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
