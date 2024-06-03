@@ -5,7 +5,7 @@ LABEL maintainer="fsj,yf"
 EXPOSE 80
 
 RUN apt-get update && \
-    apt-get install -y wget git unzip nodejs npm build-essential gdb lcov pkg-config \
+    apt-get install -y wget git unzip nginx redis build-essential gdb lcov pkg-config \
     libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev \
     libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev \
     lzma lzma-dev tk-dev uuid-dev zlib1g-dev libmpdec-dev && \
@@ -14,7 +14,7 @@ RUN apt-get update && \
 
 RUN mkdir ServerManager-Panel
 
-COPY . /ServerManager-Panel
+COPY . /
 
 WORKDIR /ServerManager-Panel
 
@@ -42,16 +42,41 @@ RUN ARCH=$(uname -m) && \
         echo "Unsupported architecture" && exit 1; \
     fi
 
-RUN npm config set registry https://registry.npmmirror.com
+echo "server {
+        listen        80;
+        server_name  localhost;
+        root   "/ServerManager-Panel/static";
+        location / {
+        try_files $uri $uri/ /index.html;
+    }
+	location /api/ {
+        	proxy_pass http://localhost:8000/api/;
+        	proxy_set_header Host $host;
+        	proxy_set_header X-Real-IP $remote_addr;
+        	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        	proxy_set_header X-Forwarded-Proto $scheme;
+   	 }
+	location /ws/ {
+        	proxy_pass http://localhost:8000/ws/;
+        	proxy_http_version 1.1;
+        	proxy_set_header Upgrade $http_upgrade;
+        	proxy_set_header Connection "Upgrade";
+        	proxy_set_header Host $host;
+        	proxy_set_header X-Real-IP $remote_addr;
+        	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        	proxy_set_header X-Forwarded-Proto $scheme;
+    	}
 
-RUN cd ./web_develop && \
-         npm i && \
-         npm run buildToStatic &&\
-         cd ../
+}
+" >/etc/nginx/conf.d/default.conf
+
+RUN redis-server
+
+RUN nginx
 
 RUN pip3 install -r ./requirements.txt && \
          python3 manage.py makemigrations && \
          python3 manage.py migrate && \
          python3 manage.py initial_data
 
-CMD ["python3", "manage.py", "runserver", "127.0.0.1:80"]
+CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
