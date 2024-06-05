@@ -1,11 +1,13 @@
 #/bin/bash 
 #for loonginx-server
 
-sudo yun -y update
+sudo yum -y update
 
-sudo yum install docker-ce 
+sudo yum -y install docker-ce 
 
 sudo systemctl enable docker
+
+sudo systemctl start docker
 
 sudo docker build -t loonginx-server1.0 ./
 
