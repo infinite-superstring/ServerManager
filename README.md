@@ -47,6 +47,18 @@ Copyright © Infinite Superstring
     python manage.py initial_data
     # ps: 忘记密码后可通过 python manage.py resetAdmin 重置密码
 ```
+**loong平台启动**
+```shell
+    # 1.在开发环境编译完用户界面
+    # 2.压缩 
+    # 3.上传服务器解压进入目录
+    cd ServerManager-Panel
+    # 4.赋予执行权限
+    sudo chmod +x setup.sh
+    # 5.源申，启动！
+    ./setup.sh
+```
+
 
 ### 以Debug模式启动项目
 ```shell
