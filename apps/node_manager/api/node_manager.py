@@ -3,6 +3,7 @@ import secrets
 from django.db.models import Q
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
+from apps.node_manager.utils.groupUtil import get_node_group_by_id
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from util.Request import RequestLoadJson
@@ -148,6 +149,7 @@ def get_node_list(req):
                         "uuid": item.get("uuid"),
                         "name": item.get("name"),
                         "description": item.get("description"),
+                        "group": get_node_group_by_id(item.get("group_id")).name if item.get("group_id") else None,
                         "tags": get_node_tags(item.get("uuid")),
                         "baseData": {
                             "platform": node_base_info.system if node_base_info else "未知",
@@ -195,6 +197,7 @@ def get_base_node_list(req):
             PageContent.append({
                 "uuid": item.get("uuid"),
                 "name": item.get("name"),
+                "group": True if item.get("group_id") else False,
             })
     return ResponseJson({
         "status": 1,

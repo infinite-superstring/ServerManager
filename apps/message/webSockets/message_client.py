@@ -20,7 +20,7 @@ class MessageClient(AsyncWebsocketConsumer):
 
     async def connect(self):
         userId = self.scope['session']['userID']
-        if userId is None:
+        if not userId:
             await self.close(0)
             return
         __userId = userId

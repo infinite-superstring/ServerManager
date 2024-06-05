@@ -15,9 +15,6 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path, re_path
-from django.views.generic import TemplateView
-from django.conf import settings
-from django.conf.urls.static import static
 
 import apps.auth.api.user_auth as user_auth
 import apps.auth.api.node_auth as node_auth
@@ -62,6 +59,7 @@ urlpatterns = [
     path('api/node_manager/node_tag/search_tag', node_tag.search_tag),  # 搜索TAG(POST)
     path('api/node_manager/node_group/getGroupList', node_group.get_group_list),  # 获取组列表(POST)
     path('api/node_manager/node_group/createGroup', node_group.create_group),  # 创建组(POST)
+    path('api/node_manager/node_group/delGroup', node_group.del_group),  # 删除节点组(POST)
     # 审计
     path('api/admin/auditAndLogger/audit', auditAndLogger.getAudit),  # 获取审计日志（POST）
     path('api/admin/auditAndLogger/accessLog', auditAndLogger.getAccessLog),  # 获取访问日志（POST）
@@ -83,5 +81,4 @@ urlpatterns = [
     path('api/message/readAll', message.read_all),  # 已读所有消息(PUT)
     path('api/message/deleteById', message.delete_by_id),  # 按ID删除消息(DELETE)
     path('api/message/getUnread',message.get_unread),  # 获取未读消息数量
-    # 静态页面
 ]

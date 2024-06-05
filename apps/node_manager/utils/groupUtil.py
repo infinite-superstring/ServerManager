@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from apps.node_manager.models import Node_MessageRecipientRule, Node_Group
+from apps.node_manager.models import Node_MessageRecipientRule, Node_Group, Node
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_id, uid_exists
 from util.logger import Log
@@ -11,6 +11,9 @@ def node_group_id_exists(group_id):
 
 def get_node_group_by_id(group_id):
     return Node_Group.objects.get(id=group_id)
+
+def get_group_nodes(group):
+    return Node.objects.filter(group=group)
 
 def create_message_recipient_rule(
         week: list,
@@ -35,11 +38,12 @@ def create_message_recipient_rule(
         start_time=start_time,
         end_time=end_time,
     )
-    for uid in users:
-        if not uid_exists(uid):
-            Log.warning(f"用户ID{uid}不存在")
+    for user in users:
+        Log.debug(user)
+        if not uid_exists(user):
+            Log.warning(f"用户ID{user}不存在")
             continue
-        rule.recipients.add(get_user_by_id(uid))
+        rule.recipients.add(get_user_by_id(user))
     return rule
 
 

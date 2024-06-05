@@ -1,5 +1,6 @@
 from apps.node_manager.models import Node_Group
-from apps.node_manager.utils.groupUtil import create_message_recipient_rules
+from apps.node_manager.utils.groupUtil import create_message_recipient_rules, node_group_id_exists, \
+    get_node_group_by_id, get_group_nodes
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid, node_set_group
 from apps.user_manager.util.userUtils import uid_exists, get_user_by_id
 from util.Request import RequestLoadJson
@@ -27,6 +28,8 @@ def get_group_list(req):
             PageContent.append({
                 "group_id": item.get("id"),
                 "group_name": item.get("name"),
+                "group_leader": get_user_by_id(item.get("leader_id")).userName,
+                "group_desc": item.get("description"),
             })
     return ResponseJson({
         "status": 1,
@@ -55,8 +58,8 @@ def create_group(req):
     # 组节点列表
     group_nodes: list = req_json.get('group_nodes')
     # 组消息发送规则
-    time_slot_recipient: list = req_json.get('time_slot_recipient')
-    if not (group_name and group_desc and group_leader):
+    rules: list = req_json.get('rules')
+    if not (group_name and group_leader and rules):
         return ResponseJson({'status': -1, 'msg': '参数不完整'})
     if Node_Group.objects.filter(name=group_name).exists():
         return ResponseJson({"status": 0, "msg": "节点组已存在"})
@@ -72,14 +75,35 @@ def create_group(req):
             Log.warning(f"节点{node}不存在")
             continue
         node_set_group(node, group.id)
-    rules = create_message_recipient_rules(time_slot_recipient)
+    rules = create_message_recipient_rules(rules)
     for rule in rules:
         group.time_slot_recipient.add(rule)
     return ResponseJson({'status': 1, 'msg': '节点组创建成功'})
 
 def del_group(req):
     """删除组"""
-
+    if req.method != 'POST':
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
+    group_id: int = req_json.get('group_id')
+    if not group_id:
+        return ResponseJson({'status': -1, 'msg': "参数不完整"}, 400)
+    if not node_group_id_exists(group_id):
+        return ResponseJson({'status': 0, 'msg': '节点组不存在'})
+    group = get_node_group_by_id(group_id)
+    nodes = get_group_nodes(group)
+    for node in nodes:
+        node.group = None
+        node.save()
+    for rule in group.time_slot_recipient.all():
+        group.time_slot_recipient.remove(rule)
+        rule.delete()
+    group.delete()
+    return ResponseJson({'status': 1, 'msg': '节点组删除成功'})
 
 def edit_group(req):
     """编辑组"""
