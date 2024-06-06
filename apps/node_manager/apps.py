@@ -16,9 +16,11 @@ class NodeManagerConfig(AppConfig):
     def ready(self):
         try:
             for i in apps.get_model("node_manager", "Node_BaseInfo").objects.all():
-                i.online = False
-                i.save()
-                cache.delete(f"node_{i.node.uuid}_usage_last_update_time")
+                if i.online:
+                    i.online = False
+                    i.save()
+                    cache.delete(f"node_{i.node.uuid}_usage_last_update_time")
+                    cache.delete(f"node_client_online_{i.node.uuid}")
         except Exception as e:
             Log.warning(f"重置节点在线状态失败!\n{e}")
         Log.success("Node Manager: Initialization complete")

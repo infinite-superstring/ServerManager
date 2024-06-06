@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+import time
 from uuid import UUID, uuid1
 
 from channels.exceptions import StopConsumer
@@ -27,7 +27,7 @@ class node_control(AsyncWebsocketConsumer):
         # 在建立连接时执行的操作
         self.__clientIP = self.scope["client"][0]
         if (not (self.scope["session"].get("userID") or self.scope["session"].get("user")) and
-            self.scope["session"].get("auth_method") != 'Node Auth'):
+                self.scope["session"].get("auth_method") != 'Node Auth'):
             Log.warning("非法访问：用户未登录")
             await self.close(0)
         if not self.scope['url_route']['kwargs']['node_uuid']:
@@ -77,6 +77,12 @@ class node_control(AsyncWebsocketConsumer):
                     case 'terminal_input':
                         if self.__connect_terminal:
                             await self.terminal_input(json_data['data'])
+
+                    case 'load_process_list':
+                        await self.__get_process_list()
+
+                    case 'process_list:heartbeat':
+                        await self.__update_process_list_heartbeat()
 
     @Log.catch
     async def send_json(self, data):
@@ -153,6 +159,14 @@ class node_control(AsyncWebsocketConsumer):
         })
 
     @Log.catch
+    async def show_process_list(self, event):
+        """展示进程列表"""
+        await self.send_json({
+            'action': 'show_process_list',
+            'data': event['process_list']
+        })
+
+    @Log.catch
     async def __connect_terminal(self):
         if self.__connect_terminal is True:
             raise RuntimeError("Terminal is already connected")
@@ -171,3 +185,22 @@ class node_control(AsyncWebsocketConsumer):
             'type': 'close_terminal',
             'sender': self.channel_name,
         })
+
+    @Log.catch
+    async def __get_process_list(self):
+        """获取进程列表"""
+        cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=3)
+        await self.channel_layer.group_send(f"NodeClient_{self.__node_uuid}", {
+            'type': 'start_get_process_list',
+            'sender': self.channel_name,
+        })
+        if cache.get(f"node_{self.__node_uuid}_process_list"):
+            await self.send_json({
+                'action': 'show_process_list',
+                'data': cache.get(f"node_{self.__node_uuid}_process_list")
+            })
+
+    @Log.catch
+    async def __update_process_list_heartbeat(self):
+        """更新进程列表 - 心跳"""
+        cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=3)

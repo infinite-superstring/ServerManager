@@ -117,7 +117,7 @@ def addUser(req: HttpRequest):
 # 删除用户
 @Log.catch
 def delUser(req: HttpRequest):
-    if req.method == 'POST':
+    if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
@@ -142,7 +142,8 @@ def delUser(req: HttpRequest):
         "User Manager(用户管理)",
         f"User Id: {query.id} User Name: {query.userName}")
     query.delete()
-    apps.get_app_config("user_manager").disable_user_list.remove(userId)
+    if userId in apps.get_app_config("user_manager").disable_user_list:
+        apps.get_app_config("user_manager").disable_user_list.remove(userId)
     return ResponseJson({"status": 1, "msg": "用户已删除"})
 
 
