@@ -67,6 +67,8 @@ urlpatterns = [
     path('api/admin/auditAndLogger/accessLog', auditAndLogger.getAccessLog),  # 获取访问日志（POST）
     path('api/admin/auditAndLogger/fileChangeLog', auditAndLogger.getFileChangeLog),  # 获取文件日志（POST）
     path('api/admin/auditAndLogger/systemLog', auditAndLogger.getSystemLog),  # 获取系统日志（POST）
+    path('api/admin/auditAndLogger/userSessionLog', auditAndLogger.get_user_session_log),  # 获取用户会话记录(POST)
+    path('api/admin/auditAndLogger/nodeSessionLog', auditAndLogger.get_node_session_log),  # 获取节点会话记录(POST)'
     # 系统设置
     path('api/admin/settings/getSettings', setting.getSetting),  # 获取设置信息
     path('api/admin/settings/editSettings', setting.editSetting),  # 编辑设置信息
@@ -82,6 +84,6 @@ urlpatterns = [
     path('api/message/deleteAll', message.delete_all),  # 删除所有消息(DELETE)
     path('api/message/readAll', message.read_all),  # 已读所有消息(PUT)
     path('api/message/deleteById', message.delete_by_id),  # 按ID删除消息(DELETE)
-    path('api/message/getUnread',message.get_unread),  # 获取未读消息数量
+    path('api/message/getUnread', message.get_unread),  # 获取未读消息数量
     # 静态页面
 ]

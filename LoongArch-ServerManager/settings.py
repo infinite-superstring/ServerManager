@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'apps.audit',  # 审计
     'apps.auth',  # 认证
     'apps.message',  # 消息
+    'apps.patrol',  # 巡检
     'django.contrib.contenttypes',
     # 'django.contrib.sessions',
     # 'django.contrib.staticfiles',

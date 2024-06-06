@@ -83,7 +83,7 @@ def get_email_content(msg: MessageBody, on_web_page=False):
     """
     封装消息到HTML
     """
-    with open('apps/message/templates/emailTemplates.html', 'r', encoding='utf-8') as f:
+    with open('apps/message/emailTemplates/emailTemplates.html', 'r', encoding='utf-8') as f:
         html = f.read()
         # 解析HTML
         html = html.replace('{{title}}', msg.title)

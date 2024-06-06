@@ -127,7 +127,7 @@ def get_unread(request):
     if request.method != "GET":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     write_access_log(request.session.get("userID"), getClientIp(request),
-                     f"Get unread message")
+                     f"获取未读消息数量")
     return ResponseJson({"status": 1, "msg": "获取成功",
                          "data": UserMessage.objects.filter(user_id=request.session.get("userID"), read=False).count()})
 
@@ -139,7 +139,7 @@ def delete_all(request):
     if request.method != "DELETE":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     write_access_log(request.session.get("userID"), getClientIp(request),
-                     f"Delete all read message")
+                     f"删除所有已读消息")
     UserMessage.objects.filter(user_id=request.session.get("userID"), read=True).delete()
     return ResponseJson({"status": 1, "msg": "删除成功"})
 
@@ -151,7 +151,7 @@ def read_all(request):
     if request.method != "PUT":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     write_access_log(request.session.get("userID"), getClientIp(request),
-                     f"Read all message")
+                     f"已读所有消息")
     UserMessage.objects.filter(user_id=request.session.get("userID"), read=False).update(read=True)
     return ResponseJson({"status": 1, "msg": "操作成功"})
 
@@ -165,4 +165,5 @@ def delete_by_id(request):
     write_access_log(request.session.get("userID"), getClientIp(request))
     msg_id = request.GET.get('id')
     UserMessage.objects.filter(user_id=request.session.get("userID"), message_id=msg_id).delete()
+
     return ResponseJson({"status": 1, "msg": "删除成功"})

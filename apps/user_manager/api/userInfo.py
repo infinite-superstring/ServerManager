@@ -60,7 +60,7 @@ def getUserInfo(req):
         User = get_user_by_id(userId)
         User_Permission = groupPermission(User.permission_id) if User.permission_id else None
 
-        write_access_log(userId, getClientIp(req), "Get User Info")
+        write_access_log(userId, getClientIp(req), "获取用户信息")
         return ResponseJson({"status": 1, "data": {
             "id": User.id,
             "userName": User.userName,

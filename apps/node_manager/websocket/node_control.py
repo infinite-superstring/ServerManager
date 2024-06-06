@@ -1,4 +1,6 @@
+import asyncio
 import json
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from uuid import UUID, uuid1
 
@@ -6,6 +8,7 @@ from channels.exceptions import StopConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
 
+from apps.audit.util.auditTools import write_node_session_log
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
@@ -46,6 +49,9 @@ class node_control(AsyncWebsocketConsumer):
         self.__client_UUID = str(uuid1())
         await self.accept()
         await self.__init_data()
+        user_id = self.scope["session"].get("userID")
+        loop = asyncio.get_event_loop()
+        loop.run_in_executor(None, write_node_session_log, self.__node.uuid, user_id, "连接", self.__clientIP)
 
     async def disconnect(self, close_code):
         if self.__node:
@@ -56,6 +62,9 @@ class node_control(AsyncWebsocketConsumer):
             )
         if self.__connect_terminal_flag:
             await self.__close_terminal()
+        user_id = self.scope["session"].get("userID")
+        loop = asyncio.get_event_loop()
+        loop.run_in_executor(None, write_node_session_log, self.__node.uuid, user_id, "断开", self.__clientIP)
         raise StopConsumer
 
     async def receive(self, text_data=None, bytes_data=None):

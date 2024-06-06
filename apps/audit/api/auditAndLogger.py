@@ -1,9 +1,11 @@
-from apps.audit.models import Audit, Access_Log, FileChange_Log, System_Log
+from apps.audit.models import Audit, Access_Log, FileChange_Log, System_Log, User_Session_Log, Node_Session_Log
+from apps.node_manager.models import Node
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.pageUtils import *
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
+
 
 def getAudit(req):
     if req.method == "POST":
@@ -39,6 +41,7 @@ def getAudit(req):
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
+
 def getAccessLog(req):
     if req.method == "POST":
         try:
@@ -71,6 +74,7 @@ def getAccessLog(req):
             })
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+
 
 def getFileChangeLog(req):
     if req.method == "POST":
@@ -105,6 +109,7 @@ def getFileChangeLog(req):
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
+
 def getSystemLog(req):
     if req.method == "POST":
         try:
@@ -137,3 +142,69 @@ def getSystemLog(req):
             })
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+
+
+def get_user_session_log(req):
+    if req.method != "POST":
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
+    else:
+        page = req_json.get("page", 1)
+        page_size = req_json.get("pageSize", 20)
+        log_list = User_Session_Log.objects.all()
+        page_content = get_page_content(log_list, page if page > 0 else 1, page_size)
+        page_max = get_max_page(log_list.count(), page_size)
+        result = []
+        for item in page_content:
+            result.append({
+                "id": item.get("id"),
+                "user": get_user_by_id(item.get("user_id")).userName if item.get("user_id") else None,
+                "ip": item.get("ip"),
+                "action": item.get("action"),
+                "time": item.get("time"),
+            })
+        return ResponseJson({
+            "status": 1,
+            "data": {
+                "maxPage": page_max,
+                "currentPage": page,
+                "PageContent": result
+            }})
+
+
+def get_node_session_log(req):
+    if req.method != "POST":
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
+    else:
+        page = req_json.get("page", 1)
+        page_size = req_json.get("pageSize", 20)
+        log_list = Node_Session_Log.objects.all()
+        page_content = get_page_content(log_list, page if page > 0 else 1, page_size)
+        page_max = get_max_page(log_list.count(), page_size)
+        result = []
+        for item in page_content:
+            node_name = Node.objects.get(uuid=item.get("node_id")).name
+            result.append({
+                "id": item.get("id"),
+                "user": get_user_by_id(item.get("user_id")).userName if item.get("user_id") else None,
+                "name": node_name,
+                "ip": item.get("ip"),
+                "action": item.get("action"),
+                "time": item.get("time"),
+            })
+        return ResponseJson({
+            "status": 1,
+            "data": {
+                "maxPage": page_max,
+                "currentPage": page,
+                "PageContent": result
+            }})

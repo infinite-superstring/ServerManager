@@ -1,6 +1,7 @@
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.logger import Log
-from apps.audit.models import Audit, Access_Log, FileChange_Log, System_Log
+from apps.audit.models import Audit, Access_Log, FileChange_Log, System_Log, User_Session_Log, Node_Session_Log
+
 
 # 写访问日志
 @Log.catch
@@ -47,3 +48,26 @@ def write_file_change_log(user_id: int, action: str, filepath: str):
     :param filepath: 目标
     """
     FileChange_Log.objects.create(user=get_user_by_id(user_id), action=action, filepath=filepath)
+
+
+@Log.catch
+def write_user_session_log(user_id: int, action: str, ip: str):
+    """
+    用户会话记录
+    :param user_id: 用户ID
+    :param action: 动作
+    :param ip: IP地址
+    """
+    User_Session_Log.objects.create(user=get_user_by_id(user_id), action=action, ip=ip)
+
+
+@Log.catch
+def write_node_session_log(node_uuid, user_id: int, action: str, ip: str):
+    """
+    节点会话记录
+    :param node_uuid: 节点
+    :param action: 动作
+    :param ip: IP地址
+    :param user_id : 用户ID
+    """
+    Node_Session_Log.objects.create(node_id=node_uuid, user_id=user_id, action=action, ip=ip)

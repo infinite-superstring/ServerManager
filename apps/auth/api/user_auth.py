@@ -6,7 +6,7 @@ from django.http import HttpRequest
 from util.Response import ResponseJson
 from util.Request import RequestLoadJson, getClientIp
 from util.logger import Log
-from apps.audit.util.auditTools import write_audit
+from apps.audit.util.auditTools import write_audit, write_user_session_log
 from apps.setting.entity.Config import config
 from apps.user_manager.util.userUtils import get_user_by_username, verify_username_and_password
 
@@ -35,16 +35,18 @@ def AuthLogin(req: HttpRequest):
     user.lastLoginIP = getClientIp(req)
     user.lastLoginTime = datetime.datetime.now()
     user.save()
-    write_audit(user.id, "Login", "User Auth", user.lastLoginIP)
+    write_audit(user.id, "用户登录", "用户认证", user.lastLoginIP)
+    write_user_session_log(user_id=user.id, action="登录", ip=user.lastLoginIP)
     return ResponseJson({"status": 1, "msg": "登录成功"})
-
-
 
 
 def AuthOutLog(req: HttpRequest):
     """用户登出"""
     if req.session.get("user"):
-        write_audit(req.session.get("userID"), "退出登录", "用户认证", getClientIp(req))
+        user_id = req.session.get("userID")
+        ip = getClientIp(req)
+        write_audit(user_id, "退出登录", "用户认证", ip)
+        write_user_session_log(user_id=user_id, action="退出", ip=ip)
         req.session.clear()
         return ResponseJson({"status": 1, "msg": "登出成功"})
     else:
