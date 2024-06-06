@@ -11,7 +11,10 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 import sys
+import logging
 from pathlib import Path
+from util.logger import Log
+from .logger import InterceptHandler
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -132,3 +135,44 @@ CACHES = {
     }
 }
 # SECURE_CONTENT_TYPE_NOSNIFF = False
+
+# 清空默认的Django日志配置
+LOGGING_CONFIG = None
+
+# 配置Django使用Loguru的日志处理器
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,  # 禁用所有存在的日志记录器
+    'handlers': {
+        'loguru': {
+            'class': 'LoongArch-ServerManager.logger.InterceptHandler',  # 将此路径替换为你定义的InterceptHandler的路径
+        },
+    },
+    'root': {
+        'handlers': ['loguru'],
+        'level': 'INFO',  # 仅输出INFO及以上级别的日志
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['loguru'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['loguru'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['loguru'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
+# 禁用所有默认的日志记录器
+for logger_name in logging.root.manager.loggerDict.keys():
+    logging.getLogger(logger_name).disabled = True
