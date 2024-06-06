@@ -4,6 +4,7 @@ from django.db.models import Q
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists
+from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists, node_name_exists
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from util.Request import RequestLoadJson
@@ -28,7 +29,7 @@ def add_node(req):
     node_group = req_json.get('node_group')
     if not node_name:
         return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
-    if Node.objects.filter(name=node_name).exists():
+    if node_name_exists(node_name):
         return ResponseJson({"status": 0, "msg": "节点已存在"})
     if node_group and not node_group_id_exists(node_group):
         return ResponseJson({'status': 0, 'msg': '节点组不存在'})
@@ -67,10 +68,10 @@ def del_node(req):
         Log.error(e)
         return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
     node_id = req_json.get('uuid')
-    if node_id is None:
+    if not node_id:
         return ResponseJson({"status": -1, "msg": "参数不完整"})
-    if Node.objects.filter(uuid=node_id).exists():
-        Node.objects.filter(uuid=node_id).delete()
+    if node_uuid_exists(node_id):
+        get_node_by_uuid(node_id).delete()
         return ResponseJson({"status": 1, "msg": "节点已删除"})
     else:
         return ResponseJson({"status": 0, "msg": "节点不存在"})
@@ -88,10 +89,10 @@ def reset_node_token(req):
     node_id = req_json.get('uuid')
     if node_id is None:
         return ResponseJson({"status": -1, "msg": "参数不完整"})
-    if not Node.objects.filter(uuid=node_id).exists():
+    if not node_uuid_exists(node_id):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
     token = secrets.token_hex(32)
-    node = Node.objects.get(uuid=node_id)
+    node = get_node_by_uuid(node_id)
     hashed_token, salt = encrypt_password(token)
     node.token_hash = hashed_token
     node.token_salt = salt
@@ -103,11 +104,6 @@ def reset_node_token(req):
             "token": token
         }
     })
-
-
-def edit_node(req):
-    """编辑节点"""
-
 
 def get_node_list(req):
     """获取节点列表"""
@@ -203,3 +199,73 @@ def get_base_node_list(req):
 
 def get_node_info(req):
     """获取节点信息"""
+    if req.method != 'POST':
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
+    node_id = req_json.get("uuid")
+    if node_id is None:
+        return ResponseJson({"status": -1, "msg": "参数不完整"})
+    if not node_uuid_exists(node_id):
+        return ResponseJson({"status": 0, "msg": "节点不存在"})
+    node = get_node_by_uuid(node_id)
+    return ResponseJson({
+        "status": 1,
+        "data": {
+            "node_uuid": node.uuid,
+            "node_name": node.name,
+            "node_desc": node.description,
+            "node_group": node.group.id if node.group else None,
+            "group_name": node.group.name if node.group else None,
+            "node_tags": list(get_node_tags(node.uuid)),
+        }
+    })
+
+def edit_node(req):
+    """编辑节点"""
+    if req.method != 'POST':
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
+    node_id = req_json.get("node_uuid")
+    node_name = req_json.get("node_name")
+    node_description = req_json.get("node_desc")
+    node_group = req_json.get("node_group")
+    node_tags = req_json.get("node_tags")
+    if node_id is None:
+        return ResponseJson({"status": -1, "msg": "参数不完整"})
+    if not node_uuid_exists(node_id):
+        return ResponseJson({"status": 0, "msg": "节点不存在"})
+    node = get_node_by_uuid(node_id)
+    if node_name is not None and node_name != node.name:
+        node.name = node_name
+    if node_description is not None and node_description != node.description:
+        node.description = node_description
+    if node_group is not None and node_group != node.group:
+        if node_group_id_exists(node_group):
+            node.group = get_node_group_by_id(node_group)
+        else:
+            Log.warning(f"Node Group Id: {node_group} is not exist")
+    if node_tags is not None and node_tags != list(get_node_tags(node.uuid)):
+        tags_obj = add_tags(node_tags)
+        node.tags.clear()
+        node.tags.add(*tags_obj)
+    node.save()
+    return ResponseJson({
+        "status": 1,
+        "msg": "节点信息保存成功",
+        "data": {
+            "uuid": node.uuid,
+            "name": node.name,
+            "description": node.description,
+            "group": node.group.id if node.group else None,
+            "group_name": node.group.name if node.group else None,
+            "tags": list(get_node_tags(node.uuid)),
+        }
+    })
