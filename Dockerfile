@@ -4,17 +4,19 @@ LABEL maintainer="fsj,yf"
 
 EXPOSE 80
 
+USER root
+
 RUN apt-get update && \
-    apt-get install -y wget git unzip nginx redis build-essential gdb lcov pkg-config \
-    libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev \
-    libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev \
+    apt-get install -y wget git curl vim unzip nginx redis build-essential gdb lcov pkg-config \
+    libbz2-dev libffi-dev libgdbm-dev libgdbm-compat-dev liblzma-dev libffi-dev python3-dev \
+    libncurses5-dev libreadline6-dev libsqlite3-dev libssl-dev build-essential libssl-dev \
     lzma lzma-dev tk-dev uuid-dev zlib1g-dev libmpdec-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir ServerManager-Panel
 
-COPY . /
+COPY . /ServerManager-Panel
 
 WORKDIR /ServerManager-Panel
 
@@ -42,41 +44,17 @@ RUN ARCH=$(uname -m) && \
         echo "Unsupported architecture" && exit 1; \
     fi
 
-echo "server {
-        listen        80;
-        server_name  localhost;
-        root   "/ServerManager-Panel/static";
-        location / {
-        try_files $uri $uri/ /index.html;
-    }
-	location /api/ {
-        	proxy_pass http://localhost:8000/api/;
-        	proxy_set_header Host $host;
-        	proxy_set_header X-Real-IP $remote_addr;
-        	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        	proxy_set_header X-Forwarded-Proto $scheme;
-   	 }
-	location /ws/ {
-        	proxy_pass http://localhost:8000/ws/;
-        	proxy_http_version 1.1;
-        	proxy_set_header Upgrade $http_upgrade;
-        	proxy_set_header Connection "Upgrade";
-        	proxy_set_header Host $host;
-        	proxy_set_header X-Real-IP $remote_addr;
-        	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        	proxy_set_header X-Forwarded-Proto $scheme;
-    	}
+RUN mv /ServerManager-Panel/nginx/default.conf /etc/nginx/conf.d/default.conf
 
-}
-" >/etc/nginx/conf.d/default.conf
-
-RUN redis-server
-
-RUN nginx
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 RUN pip3 install -r ./requirements.txt && \
-         python3 manage.py makemigrations && \
-         python3 manage.py migrate && \
-         python3 manage.py initial_data
+    python3 manage.py makemigrations && \
+    python3 manage.py migrate && \
+    python3 manage.py initial_data
 
-CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+RUN sed -i 's/user .*/user root;/' /etc/nginx/nginx.conf
+
+RUN chmod +x /ServerManager-Panel/run/run.sh
+
+CMD ["/bin/bash","/ServerManager-Panel/run/run.sh"]
