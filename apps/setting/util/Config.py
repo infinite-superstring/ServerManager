@@ -55,8 +55,12 @@ def dictToConfig(data: dict) -> configObj:
             item = data.get(key1)
             annotations = temp.__annotations__
             for key2 in item.keys():
-                if hasattr(temp, key2):
+                if not hasattr(temp, key2):
+                    continue
+                if type(item[key2]) == annotations.get(key2):
                     setattr(temp, key2, annotations.get(key2)(item.get(key2)))
+                else:
+                    Log.warning(f"{key1}.{key2} Value Type Error! {type(item[key2])} != {annotations.get(key2)}")
         else:
             continue
     return temp_config
