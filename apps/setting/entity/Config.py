@@ -16,6 +16,10 @@ class base:
     server_token: str = None
     # Session超时时间
     session_expiry: int = None
+    # 登录失败次数显示
+    login_error_count: int = None
+    # 限制登陆时长 分钟
+    login_expiry: int = None
 
 
 # 节点配置
