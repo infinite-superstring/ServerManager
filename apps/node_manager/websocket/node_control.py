@@ -76,23 +76,19 @@ class node_control(AsyncWebsocketConsumer):
                 print(json_data)
             except Exception as e:
                 Log.error(f"解析Websocket消息时发生错误：\n{e}")
-            else:
-                match json_data['action']:
-                    case 'connect_terminal':
-                        await self.__connect_terminal()
-
-                    case 'close_terminal':
-                        await self.__close_terminal()
-
-                    case 'terminal_input':
-                        if self.__connect_terminal:
-                            await self.terminal_input(json_data['data'])
-
-                    case 'load_process_list':
-                        await self.__get_process_list()
-
-                    case 'process_list:heartbeat':
-                        await self.__update_process_list_heartbeat()
+                return
+            match json_data['action']:
+                case 'connect_terminal':
+                    await self.__connect_terminal()
+                case 'close_terminal':
+                    await self.__close_terminal()
+                case 'terminal_input':
+                    if self.__connect_terminal:
+                        await self.terminal_input(json_data['data'])
+                case 'load_process_list':
+                    await self.__get_process_list()
+                case 'process_list:heartbeat':
+                    await self.__update_process_list_heartbeat()
 
     @Log.catch
     async def send_json(self, data):
@@ -199,7 +195,7 @@ class node_control(AsyncWebsocketConsumer):
     @Log.catch
     async def __get_process_list(self):
         """获取进程列表"""
-        cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=3)
+        cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=10)
         await self.channel_layer.group_send(f"NodeClient_{self.__node_uuid}", {
             'type': 'start_get_process_list',
             'sender': self.channel_name,
@@ -213,4 +209,4 @@ class node_control(AsyncWebsocketConsumer):
     @Log.catch
     async def __update_process_list_heartbeat(self):
         """更新进程列表 - 心跳"""
-        cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=3)
+        cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=10)

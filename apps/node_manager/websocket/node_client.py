@@ -97,46 +97,45 @@ class node_client(AsyncWebsocketConsumer):
                 json_data = json.loads(text_data)
             except Exception as e:
                 Log.error(f"解析Websocket消息时发生错误：\n{e}")
-            else:
-                action = json_data.get('action')
-                data = json_data.get('data')
-                match action:
-                    case 'upload_running_data':
-                        await self.__save_running_data(data)
-
-                    case 'refresh_node_info':
-                        await self.__refresh_node_info(data)
-
-                    case 'create_terminal_session':
-                        """创建tty会话返回"""
-                        index = UUID(data['index'])
-                        sid = data['uuid']
-                        Log.debug(self.__init_tty_queue)
-                        Log.debug(index)
-                        if index not in self.__init_tty_queue.keys():
-                            await self.send_json({
-                                'action': 'close_terminal',
-                                'data': {
-                                    'uuid': sid
-                                }
-                            })
-                        else:
-                            self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
-                            self.__init_tty_queue.pop(index)
-
-                    case "terminal_output":
-                        """终端内容输出"""
-                        channel = get_key_by_value(self.__tty_uuid, data['uuid'], True)
-                        if channel:
-                            await self.channel_layer.send(channel, {
-                                'type': "terminal_output",
-                                'output': data['output']
-                            })
-
-                    case 'ping':
-                        pass
-                    case _:
-                        Log.warning(f'Unknown action:{action}')
+                return
+            action = json_data.get('action')
+            print(action)
+            data = json_data.get('data')
+            match action:
+                case 'upload_running_data':
+                    await self.__save_running_data(data)
+                case 'refresh_node_info':
+                    await self.__refresh_node_info(data)
+                case 'create_terminal_session':
+                    """创建tty会话返回"""
+                    index = UUID(data['index'])
+                    sid = data['uuid']
+                    Log.debug(self.__init_tty_queue)
+                    Log.debug(index)
+                    if index not in self.__init_tty_queue.keys():
+                        await self.send_json({
+                            'action': 'close_terminal',
+                            'data': {
+                                'uuid': sid
+                            }
+                        })
+                    else:
+                        self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
+                        self.__init_tty_queue.pop(index)
+                case "terminal_output":
+                    """终端内容输出"""
+                    channel = get_key_by_value(self.__tty_uuid, data['uuid'], True)
+                    if channel:
+                        await self.channel_layer.send(channel, {
+                            'type': "terminal_output",
+                            'output': data['output']
+                        })
+                case "process_list":
+                    await self.__process_list(data)
+                case 'ping':
+                    pass
+                case _:
+                    Log.warning(f'Unknown action:{action}')
 
     @Log.catch
     async def send_json(self, data):
@@ -278,6 +277,14 @@ class node_client(AsyncWebsocketConsumer):
     @Log.catch
     async def __update_cache_timeout(self):
         cache.set(f"node_client_online_{self.__node.uuid}", self.channel_name, timeout=self.__config.node.heartbeat_time)
+
+    @Log.catch
+    async def __process_list(self, data):
+        cache.set(f"node_{self.__node_uuid}_process_list", data, 5)
+        await self.channel_layer.group_send(f"NodeControl_{self.__node_uuid}", {
+            'type': 'show_process_list',
+            'process_list': data
+        })
 
     @Log.catch
     def __check_get_process_list_activity(self):
