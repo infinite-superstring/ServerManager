@@ -19,15 +19,14 @@ class MessageClient(AsyncWebsocketConsumer):
         await self.send(json.dumps(data, cls=ComplexEncoder))
 
     async def connect(self):
-        userId = self.scope['session']['userID']
-        if not userId:
+        self.__userID = self.scope['session']['userID']
+        if not self.__userID:
             await self.close(0)
             return
-        __userId = userId
         # 校验通过
         await self.accept()
         await self.channel_layer.group_add(
-            f"message_client_{__userId}",
+            f"message_client_{self.__userID}",
             self.channel_name
         )
         await self.send_json({
