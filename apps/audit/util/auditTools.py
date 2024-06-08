@@ -62,12 +62,11 @@ def write_user_session_log(user_id: int, action: str, ip: str):
 
 
 @Log.catch
-def write_node_session_log(node_uuid, user_id: int, action: str, ip: str):
+def write_node_session_log(node_uuid,  action: str, ip: str):
     """
     节点会话记录
     :param node_uuid: 节点
     :param action: 动作
     :param ip: IP地址
-    :param user_id : 用户ID
     """
-    Node_Session_Log.objects.create(node_id=node_uuid, user_id=user_id, action=action, ip=ip)
+    Node_Session_Log.objects.create(node_id=node_uuid,  action=action, ip=ip)

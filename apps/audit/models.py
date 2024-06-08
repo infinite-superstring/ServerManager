@@ -72,7 +72,6 @@ class User_Session_Log(models.Model):
 class Node_Session_Log(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     ip = models.GenericIPAddressField("IP地址", null=True)
-    user = models.ForeignKey("user_manager.User", db_column="user", on_delete=models.DO_NOTHING)
     node = models.ForeignKey("node_manager.Node", db_column="node", on_delete=models.DO_NOTHING)
     action = models.CharField("动作", max_length=512, default="未知")
     time = models.DateTimeField("操作时间", auto_now_add=True)

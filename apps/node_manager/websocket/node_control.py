@@ -31,7 +31,7 @@ class node_control(AsyncWebsocketConsumer):
         # 在建立连接时执行的操作
         self.__clientIP = self.scope["client"][0]
         if (not (self.scope["session"].get("userID") or self.scope["session"].get("user")) and
-                self.scope["session"].get("auth_method") != 'Node Auth'):
+            self.scope["session"].get("auth_method") != 'Node Auth'):
             Log.warning("非法访问：用户未登录")
             await self.close(0)
         if not self.scope['url_route']['kwargs']['node_uuid']:
@@ -50,9 +50,6 @@ class node_control(AsyncWebsocketConsumer):
         self.__client_UUID = str(uuid1())
         await self.accept()
         await self.__init_data()
-        user_id = self.scope["session"].get("userID")
-        loop = asyncio.get_event_loop()
-        loop.run_in_executor(None, write_node_session_log, self.__node.uuid, user_id, "连接", self.__clientIP)
 
     async def disconnect(self, close_code):
         if self.__node:
@@ -63,9 +60,6 @@ class node_control(AsyncWebsocketConsumer):
             )
         if self.__connect_terminal_flag:
             await self.__close_terminal()
-        user_id = self.scope["session"].get("userID")
-        loop = asyncio.get_event_loop()
-        loop.run_in_executor(None, write_node_session_log, self.__node.uuid, user_id, "断开", self.__clientIP)
         raise StopConsumer
 
     async def receive(self, text_data=None, bytes_data=None):

@@ -11,6 +11,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.apps import apps
 from django.core.cache import cache
 
+from apps.audit.util.auditTools import write_node_session_log
 from apps.node_manager.models import Node, Node_BaseInfo
 from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database
 from apps.setting.entity import Config
@@ -70,6 +71,10 @@ class node_client(AsyncWebsocketConsumer):
             }
         })
         await self.__node_online()
+
+        clientIP = self.scope['client'][0]
+        loop = asyncio.get_event_loop()
+        loop.run_in_executor(None, write_node_session_log, self.__node.uuid, "上线", clientIP)
         Log.success(f"节点：{node_name}已连接")
 
     async def disconnect(self, close_code):
@@ -85,6 +90,9 @@ class node_client(AsyncWebsocketConsumer):
             cache.delete(f"node_{self.__node.uuid}_usage_last_update_time")
             cache.delete(f"node_client_online_{self.__node.uuid}")
             await self.__node_offline()
+            clientIP = self.scope['client'][0]
+            loop = asyncio.get_event_loop()
+            loop.run_in_executor(None, write_node_session_log, self.__node.uuid, "上线", clientIP)
             Log.success(f"节点：{node_name}已断开({close_code})")
         raise StopConsumer
 
