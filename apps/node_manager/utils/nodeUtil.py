@@ -6,19 +6,47 @@ from util.passwordUtils import verify_password
 from util.logger import Log
 
 
-def node_name_exists(node_name):
+def node_name_exists(node_name) -> bool:
+    """检查节点名是否存在"""
     return Node.objects.filter(name=node_name).exists()
 
-def node_uuid_exists(node_uuid):
+
+def node_uuid_exists(node_uuid) -> bool:
+    """检查节点UUID是否存在"""
     return Node.objects.filter(uuid=node_uuid).exists()
 
-def get_node_by_uuid(node_uuid):
+
+def get_node_by_uuid(node_uuid) -> Node:
+    """根据节点UUID获取节点实例"""
     return Node.objects.get(uuid=node_uuid)
 
-def get_node_by_name(node_name):
+
+def get_node_by_name(node_name) -> Node:
+    """根据节点名获取节点实例"""
     return Node.objects.get(name=node_name)
 
-def node_set_group(node_uuid, group_id):
+
+def get_node_count() -> int:
+    """获取节点数量"""
+    return Node.objects.count()
+
+
+def get_node_online_count() -> int:
+    """获取在线节点数量"""
+    return Node_BaseInfo.objects.filter(online=True).count()
+
+
+def get_node_offline_count() -> int:
+    """获取离线节点数量"""
+    return get_node_count() - Node_BaseInfo.objects.filter(online=True).count()
+
+
+def get_node_warning_count() -> int:
+    """获取正在告警的节点数量"""
+    return 0
+
+
+def node_set_group(node_uuid, group_id) -> bool:
     if not node_group_id_exists(group_id):
         Log.error('Node Group does not exist')
         return False
@@ -30,7 +58,8 @@ def node_set_group(node_uuid, group_id):
     node.save()
     return True
 
-def verify_node_token(node: Node, token):
+
+def verify_node_token(node: Node, token) -> bool:
     """
     验证节点Token
     """

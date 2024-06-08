@@ -27,6 +27,7 @@ import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
 import apps.user_manager.api.userInfo as userInfo
 import apps.message.api.message as message
+import apps.dashboard.api.dashboard as dashboard
 from apps.patrol.api import patrol
 
 urlpatterns = [
@@ -90,4 +91,9 @@ urlpatterns = [
     path('api/patrol/getList', patrol.getList),  # 获取巡检记录列表(POST)
     path('api/patrol/updateARecord', patrol.updateRecord),  # 更新巡检记录(PUT)
     path('api/patrol/deleteRecord', patrol.deleteRecord),  # 删除巡检记录(DELETE)
+    # 仪表盘
+    path('api/dashboard/getOverview', dashboard.get_overview),  # 获取总览(ALL)
+    path('api/dashboard/getNodeList', dashboard.get_node_list),  # 获取节点列表(POST)
+    path('api/dashboard/getStatistics', dashboard.get_statistics),  # 获取统计信息(GET)
+    path('api/dashboard/getTasks', dashboard.get_tasks),  # 获取任务列表(GET)
 ]

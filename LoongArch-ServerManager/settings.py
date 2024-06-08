@@ -42,8 +42,9 @@ INSTALLED_APPS = [
     'apps.user_manager',  # 用户管理器
     'apps.permission_manager',  # 权限管理器
     'apps.node_manager',  # 节点管理器
-    'apps.audit',  # 审计
     'apps.auth',  # 认证
+    'apps.dashboard',  # 仪表盘
+    'apps.audit',  # 审计
     'apps.message',  # 消息
     'apps.patrol',  # 巡检
     'django.contrib.contenttypes',
