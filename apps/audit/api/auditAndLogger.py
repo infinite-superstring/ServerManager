@@ -201,6 +201,7 @@ def get_node_session_log(req):
                 "action": item.get("action"),
                 "time": item.get("time"),
             })
+        result.sort(key=lambda x: x["time"])
         return ResponseJson({
             "status": 1,
             "data": {

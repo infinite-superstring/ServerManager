@@ -27,6 +27,7 @@ import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
 import apps.user_manager.api.userInfo as userInfo
 import apps.message.api.message as message
+from apps.patrol.api import patrol
 
 urlpatterns = [
     # 认证
@@ -46,7 +47,8 @@ urlpatterns = [
     path('api/admin/permissionManager/getPermissionList', permission_manager.getPermissionList),  # 获取权限列表（ALL）
     path('api/admin/permissionManager/addPermissionGroup', permission_manager.addPermissionGroup),  # 新增权限组列表 （POST）
     path('api/admin/permissionManager/delPermissionGroup', permission_manager.delPermissionGroup),  # 删除权限组 （POST）
-    path('api/admin/permissionManager/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),  # 获取权限组信息 （POST）
+    path('api/admin/permissionManager/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),
+    # 获取权限组信息 （POST）
     path('api/admin/permissionManager/setPermissionGroup', permission_manager.setPermissionGroup),  # 设置权限组 （POST）
     # 节点管理器
     path('api/node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
@@ -83,6 +85,9 @@ urlpatterns = [
     path('api/message/readAll', message.read_all),  # 已读所有消息(PUT)
     path('api/message/deleteById', message.delete_by_id),  # 按ID删除消息(DELETE)
     path('api/message/getUnread', message.get_unread),  # 获取未读消息数量
-    # 静态页面
-    path('api/message/getUnread',message.get_unread),  # 获取未读消息数量
+    # 巡检记录
+    path('api/patrol/addARecord', patrol.addARecord),  # 添加巡检记录(POST)
+    path('api/patrol/getList', patrol.getList),  # 获取巡检记录列表(POST)
+    path('api/patrol/updateARecord', patrol.updateRecord),  # 更新巡检记录(PUT)
+    path('api/patrol/deleteRecord', patrol.deleteRecord),  # 删除巡检记录(DELETE)
 ]

@@ -92,7 +92,7 @@ class node_client(AsyncWebsocketConsumer):
             await self.__node_offline()
             clientIP = self.scope['client'][0]
             loop = asyncio.get_event_loop()
-            loop.run_in_executor(None, write_node_session_log, self.__node.uuid, "上线", clientIP)
+            loop.run_in_executor(None, write_node_session_log, self.__node.uuid, "断开", clientIP)
             Log.success(f"节点：{node_name}已断开({close_code})")
         raise StopConsumer
 
