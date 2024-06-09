@@ -141,7 +141,9 @@ class node_client(AsyncWebsocketConsumer):
                 case "process_list":
                     await self.__process_list(data)
                 case 'ping':
-                    pass
+                    await self.send_json({
+                        'action': 'pong',
+                    })
                 case _:
                     Log.warning(f'Unknown action:{action}')
 
@@ -204,6 +206,20 @@ class node_client(AsyncWebsocketConsumer):
             self.__get_process_list = True
 
     @Log.catch
+    async def kill_process(self, event):
+        """结束进程"""
+        pid: int = event['pid']
+        tree_mode = event['tree_mode']
+        if pid:
+            await self.send_json({
+                'action': 'kill_process',
+                'data': {
+                    'pid': pid,
+                    'tree_mode': tree_mode
+                }
+            })
+
+    @Log.catch
     async def __refresh_node_info(self, data):
         """刷新节点信息"""
         self.__node_base_info.system = data['system']
@@ -216,6 +232,7 @@ class node_client(AsyncWebsocketConsumer):
         self.__node_base_info.processor_count = data['cpu']['processor']
         await update_disk_partition(self.__node, data['disks'])
         await self.__node_base_info.asave()
+        self.__node_base_info = self.__node_base_info
 
     async def __save_running_data(self, data):
         """上传节点数据"""
