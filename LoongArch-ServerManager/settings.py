@@ -48,8 +48,6 @@ INSTALLED_APPS = [
     'apps.message',  # 消息
     'apps.patrol',  # 巡检
     'django.contrib.contenttypes',
-    # 'django.contrib.sessions',
-    # 'django.contrib.staticfiles',
 ]
 
 MIDDLEWARE = [
@@ -60,7 +58,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'middleware.AuthMiddleware.AuthMiddleware',
-    'middleware.PermissionsMiddleware.PermissionsMiddleware'
+    'middleware.PermissionsMiddleware.PermissionsMiddleware',
+    'middleware.APICallCounterMiddleware.APICallCounterMiddleware',
 ]
 
 ROOT_URLCONF = 'LoongArch-ServerManager.urls'
