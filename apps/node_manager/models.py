@@ -81,8 +81,8 @@ class Node_MessageRecipientRule(models.Model):
     friday = models.BooleanField("星期五", null=False)
     saturday = models.BooleanField("星期六", null=False)
     sunday = models.BooleanField("星期日", null=False)
-    start_time = models.CharField("开始时间", max_length=8, null=False)
-    end_time = models.CharField("结束时间", max_length=8, null=False)
+    start_time = models.TimeField("开始时间", null=False)
+    end_time = models.TimeField("结束时间", null=False)
     recipients = models.ManyToManyField("user_manager.User", related_name='node_message_recipients_mapping')
 
     class Meta:
