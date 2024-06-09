@@ -7,6 +7,8 @@ from django.test import TestCase
 from apps.message.api.message import get_message_list
 from apps.message.models import Message, MessageBody
 from apps.message.utils.messageUtil import send
+from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
+from apps.node_manager.utils.groupUtil import create_message_recipient_rule, create_message_recipient_rules
 from apps.user_manager.models import User
 from util.passwordUtils import encrypt_password
 from apps.message.webSockets.message_client import MessageClient
@@ -25,4 +27,48 @@ class MessageTest(TestCase):
         print(salt)
 
     def test2(self):
-        pass
+        for i in range(10):
+            password, salt = encrypt_password("123456")
+            User.objects.create(
+                userName=str(i+1) + "test",
+                realName=str(i) + "test",
+                email=str(i) + "test@test.com",
+                password=password,
+                passwordSalt=salt)
+        # Node_MessageRecipientRule.objects.create(
+        #     monday=True,
+        #     tuesday=True,
+        #     wednesday=True,
+        #     thursday=True,
+        #     friday=True,
+        #     saturday=True,
+        #     sunday=True,
+        #     start_time="08:00",
+        #     end_time="18:00",
+        #     recipients=User.objects.filter(id__in=[1, 2, 3, 4, 5]))
+        # ng = Node_Group.objects.create(name="test", description="test", leader=User.objects.get(id=1))
+        # ng.time_slot_recipient.add(Node_MessageRecipientRule.objects.get(id=1))
+        # ng = create_message_recipient_rule(
+        #     week=['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', ],
+        #     start_time="08:00",
+        #     end_time="18:00",
+        #     users=User.objects.filter(id__in=[1, 2, 3, 4, 5])
+        # )
+        ng = Node_Group.objects.create(name="test", description="test", leader=User.objects.get(id=1))
+        rules = create_message_recipient_rules(
+            data=[
+                {
+                    "week": ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', ],
+                    "start_time": "08:00",
+                    "end_time": "18:00",
+                    "users": [1, 2, 3, 4, 5]
+                },
+                {
+                    "week": ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', ],
+                    "start_time": "08:00",
+                    "end_time": "18:00",
+                    "users": [3, 4, 5, 9, 10]
+                }
+            ])
+        ng.time_slot_recipient.add(*rules)
+        send(MessageBody(title="test", content="test", name="test", node_groups=Node_Group.objects.filter()))

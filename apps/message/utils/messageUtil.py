@@ -6,6 +6,8 @@ from channels.layers import get_channel_layer
 from django.db.models import QuerySet
 
 from apps.audit.util.auditTools import write_system_log
+from apps.node_manager.models import Node_Group
+from apps.node_manager.utils.groupUtil import get_group_nodes
 from apps.user_manager.models import User
 from django.apps import apps
 from apps.message.models import MessageBody, UserMessage
@@ -55,10 +57,9 @@ def _message_to_database(msg: MessageBody):
     """
     根据消息对象将消息存入数据库，并返回用户
     """
-
-    if not msg.server_groups and not msg.permission and not msg.recipient:
+    if not msg.node_groups and not msg.permission and not msg.recipient:
         # 没指定发消息方式，不发送
-        return {}
+        return None
 
     message_obj = Message.objects.create(title=msg.title, content=msg.content, create_time=datetime.now())
 
@@ -70,10 +71,21 @@ def _message_to_database(msg: MessageBody):
     # 指定用户
     if msg.recipient:
         return create_recipient(us=msg.recipient)
-    # 指定服务器组
-    if msg.server_groups:
-        return {}
-    # 指定权限组
+    # 指定节点组组
+    if msg.node_groups:
+        us_list = User.objects.none()
+        for node_group in msg.node_groups:
+            tsr = node_group.time_slot_recipient.all()
+            for t in tsr:
+                recipients = t.recipients.all()
+                us_list = us_list | recipients
+        if us_list is None:
+            return
+        # 去重
+        us_list = us_list.distinct()
+        return create_recipient(us=us_list)
+
+        # 指定权限组
     if msg.permission:
         users = User.objects.filter(permission_id__in=[p.id for p in msg.permission])
         return create_recipient(us=users)

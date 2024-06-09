@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import QuerySet
 
+from apps.node_manager.models import Node_Group
 from apps.permission_manager.models import Permission_groups
 from apps.user_manager.models import User
 
@@ -11,7 +12,7 @@ class MessageBody:
     content: str = None
     name: str = None
     recipient: QuerySet[User] = None
-    server_groups: QuerySet = None
+    node_groups: QuerySet[Node_Group] = None
     permission: QuerySet[Permission_groups] = None
 
     def __init__(
@@ -20,7 +21,7 @@ class MessageBody:
             content=None,
             name=None,
             recipient: QuerySet[User] = None,
-            server_groups: QuerySet = None,
+            node_groups: QuerySet[Node_Group] = None,
             permission: QuerySet[Permission_groups] = None):
         """
         封装消息信息
@@ -33,11 +34,11 @@ class MessageBody:
         self.content = content
         self.name = name
 
-        count = sum(1 for arg in [recipient, server_groups, permission] if arg is not None)
+        count = sum(1 for arg in [recipient, node_groups, permission] if arg is not None)
         if count != 1:
             raise ValueError("请指定一个发件方式")
         self.recipient = recipient
-        self.server_groups = server_groups
+        self.node_groups = node_groups
         self.permission = permission
 
 

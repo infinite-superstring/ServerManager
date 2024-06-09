@@ -18,7 +18,7 @@ def getAudit(req):
             PageContent = []
             page = req_json.get("page", 1)
             pageSize = req_json.get("pageSize", 20)
-            result = Audit.objects.filter()
+            result = Audit.objects.filter().order_by("-time")
             pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
             if pageQuery:
                 for item in pageQuery:
@@ -53,7 +53,8 @@ def getAccessLog(req):
             PageContent = []
             page = req_json.get("page", 1)
             pageSize = req_json.get("pageSize", 20)
-            result = Access_Log.objects.filter()
+            # 按时间排序查询
+            result = Access_Log.objects.filter().order_by("-time")
             pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
             if pageQuery:
                 for item in pageQuery:
@@ -87,7 +88,7 @@ def getFileChangeLog(req):
             PageContent = []
             page = req_json.get("page", 1)
             pageSize = req_json.get("pageSize", 20)
-            result = FileChange_Log.objects.filter()
+            result = FileChange_Log.objects.filter().order_by("-time")
             pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
             if pageQuery:
                 for item in pageQuery:
@@ -121,7 +122,7 @@ def getSystemLog(req):
             PageContent = []
             page = req_json.get("page", 1)
             pageSize = req_json.get("pageSize", 20)
-            result = System_Log.objects.filter()
+            result = System_Log.objects.filter().order_by("-time")
             pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
             if pageQuery:
                 for item in pageQuery:
@@ -155,7 +156,7 @@ def get_user_session_log(req):
     else:
         page = req_json.get("page", 1)
         page_size = req_json.get("pageSize", 20)
-        log_list = User_Session_Log.objects.all()
+        log_list = User_Session_Log.objects.filter().order_by("-time")
         page_content = get_page_content(log_list, page if page > 0 else 1, page_size)
         page_max = get_max_page(log_list.count(), page_size)
         result = []
@@ -187,7 +188,7 @@ def get_node_session_log(req):
     else:
         page = req_json.get("page", 1)
         page_size = req_json.get("pageSize", 20)
-        log_list = Node_Session_Log.objects.all()
+        log_list = Node_Session_Log.objects.filter().order_by("-time")
         page_content = get_page_content(log_list, page if page > 0 else 1, page_size)
         page_max = get_max_page(log_list.count(), page_size)
         result = []
