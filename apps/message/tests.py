@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -30,7 +30,7 @@ class MessageTest(TestCase):
         for i in range(10):
             password, salt = encrypt_password("123456")
             User.objects.create(
-                userName=str(i+1) + "test",
+                userName=str(i + 1) + "test",
                 realName=str(i) + "test",
                 email=str(i) + "test@test.com",
                 password=password,
@@ -54,21 +54,18 @@ class MessageTest(TestCase):
         #     end_time="18:00",
         #     users=User.objects.filter(id__in=[1, 2, 3, 4, 5])
         # )
-        ng = Node_Group.objects.create(name="test", description="test", leader=User.objects.get(id=1))
+        ng = Node_Group.objects.create(name="test", description="test", leader=User.objects.get(id=6))
         rules = create_message_recipient_rules(
             data=[
                 {
-                    "week": ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', ],
-                    "start_time": "08:00",
-                    "end_time": "18:00",
+                    "week": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+                    "start_time": "3:00",
+                    "end_time": "3:13",
                     "users": [1, 2, 3, 4, 5]
                 },
-                {
-                    "week": ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', ],
-                    "start_time": "08:00",
-                    "end_time": "18:00",
-                    "users": [3, 4, 5, 9, 10]
-                }
             ])
         ng.time_slot_recipient.add(*rules)
+        now = datetime.now()
+        current_time = time(now.hour, now.minute)
+        a = Node_MessageRecipientRule.objects.filter(start_time__lte=current_time, end_time__gte=current_time)
         send(MessageBody(title="test", content="test", name="test", node_groups=Node_Group.objects.filter()))

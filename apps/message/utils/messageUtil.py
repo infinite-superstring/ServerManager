@@ -6,7 +6,7 @@ from channels.layers import get_channel_layer
 from django.db.models import QuerySet
 
 from apps.audit.util.auditTools import write_system_log
-from apps.node_manager.models import Node_Group
+from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
 from apps.node_manager.utils.groupUtil import get_group_nodes
 from apps.user_manager.models import User
 from django.apps import apps
@@ -53,6 +53,30 @@ def __get_all_user_contact_way(way: str) -> list:
         return [user.phone for user in User.objects.all()]
 
 
+def get_week():
+    weekday = datetime.now().weekday()  # 使用timezone.now()获取带时区意识的当前时间
+    days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    return days[weekday]
+
+
+def _get_should_reception(node_group) -> QuerySet[Node_MessageRecipientRule]:
+    """
+    获取 现在时间段应该接收消息的用户
+    """
+    now = datetime.now()
+    hour, minute = now.hour, now.minute
+    current_time = f"{hour:02d}:{minute:02d}"
+    curr_week = get_week()
+    conditions = {
+        f'{curr_week}': True,
+        'start_time__lte': current_time,
+        'end_time__gte': current_time
+    }
+    should_receptions = node_group.time_slot_recipient.filter(**conditions)
+    should_receptions = should_receptions.distinct()
+    return should_receptions
+
+
 def _message_to_database(msg: MessageBody):
     """
     根据消息对象将消息存入数据库，并返回用户
@@ -75,7 +99,9 @@ def _message_to_database(msg: MessageBody):
     if msg.node_groups:
         us_list = User.objects.none()
         for node_group in msg.node_groups:
-            tsr = node_group.time_slot_recipient.all()
+            us_list = us_list | User.objects.filter(id=node_group.leader.id)
+            # 节点接收人
+            tsr = _get_should_reception(node_group)
             for t in tsr:
                 recipients = t.recipients.all()
                 us_list = us_list | recipients
