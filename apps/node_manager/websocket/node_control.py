@@ -3,6 +3,9 @@ import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+
+from asgiref.sync import sync_to_async
+from django.utils import timezone
 from uuid import UUID, uuid1
 
 from channels.exceptions import StopConsumer
@@ -11,6 +14,7 @@ from django.core.cache import cache
 
 from apps.audit.util.auditTools import write_node_session_log
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
+from apps.node_manager.utils.nodeUtil import read_performance_record
 from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
 from util.jsonEncoder import ComplexEncoder
@@ -31,7 +35,7 @@ class node_control(AsyncWebsocketConsumer):
         # 在建立连接时执行的操作
         self.__clientIP = self.scope["client"][0]
         if (not (self.scope["session"].get("userID") or self.scope["session"].get("user")) and
-            self.scope["session"].get("auth_method") != 'Node Auth'):
+                self.scope["session"].get("auth_method") != 'Node Auth'):
             Log.warning("非法访问：用户未登录")
             await self.close(0)
         if not self.scope['url_route']['kwargs']['node_uuid']:
@@ -50,6 +54,7 @@ class node_control(AsyncWebsocketConsumer):
         self.__client_UUID = str(uuid1())
         await self.accept()
         await self.__init_data()
+        await self.__load_performance_record()
 
     async def disconnect(self, close_code):
         if self.__node:
@@ -83,6 +88,14 @@ class node_control(AsyncWebsocketConsumer):
                     await self.__get_process_list()
                 case 'process_list:heartbeat':
                     await self.__update_process_list_heartbeat()
+                case "kill_process":
+                    if json_data['data'].get('pid'):
+                        await self.__kill_process(json_data['data'].get('pid'))
+                case "load_performance_record":
+                    pass
+                case "kill_process_tree":
+                    if json_data['data'].get('pid'):
+                        await self.__kill_process(json_data['data'].get('pid'), True)
 
     @Log.catch
     async def send_json(self, data):
@@ -204,3 +217,54 @@ class node_control(AsyncWebsocketConsumer):
     async def __update_process_list_heartbeat(self):
         """更新进程列表 - 心跳"""
         cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=10)
+
+    @Log.catch
+    async def __kill_process(self, pid, tree_mode: bool = False):
+        await self.channel_layer.group_send(f"NodeClient_{self.__node_uuid}", {
+            'type': 'kill_process',
+            'pid': pid,
+            'tree_mode': tree_mode
+        })
+
+    @Log.catch
+    async def __load_performance_record(self):
+        print(timezone.now())
+        performance_record = await read_performance_record(self.__node, str(timezone.now() - timezone.timedelta(days=1)), str(timezone.now()))
+        temp = []
+        async for record in performance_record:
+            system_loadavg = await sync_to_async(lambda: record.system_loadavg)()
+            item = {
+                "timestamp": record.timestamp,
+                "cpu_usage": record.cpu_usage,
+                "cpu_cores_usage": [],
+                "memory_used": record.memory_used,
+                "disk_io_read_bytes": record.disk_io_read_bytes,
+                "disk_io_write_bytes": record.disk_io_write_bytes,
+                "network_usage": [],
+                "system_loadavg": {
+                    "one_minute": system_loadavg.one_minute,
+                    "five_minute": system_loadavg.five_minute,
+                    "fifteen_minute": system_loadavg.fifteen_minute,
+                }
+            }
+            async for core in record.cpu_core_usage.all():
+                item["cpu_cores_usage"].append({
+                    "core": core.core_index,
+                    "usage": core.usage,
+                })
+            async for network_port in record.network_usage.all():
+                item["network_usage"].append({
+                    "name": network_port.port_name,
+                    "bytes_sent": network_port.bytes_sent,
+                    "bytes_recv": network_port.bytes_recv,
+                })
+            temp.append(item)
+        return await self.send_json({
+            'action': 'load_performance_record',
+            'data': {
+                "model": "all",
+                "start_time": str(timezone.now() - timezone.timedelta(days=1)),
+                "end_time": str(timezone.now()),
+                "usage_data": temp
+            }
+        })
