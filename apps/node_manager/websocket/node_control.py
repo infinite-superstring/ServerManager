@@ -1,8 +1,5 @@
-import asyncio
 import json
 import time
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
 
 from asgiref.sync import sync_to_async
 from django.utils import timezone
@@ -12,7 +9,6 @@ from channels.exceptions import StopConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
 
-from apps.audit.util.auditTools import write_node_session_log
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.nodeUtil import read_performance_record
 from apps.node_manager.utils.tagUtil import aget_node_tags
@@ -54,7 +50,6 @@ class node_control(AsyncWebsocketConsumer):
         self.__client_UUID = str(uuid1())
         await self.accept()
         await self.__init_data()
-        await self.__load_performance_record()
 
     async def disconnect(self, close_code):
         if self.__node:
@@ -92,7 +87,14 @@ class node_control(AsyncWebsocketConsumer):
                     if json_data['data'].get('pid'):
                         await self.__kill_process(json_data['data'].get('pid'))
                 case "load_performance_record":
-                    pass
+                    await self.__load_performance_record()
+                case "get_performance_record":
+                    data = json_data['data']
+                    start_time = data.get('start_time')
+                    end_time = data.get('end_time')
+                    device = data.get('device', "_all")
+                    if start_time and end_time:
+                        await self.__load_performance_record(start_time, end_time, device)
                 case "kill_process_tree":
                     if json_data['data'].get('pid'):
                         await self.__kill_process(json_data['data'].get('pid'), True)
@@ -227,36 +229,52 @@ class node_control(AsyncWebsocketConsumer):
         })
 
     @Log.catch
-    async def __load_performance_record(self):
-        print(timezone.now())
-        performance_record = await read_performance_record(self.__node, str(timezone.now() - timezone.timedelta(days=1)), str(timezone.now()))
+    async def __load_performance_record(self, start_time=None, end_time=None, device="_all"):
+        start_time = str(timezone.now() - timezone.timedelta(days=1)) if not start_time else start_time
+        end_time = str(timezone.now()) if not end_time else end_time
+        performance_record = await read_performance_record(self.__node, start_time, end_time)
         temp = []
         async for record in performance_record:
-            system_loadavg = await sync_to_async(lambda: record.system_loadavg)()
             item = {
                 "timestamp": record.timestamp,
-                "cpu_usage": record.cpu_usage,
-                "cpu_cores_usage": [],
-                "memory_used": record.memory_used,
-                "disk_io_read_bytes": record.disk_io_read_bytes,
-                "disk_io_write_bytes": record.disk_io_write_bytes,
-                "network_usage": [],
-                "system_loadavg": {
-                    "one_minute": system_loadavg.one_minute,
-                    "five_minute": system_loadavg.five_minute,
-                    "fifteen_minute": system_loadavg.fifteen_minute,
-                }
             }
-            async for core in record.cpu_core_usage.all():
-                item["cpu_cores_usage"].append({
-                    "core": core.core_index,
-                    "usage": core.usage,
+            if device == "_all" or device == "cpu":
+                item.update({
+                    "cpu_usage": record.cpu_usage,
+                    "cpu_cores_usage": [],
                 })
-            async for network_port in record.network_usage.all():
-                item["network_usage"].append({
-                    "name": network_port.port_name,
-                    "bytes_sent": network_port.bytes_sent,
-                    "bytes_recv": network_port.bytes_recv,
+                async for core in record.cpu_core_usage.all():
+                    item["cpu_cores_usage"].append({
+                        "core": core.core_index,
+                        "usage": core.usage,
+                    })
+            if device == "_all" or device == "memory":
+                item.update({
+                    "memory_used": record.memory_used,
+                })
+            if device == "_all" or device == "disk_io":
+                item.update({
+                    "disk_io_read_bytes": record.disk_io_read_bytes,
+                    "disk_io_write_bytes": record.disk_io_write_bytes,
+                })
+            if device == "_all" or device == "network":
+                item.update({
+                    "network_usage": [],
+                })
+                async for network_port in record.network_usage.all():
+                    item["network_usage"].append({
+                        "name": network_port.port_name,
+                        "bytes_sent": network_port.bytes_sent,
+                        "bytes_recv": network_port.bytes_recv,
+                    })
+            if device == "_all" or device == "loadavg":
+                system_loadavg = await sync_to_async(lambda: record.system_loadavg)()
+                item.update({
+                    "system_loadavg": {
+                        "one_minute": system_loadavg.one_minute,
+                        "five_minute": system_loadavg.five_minute,
+                        "fifteen_minute": system_loadavg.fifteen_minute,
+                    }
                 })
             temp.append(item)
         return await self.send_json({
