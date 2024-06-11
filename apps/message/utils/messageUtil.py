@@ -1,23 +1,19 @@
+import smtplib
 from datetime import datetime
-from typing import Tuple, List, Any
-
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.db.models import QuerySet
-
-from apps.audit.util.auditTools import write_system_log
-from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
-from apps.node_manager.utils.groupUtil import get_group_nodes
-from apps.user_manager.models import User
-from django.apps import apps
-from apps.message.models import MessageBody, UserMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from apps.user_manager.util.userUtils import get_user_by_id
-from util.logger import Log
-import smtplib
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.apps import apps
+from django.db.models import QuerySet
+
+from apps.audit.util.auditTools import write_system_log
 from apps.message.models import Message
+from apps.message.models import MessageBody, UserMessage
+from apps.node_manager.models import Node_MessageRecipientRule
+from apps.user_manager.models import User
+from util.logger import Log
 
 """
 email 方法
@@ -27,6 +23,9 @@ EMAIL_METHOD = 'email'
 SMS 方法
 """
 SMS_METHOD = 'SMS'
+
+# 拿到消息配置
+message_config = apps.get_app_config('setting').get_config().message
 
 
 def byUserGetUsername(user: User) -> str:
@@ -89,7 +88,9 @@ def _message_to_database(msg: MessageBody):
 
     def create_recipient(us: QuerySet[User]):
         for u in us:
-            UserMessage.objects.create(user=u, message=message_obj, read=False)
+            # 只发送电子邮件则不需要存储至数据库
+            if msg.email_sms_only:
+                UserMessage.objects.create(user=u, message=message_obj, read=False)
         return us
 
     # 指定用户
@@ -135,49 +136,55 @@ def get_email_content(msg: MessageBody, on_web_page=False):
         return html
 
 
+def send_email(mes_obj: MessageBody, users: QuerySet[User]):
+    """
+    发送邮件
+    """
+    # 如果配置ssl连接 则开启 ssl连接
+    if message_config.email_ssl:
+        # 创建 stp服务器连接
+        stp = smtplib.SMTP_SSL(host=message_config.email_host, port=message_config.email_port, timeout=3)
+    else:
+        stp = smtplib.SMTP(host=message_config.email_host, port=message_config.email_port, timeout=3)
+
+    # 登录到服务器
+    stp.login(message_config.email_username, message_config.email_password)
+
+    for u in users:
+        # 创建邮件实例
+        mes_obj.recipient = u.email
+        mes_obj.name = byUserGetUsername(user=u)
+        content = get_email_content(mes_obj)  # 封装邮件内容
+        email = MIMEMultipart()
+        email.set_charset("UTF-8")
+        #  封装邮件
+        email.attach(MIMEText(content, 'html', 'utf-8'))
+        # TODO 测试使用
+        email['Subject'] = "龙芯测试平台消息通知" + mes_obj.title
+        email['From'] = message_config.email_from_address
+        email['To'] = u.email
+        # 发送邮件
+        stp.send_message(email)
+    stp.quit()
+
+
 def send(mes_obj: MessageBody):
     """
     发送消息
+    返回用户列表
     """
-    # 拿到消息配置
-    message_config = apps.get_app_config('setting').get_config().message
 
     # 发送邮件
     if message_config.message_send_type == EMAIL_METHOD:
         try:
-
             # 邮件写到数据库
             users: QuerySet[User] = _message_to_database(mes_obj)
             if not users:
                 return
-
-            # 如果配置ssl连接 则开启 ssl连接
-            if message_config.email_ssl:
-                # 创建 stp服务器连接
-                stp = smtplib.SMTP_SSL(host=message_config.email_host, port=message_config.email_port, timeout=3)
-            else:
-                stp = smtplib.SMTP(host=message_config.email_host, port=message_config.email_port, timeout=3)
-
-            # 登录到服务器
-            stp.login(message_config.email_username, message_config.email_password)
-
-            for u in users:
-                # 创建邮件实例
-                mes_obj.recipient = u.email
-                mes_obj.name = byUserGetUsername(user=u)
-                content = get_email_content(mes_obj)  # 封装邮件内容
-                email = MIMEMultipart()
-                email.set_charset("UTF-8")
-                #  封装邮件
-                email.attach(MIMEText(content, 'html', 'utf-8'))
-                # TODO 测试使用
-                email['Subject'] = "龙芯测试平台消息通知" + mes_obj.title
-                email['From'] = message_config.email_from_address
-                email['To'] = u.email
-                # 发送邮件
-                stp.send_message(email)
-
-            stp.quit()
+            # 执行发送
+            send_email(mes_obj=mes_obj, users=users)
+            if mes_obj.email_sms_only:
+                return None
             return users
         except smtplib.SMTPException as e:
             Log.error(e)
@@ -195,7 +202,7 @@ def send_ws(user: QuerySet[User]):
     """
     向客户端发送套接字
     """
-    if not user:
+    if not user or user is None:
         return
     for u in user:
         # 获取未读消息数量
