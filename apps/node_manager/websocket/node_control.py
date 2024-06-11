@@ -230,8 +230,8 @@ class node_control(AsyncWebsocketConsumer):
 
     @Log.catch
     async def __load_performance_record(self, start_time=None, end_time=None, device="_all"):
-        start_time = str(timezone.now() - timezone.timedelta(days=1)) if not start_time else start_time
-        end_time = str(timezone.now()) if not end_time else end_time
+        start_time = (timezone.now() - timezone.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S') if not start_time else start_time
+        end_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S') if not end_time else end_time
         performance_record = await read_performance_record(self.__node, start_time, end_time)
         temp = []
         async for record in performance_record:
@@ -250,6 +250,7 @@ class node_control(AsyncWebsocketConsumer):
                     })
             if device == "_all" or device == "memory":
                 item.update({
+                    "memory_total": self.__node_base_info.memory_total,
                     "memory_used": record.memory_used,
                 })
             if device == "_all" or device == "disk_io":
@@ -271,6 +272,7 @@ class node_control(AsyncWebsocketConsumer):
                 system_loadavg = await sync_to_async(lambda: record.system_loadavg)()
                 item.update({
                     "system_loadavg": {
+                        "processor_count": self.__node_base_info.processor_count,
                         "one_minute": system_loadavg.one_minute,
                         "five_minute": system_loadavg.five_minute,
                         "fifteen_minute": system_loadavg.fifteen_minute,
@@ -280,9 +282,9 @@ class node_control(AsyncWebsocketConsumer):
         return await self.send_json({
             'action': 'load_performance_record',
             'data': {
-                "model": "all",
-                "start_time": str(timezone.now() - timezone.timedelta(days=1)),
-                "end_time": str(timezone.now()),
+                "device": device,
+                "start_time": start_time,
+                "end_time": end_time,
                 "usage_data": temp
             }
         })
