@@ -14,6 +14,7 @@ class MessageBody:
     recipient: QuerySet[User] = None
     node_groups: QuerySet[Node_Group] = None
     permission: QuerySet[Permission_groups] = None
+    email_sms_only: bool = False
 
     def __init__(
             self,
@@ -22,17 +23,20 @@ class MessageBody:
             name=None,
             recipient: QuerySet[User] = None,
             node_groups: QuerySet[Node_Group] = None,
-            permission: QuerySet[Permission_groups] = None):
+            permission: QuerySet[Permission_groups] = None,
+            email_sms_only: bool = False):
         """
         封装消息信息
         recipient 用户列表
         server_groups 服务器群
         permission_id 权限组
+        email_sms_only 只发送电子邮件 or 短信
         指定其中一个发件方式
         """
         self.title = title
         self.content = content
         self.name = name
+        self.email_sms_only = email_sms_only
 
         count = sum(1 for arg in [recipient, node_groups, permission] if arg is not None)
         if count != 1:
