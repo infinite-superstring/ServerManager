@@ -126,12 +126,40 @@ class Command(BaseCommand):
 
         defaultSetting = [
             {
+                'Settings': "base.website_name",
+                'value': 'LoongArch-ServerManage'
+            },
+            {
+                'Settings': "base.website_url",
+                'value': ""
+            },
+            {
                 'Settings': "base.server_token",
                 'value': secrets.token_hex(32)
             },
             {
                 'Settings': "base.session_expiry",
                 'value': 0
+            },
+            {
+                'Settings': "security.auth_code_resend_interval",
+                'value': 60
+            },
+            {
+                'Settings': "security.auth_code_timeout",
+                'value': 5
+            },
+            {
+                'Settings': "security.auth_code_length",
+                'value': 8
+            },
+            {
+                'Settings': "security.login_error_count",
+                'value': 5
+            },
+            {
+                'Settings': "security.login_expiry",
+                'value': 5
             },
             {
                 'Settings': "node_usage.data_storage_time",

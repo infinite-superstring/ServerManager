@@ -230,6 +230,7 @@ class node_client(AsyncWebsocketConsumer):
         self.__node_base_info.architecture = data['cpu']['architecture']
         self.__node_base_info.core_count = data['cpu']['core']
         self.__node_base_info.processor_count = data['cpu']['processor']
+        self.__node_base_info.memory_total = data['memory_total']
         await update_disk_partition(self.__node, data['disks'])
         await self.__node_base_info.asave()
         self.__node_base_info = self.__node_base_info

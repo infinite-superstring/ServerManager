@@ -25,11 +25,11 @@ def AuthLogin(req: HttpRequest):
     user = req_json.get("username")
     password = req_json.get("password")
     limit = cache.get(f"user_temp_limit_{req_json.get('username')}")
-    login_error_count = config.base.login_error_count
+    login_error_count = config.security.login_error_count
     if limit is not None and login_error_count is not None and limit >= login_error_count:  # 次数
         return ResponseJson({"status": 0, "msg": "账户被临时限制登录，请稍后再试"})
     if not verify_username_and_password(user, password):
-        expiry = config.base.login_expiry if config.base.login_expiry else 1
+        expiry = config.security.login_expiry if config.security.login_expiry else 1
         cache.set(f"user_temp_limit_{req_json.get('username')}", limit + 1 if limit else 1, expiry * 60) # 时间
         return ResponseJson({"status": 0, "msg": "用户名或密码错误"})
     user = get_user_by_username(user)
