@@ -18,6 +18,7 @@ from django.urls import path, re_path
 
 import apps.auth.api.user_auth as user_auth
 import apps.auth.api.node_auth as node_auth
+import apps.auth.api.otp as otp
 import apps.user_manager.api.user_management as user_manager
 import apps.permission_manager.api.permission as permission_manager
 import apps.node_manager.api.node_manager as node_manager
@@ -36,6 +37,7 @@ urlpatterns = [
     path('api/auth/logout', user_auth.AuthOutLog),  # 用户登出（ALL）
     path('api/auth/getUserLoginStatus', user_auth.getLoginStatus),  # 获取用户登录状态 (ALL)
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
+    path('api/auth/bindOTP', otp.send_bind_otp_auth_code),
     # 用户管理
     path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（ALL）
     path('api/admin/userManager/addUser', user_manager.addUser),  # 新增用户（POST）

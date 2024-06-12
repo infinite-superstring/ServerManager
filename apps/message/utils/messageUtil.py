@@ -26,7 +26,7 @@ SMS 方法
 SMS_METHOD = 'SMS'
 
 # 拿到消息配置
-message_config = apps.get_app_config('setting').get_config().message
+config = apps.get_app_config('setting').get_config
 
 
 def byUserGetUsername(user: User) -> str:
@@ -156,14 +156,14 @@ def send_email(mes_obj: MessageBody, users: QuerySet[User]):
     发送邮件
     """
     # 如果配置ssl连接 则开启 ssl连接
-    if message_config.email_ssl:
+    if config().message.email_ssl:
         # 创建 stp服务器连接
-        stp = smtplib.SMTP_SSL(host=message_config.email_host, port=message_config.email_port, timeout=3)
+        stp = smtplib.SMTP_SSL(host=config().message.email_host, port=config().message.email_port, timeout=3)
     else:
-        stp = smtplib.SMTP(host=message_config.email_host, port=message_config.email_port, timeout=3)
+        stp = smtplib.SMTP(host=config().message.email_host, port=config().message.email_port, timeout=3)
 
     # 登录到服务器
-    stp.login(message_config.email_username, message_config.email_password)
+    stp.login(config().message.email_username, config().message.email_password)
 
     for u in users:
         # 创建邮件实例
@@ -176,7 +176,7 @@ def send_email(mes_obj: MessageBody, users: QuerySet[User]):
         email.attach(MIMEText(content, 'html', 'utf-8'))
         # TODO 测试使用
         email['Subject'] = "龙芯测试平台消息通知" + mes_obj.title
-        email['From'] = message_config.email_from_address
+        email['From'] = config().message.email_from_address
         email['To'] = u.email
         # 发送邮件
         stp.send_message(email)
@@ -190,7 +190,7 @@ def send(mes_obj: MessageBody):
     """
 
     # 发送邮件
-    if message_config.message_send_type == EMAIL_METHOD:
+    if config().message.message_send_type == EMAIL_METHOD:
         try:
             # 邮件写到数据库
             users: QuerySet[User] = _message_to_database(mes_obj)
@@ -209,7 +209,7 @@ def send(mes_obj: MessageBody):
             Log.error(e)
             raise TimeoutError
     # 发送短信
-    elif message_config.message_send_type == SMS_METHOD:
+    elif config().message.message_send_type == SMS_METHOD:
         return
 
 
