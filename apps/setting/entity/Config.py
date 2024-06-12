@@ -1,10 +1,13 @@
 class config:
     base = None
+    security = None
     node = None
+    node_usage = None
     message = None
 
     def __init__(self):
         self.base = base()
+        self.security = security()
         self.node = node()
         self.node_usage = node_usage()
         self.message = message()
@@ -14,11 +17,25 @@ class config:
 class base:
     # 服务器Token
     server_token: str = None
+    # 站点URL
+    website_url: str = None
+    # 站点名称
+    website_name: str = None
     # Session超时时间
     session_expiry: int = None
-    # 登录失败次数显示
+
+
+# 安全性
+class security:
+    # 消息验证码重发时间(秒)
+    auth_code_resend_interval: int = None
+    # 消息验证码超时时间(分)
+    auth_code_timeout: int = None
+    # 消息验证码长度
+    auth_code_length: int = None
+    # 登录失败次数限制
     login_error_count: int = None
-    # 限制登陆时长 分钟
+    # 限制登陆时长(分钟)
     login_expiry: int = None
 
 
@@ -29,6 +46,7 @@ class node:
     # 心跳包时间（毫秒）
     heartbeat_time: int = None
 
+
 class node_usage:
     # 运行数据提交间隔（秒）
     upload_data_interval: int = None
@@ -36,6 +54,7 @@ class node_usage:
     data_save_interval: int = None
     # 使用数据存储时限（天）
     data_storage_time: int = None
+
 
 # 消息设置
 class message:
