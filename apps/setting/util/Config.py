@@ -16,7 +16,16 @@ def loadConfig(config: configObj) -> configObj:
             annotations = config_obj.__annotations__
             for index, split in enumerate(settingKeys):
                 if index == len(settingKeys) - 1:
-                    setattr(config_obj, split, annotations.get(split)(item.value))
+                    value = item.value
+                    # 专门处理布尔值的转换
+                    if annotations.get(split) == bool:
+                        if value.lower() == 'false':
+                            value = False
+                        else:
+                            value = True
+                    else:
+                        value = annotations.get(split)(value)  # 其他类型的转换
+                    setattr(config_obj, split, value)
                 elif hasattr(config_obj, split):
                     config_obj = getattr(config_obj, split)
     Log.success("配置已加载到内存")
@@ -34,6 +43,7 @@ def saveConfig(obj: configObj) -> configObj:
             settings = Settings.objects.filter(Settings=temp).first()
             if settings:
                 settings.value = str(item2Value)
+                Log.debug(f"key:{temp} | value:{settings.value} | type:{type(settings.value)}")
                 settings.save()
             else:
                 Settings.objects.create(Settings=temp, value=str(item2Value))
@@ -56,6 +66,7 @@ def dictToConfig(data: dict) -> configObj:
             annotations = temp.__annotations__
             for key2 in item.keys():
                 if not hasattr(temp, key2):
+                    Log.warning(f"{key2} Does not exist ")
                     continue
                 if type(item[key2]) == annotations.get(key2):
                     setattr(temp, key2, annotations.get(key2)(item.get(key2)))
