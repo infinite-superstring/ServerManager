@@ -11,9 +11,9 @@ class MessageBody:
     title: str = None
     content: str = None
     name: str = None
-    recipient: QuerySet[User] = None
-    node_groups: QuerySet[Node_Group] = None
-    permission: QuerySet[Permission_groups] = None
+    recipient: QuerySet[User] | User = None
+    node_groups: QuerySet[Node_Group] | Node_Group = None
+    permission: QuerySet[Permission_groups] | Permission_groups = None
     email_sms_only: bool = False
 
     def __init__(
@@ -21,9 +21,9 @@ class MessageBody:
             title=None,
             content=None,
             name=None,
-            recipient: QuerySet[User] = None,
-            node_groups: QuerySet[Node_Group] = None,
-            permission: QuerySet[Permission_groups] = None,
+            recipient: QuerySet[User] | User = None,
+            node_groups: QuerySet[Node_Group] | Node_Group = None,
+            permission: QuerySet[Permission_groups] | Permission_groups = None,
             email_sms_only: bool = False):
         """
         封装消息信息

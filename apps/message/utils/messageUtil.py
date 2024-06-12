@@ -11,7 +11,8 @@ from django.db.models import QuerySet
 from apps.audit.util.auditTools import write_system_log
 from apps.message.models import Message
 from apps.message.models import MessageBody, UserMessage
-from apps.node_manager.models import Node_MessageRecipientRule
+from apps.node_manager.models import Node_MessageRecipientRule, Node_Group
+from apps.permission_manager.models import Permission_groups
 from apps.user_manager.models import User
 from util.logger import Log
 
@@ -93,19 +94,29 @@ def _message_to_database(msg: MessageBody):
                 UserMessage.objects.create(user=u, message=message_obj, read=False)
         return us
 
+    def node_group_to_recipient(node_groups: Node_Group, u_list: QuerySet[User]):
+        u_list = u_list | User.objects.filter(id=node_group.leader.id)
+        # 节点接收人
+        tsr = _get_should_reception(node_group)
+        for t in tsr:
+            recipients = t.recipients.all()
+            u_list = u_list | recipients
+        return u_list
+
     # 指定用户
     if msg.recipient:
-        return create_recipient(us=msg.recipient)
+        if isinstance(msg.recipient, User):
+            return create_recipient(us=User.objects.filter(id=msg.recipient.id))
+        else:
+            return create_recipient(us=msg.recipient)
     # 指定节点组组
     if msg.node_groups:
         us_list = User.objects.none()
-        for node_group in msg.node_groups:
-            us_list = us_list | User.objects.filter(id=node_group.leader.id)
-            # 节点接收人
-            tsr = _get_should_reception(node_group)
-            for t in tsr:
-                recipients = t.recipients.all()
-                us_list = us_list | recipients
+        if isinstance(msg.node_groups, Node_Group):
+            us_list = node_group_to_recipient(msg.node_groups, us_list)
+        else:
+            for node_group in msg.node_groups:
+                us_list = node_group_to_recipient(node_group, us_list)
         if us_list is None:
             return
         # 去重
@@ -114,7 +125,11 @@ def _message_to_database(msg: MessageBody):
 
         # 指定权限组
     if msg.permission:
-        users = User.objects.filter(permission_id__in=[p.id for p in msg.permission])
+        users: QuerySet[User] = User.objects.none()
+        if isinstance(msg.recipient, Permission_groups):
+            users = User.objects.filter(permission_id=msg.permission.id)
+        else:
+            users = User.objects.filter(permission_id__in=[p.id for p in msg.permission])
         return create_recipient(us=users)
 
 
