@@ -1,7 +1,5 @@
 from django.apps import AppConfig, apps
 from django.core.cache import cache
-from django.core.signals import request_finished
-
 from util.logger import Log
 
 
@@ -23,5 +21,8 @@ class NodeManagerConfig(AppConfig):
                     cache.delete(f"node_client_online_{i.node.uuid}")
         except Exception as e:
             Log.warning(f"重置节点在线状态失败!\n{e}")
+        from apps.node_manager.tasks import tasks
+        task = tasks()
+        task.start()
         Log.success("Node Manager: Initialization complete")
 
