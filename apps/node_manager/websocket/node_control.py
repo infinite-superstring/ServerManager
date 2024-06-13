@@ -85,7 +85,7 @@ class node_control(AsyncWebsocketConsumer):
                     await self.__update_process_list_heartbeat()
                 case "kill_process":
                     if json_data['data'].get('pid'):
-                        await self.__kill_process(json_data['data'].get('pid'))
+                        await self.__kill_process(json_data['data'].get('pid'), json_data['data'].get('tree'))
                 case "load_performance_record":
                     await self.__load_performance_record()
                 case "get_performance_record":
@@ -95,9 +95,6 @@ class node_control(AsyncWebsocketConsumer):
                     device = data.get('device', "_all")
                     if start_time and end_time:
                         await self.__load_performance_record(start_time, end_time, device)
-                case "kill_process_tree":
-                    if json_data['data'].get('pid'):
-                        await self.__kill_process(json_data['data'].get('pid'), True)
 
     @Log.catch
     async def send_json(self, data):

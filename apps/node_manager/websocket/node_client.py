@@ -208,6 +208,7 @@ class node_client(AsyncWebsocketConsumer):
     @Log.catch
     async def kill_process(self, event):
         """结束进程"""
+        Log.warning("kill_process")
         pid: int = event['pid']
         tree_mode = event['tree_mode']
         if pid:
