@@ -3,5 +3,6 @@ django~=4.2.7
 daphne
 channels~=4.0.0
 channels_redis
+apscheduler
 redis
 hiredis

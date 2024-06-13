@@ -30,9 +30,9 @@ def send_auth_code(user: User):
     cache.set(f"getAuthCode_{user.id}", {
         "code": code,
         'start_time': currentTime,
-        'end_time': currentTime-config().security.auth_code_resend_interval,
-    })
-    title = "【验证码】验证您的操作"
+        'end_time': currentTime+config().security.auth_code_resend_interval,
+    }, config().security.auth_code_timeout * 60)
+    title = f"【{config().base.website_name}】验证您的操作"
     content = f"【操作验证】验证码：{code}（{config().security.auth_code_timeout}分钟内有效）。您正在执行高危操作，请勿将验证码告诉他人。\n（系统消息请勿回复）"
     return send(MessageBody(
         title=title,

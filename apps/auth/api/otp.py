@@ -17,11 +17,11 @@ def send_bind_otp_auth_code(request: HttpRequest) -> HttpResponse:
     #         'status': 0,
     #         'msg': '已绑定过OTP'
     #     })
-    if cache.get(f"getAuthCode_{user.id}") and cache.get(f"getAuthCode_{user.id}")['end_time'] > time.time():
-        return ResponseJson({
-            'status': 0,
-            'msg': f'冷却中! 请等待{cache.get(f"getAuthCode_{user.id}")["end_time"] - time.time()}秒'
-        })
+    # if cache.get(f"getAuthCode_{user.id}") and cache.get(f"getAuthCode_{user.id}")['end_time'] > time.time():
+    #     return ResponseJson({
+    #         'status': 0,
+    #         'msg': f'冷却中! 请等待{cache.get(f"getAuthCode_{user.id}")["end_time"] - time.time()}秒'
+    #     })
     try:
         send_auth_code(user)
     except Exception as e:
