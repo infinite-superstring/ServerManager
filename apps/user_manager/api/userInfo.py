@@ -4,7 +4,7 @@ import hashlib
 import os
 
 from django.http import FileResponse
-# from app.models import Users
+from apps.user_manager.models import  User as Users
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, \
     verify_username_and_password, username_exists
 from util.passwordUtils import verifyPasswordRules
@@ -99,7 +99,8 @@ def setUserInfo(req):
                 User.userName = userName
                 req.session["user"] = userName
                 if email and email != User.email:
-                    if User.objects.filter(email=email):
+                    users = Users.objects.filter(email=email)
+                    if users.count() >= 1:
                         return ResponseJson({"status": 0, "msg": "邮箱已被使用过啦"})
                     write_audit(userId, "Set user info(设置用户信息): update email(更新电子邮箱)",
                                "User Info(用户信息)",

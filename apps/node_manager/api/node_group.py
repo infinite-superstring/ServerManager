@@ -7,6 +7,7 @@ from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
+from django.forms.models import model_to_dict
 
 
 def get_group_list(req):
@@ -39,6 +40,7 @@ def get_group_list(req):
             "PageContent": PageContent
         }
     })
+
 
 def create_group(req):
     """创建组"""
@@ -80,6 +82,7 @@ def create_group(req):
         group.time_slot_recipient.add(rule)
     return ResponseJson({'status': 1, 'msg': '节点组创建成功'})
 
+
 def del_group(req):
     """删除组"""
     if req.method != 'POST':
@@ -105,5 +108,34 @@ def del_group(req):
     group.delete()
     return ResponseJson({'status': 1, 'msg': '节点组删除成功'})
 
+
 def edit_group(req):
     """编辑组"""
+
+
+def get_group_by_id(req):
+    """获取组详细"""
+    if req.method != 'GET':
+        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    group_id: int = req.GET.get('group_id')
+    if not group_id:
+        return ResponseJson({'status': -1, 'msg': "参数不完整"}, 400)
+    if not node_group_id_exists(group_id):
+        return ResponseJson({'status': 0, 'msg': '节点组不存在'})
+    group = get_node_group_by_id(group_id)
+    return ResponseJson({
+        "status": 1,
+        "data": {
+            "group_id": group.id,
+            "group_name": group.name,
+            "group_leader": group.leader.userName,
+            "group_desc": group.description,
+            "group_nodes": [{
+                'uuid':item.uuid,
+                'name':item.name,
+                'description':item.description,
+                'leader':item.group.leader,
+            } for item in get_group_nodes(group)],
+            "rules": group.time_slot_recipient.all()
+        }
+    })

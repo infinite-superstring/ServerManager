@@ -1,5 +1,5 @@
 from datetime import datetime
-from smtplib import SMTPServerDisconnected, SMTPAuthenticationError, SMTPException
+from smtplib import SMTPException, SMTPAuthenticationError, SMTPServerDisconnected
 
 from django.db.models import QuerySet
 
@@ -23,19 +23,22 @@ def send_email(message: MessageBody):
         send_err_handle("连接错误，请尝试使用SSL连接")
     except SMTPAuthenticationError as e:
         """
-        账号密码错误
+        账号或密码错误
         """
-        send_err_handle("账号或密码错误,认证失败,请检查配置")
+        send_err_handle("邮件服务用户名或密码错误,认证失败,请检查配置")
     except SMTPException as e:
         """
         可能是发送人的账号错误
         """
-        send_err_handle("邮件发送地址错误,或者端口错误,请检查配置")
+        send_err_handle("邮件发件地址错误,认证失败,请检查配置")
     except TimeoutError as e:
         """
         端口错误
         """
         send_err_handle("邮件服务端口错误,请检查配置")
+    except Exception as e:
+        """未知错误"""
+        send_err_handle("未知错误,请检查配置")
     else:
         send_ws(users)
         return True

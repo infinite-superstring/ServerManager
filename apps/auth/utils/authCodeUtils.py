@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.db.models import QuerySet
 
 from apps.message.models import MessageBody
-from apps.message.utils.messageUtil import send
+from apps.message.api.message import send_email
 from apps.user_manager.models import User
 from apps.auth.models import OTP
 
@@ -34,7 +34,7 @@ def send_auth_code(user: User):
     }, config().security.auth_code_timeout * 60)
     title = f"需验证您的操作"
     content = f"【操作验证】验证码：{code}（{config().security.auth_code_timeout}分钟内有效）。您正在执行高危操作，请勿将验证码告诉他人。\n（系统消息请勿回复）"
-    return send(MessageBody(
+    return send_email(MessageBody(
         title=title,
         content=content,
         recipient=user,

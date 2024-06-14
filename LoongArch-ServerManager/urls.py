@@ -65,6 +65,7 @@ urlpatterns = [
     path('api/node_manager/node_group/getGroupList', node_group.get_group_list),  # 获取组列表(POST)
     path('api/node_manager/node_group/createGroup', node_group.create_group),  # 创建组(POST)
     path('api/node_manager/node_group/delGroup', node_group.del_group),  # 删除节点组(POST)
+    path('api/node_manager/node_group/getGroupById', node_group.get_group_by_id),  # 获取节点组详情
     # 审计
     path('api/admin/auditAndLogger/audit', auditAndLogger.getAudit),  # 获取审计日志（POST）
     path('api/admin/auditAndLogger/accessLog', auditAndLogger.getAccessLog),  # 获取访问日志（POST）
