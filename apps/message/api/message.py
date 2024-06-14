@@ -45,6 +45,7 @@ def get_message_list(request):
     """
     获取消息列表
     """
+
     # send_ws(user=User.objects.all())
 
     def _get_page_list(r, current_page: int, pz: int = 20) -> QuerySet:

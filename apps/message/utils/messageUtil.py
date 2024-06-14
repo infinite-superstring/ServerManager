@@ -1,7 +1,9 @@
 import smtplib
+from smtplib import SMTPException
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.header import Header
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -90,14 +92,14 @@ def _message_to_database(msg: MessageBody):
     def create_recipient(us: QuerySet[User]):
         for u in us:
             # 只发送电子邮件则不需要存储至数据库
-            if msg.email_sms_only:
+            if not msg.email_sms_only:
                 UserMessage.objects.create(user=u, message=message_obj, read=False)
         return us
 
     def node_group_to_recipient(node_groups: Node_Group, u_list: QuerySet[User]):
-        u_list = u_list | User.objects.filter(id=node_group.leader.id)
+        u_list = u_list | User.objects.filter(id=node_groups.leader.id)
         # 节点接收人
-        tsr = _get_should_reception(node_group)
+        tsr = _get_should_reception(node_groups)
         for t in tsr:
             recipients = t.recipients.all()
             u_list = u_list | recipients
@@ -170,13 +172,10 @@ def send_email(mes_obj: MessageBody, users: QuerySet[User]):
         mes_obj.recipient = u.email
         mes_obj.name = byUserGetUsername(user=u)
         content = get_email_content(mes_obj)  # 封装邮件内容
-        email = MIMEMultipart()
-        email.set_charset("UTF-8")
-        #  封装邮件
-        email.attach(MIMEText(content, 'html', 'utf-8'))
+        email = MIMEText(content, _subtype='html', _charset='utf-8')
         # TODO 测试使用
-        email['Subject'] = "龙芯测试平台消息通知" + mes_obj.title
-        email['From'] = config().message.email_from_address
+        email['Subject'] = config().base.website_name + mes_obj.title
+        email['From'] = Header(f"{config().message.email_from_name}<{config().message.email_from_address}>")
         email['To'] = u.email
         # 发送邮件
         stp.send_message(email)
@@ -188,7 +187,6 @@ def send(mes_obj: MessageBody):
     发送消息
     返回用户列表
     """
-
     # 发送邮件
     if config().message.message_send_type == EMAIL_METHOD:
         try:
@@ -201,9 +199,9 @@ def send(mes_obj: MessageBody):
             if mes_obj.email_sms_only:
                 return None
             return users
-        except smtplib.SMTPException as e:
+        except SMTPException as e:
             Log.error(e)
-            raise smtplib.SMTPException
+            raise SMTPException
         except TimeoutError as e:
             e = "可能由端口错误发送邮件超时" + str(e)
             Log.error(e)

@@ -69,3 +69,7 @@ class MessageTest(TestCase):
         current_time = time(now.hour, now.minute)
         a = Node_MessageRecipientRule.objects.filter(start_time__lte=current_time, end_time__gte=current_time)
         send(MessageBody(title="test", content="test", name="test", node_groups=Node_Group.objects.filter()))
+
+    def test3(self):
+
+        send(MessageBody(title="test", content="test", name="test", recipient=User.objects.get(id=1)))
