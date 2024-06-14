@@ -183,6 +183,7 @@ class Node_Event(models.Model):
 # 节点告警设置
 class Node_AlarmSetting(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
+    delay_seconds = models.IntegerField("告警延迟时间(秒)", null=False, default=1)
     general_rules = models.ManyToManyField('GeneralAlarmRule')
     disk_used_rules = models.ManyToManyField('DiskUsedAlarmRule')
     network_rule = models.ForeignKey('NetworkAlarmRule', on_delete=models.CASCADE)
@@ -190,24 +191,27 @@ class Node_AlarmSetting(models.Model):
     # 告警规则基类
     class Base_AlarmRule(models.Model):
         MODULE_CHOICES = [
-            ('CPU', 'CPU'),
-            ('Memory', 'Memory'),
-            ('Swap', 'Swap'),
-            ('Disk', 'Disk'),
-            ('Network', 'Network'),
+            ('CPU', 'CPU'),  # 百分比
+            ('Memory', 'Memory'),  # 百分比
+            ('Swap', 'Swap'),  # 百分比
+            ('Disk', 'Disk'),  # 设备 百分比
+            ('Network', 'Network'),  # 最大Bytes
         ]
         module = models.CharField(max_length=50, choices=MODULE_CHOICES)
         enabled = models.BooleanField(default=True)
         created_at = models.DateTimeField(auto_now_add=True)
         updated_at = models.DateTimeField(auto_now=True)
 
+    # 通用告警设置
     class GeneralAlarmRule(Base_AlarmRule):
         threshold = models.BigIntegerField("阈值")
 
+    # 磁盘告警设置
     class DiskUsedAlarmRule(Base_AlarmRule):
         device = models.ForeignKey('Node_DiskPartition', on_delete=models.CASCADE)
         threshold = models.IntegerField("磁盘空间百分比")
 
+    # 网络告警设置
     class NetworkAlarmRule(Base_AlarmRule):
         send_threshold = models.BigIntegerField("发送最大阈值(bytes/s)")
         receive_threshold = models.BigIntegerField("接收最大阈值(bytes/s)")
