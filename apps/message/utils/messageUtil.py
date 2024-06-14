@@ -1,5 +1,5 @@
 import smtplib
-from smtplib import SMTPException
+from smtplib import SMTPException, SMTPAuthenticationError
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -173,8 +173,9 @@ def send_email(mes_obj: MessageBody, users: QuerySet[User]):
         mes_obj.name = byUserGetUsername(user=u)
         content = get_email_content(mes_obj)  # 封装邮件内容
         email = MIMEText(content, _subtype='html', _charset='utf-8')
-        # TODO 测试使用
-        email['Subject'] = config().base.website_name + mes_obj.title
+        website_name = config().base.website_name
+        title = mes_obj.title
+        email['Subject'] = f"【{website_name}】{title}"
         email['From'] = Header(f"{config().message.email_from_name}<{config().message.email_from_address}>")
         email['To'] = u.email
         # 发送邮件
@@ -199,6 +200,9 @@ def send(mes_obj: MessageBody):
             if mes_obj.email_sms_only:
                 return None
             return users
+        except SMTPAuthenticationError as e:
+            Log.error(e)
+            raise SMTPAuthenticationError
         except SMTPException as e:
             Log.error(e)
             raise SMTPException
