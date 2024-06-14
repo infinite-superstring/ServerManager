@@ -1,4 +1,6 @@
 import uuid
+
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -143,6 +145,7 @@ class Node_UsageData(models.Model):
             db_table = 'network_usage'
             db_table_comment = "网络接口负载"
 
+
 class Node_DiskPartition(models.Model):
     """磁盘分区信息"""
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
@@ -155,3 +158,56 @@ class Node_DiskPartition(models.Model):
     class Meta:
         db_table = 'node_disk_partition_list'
         db_table_comment = '分区列表'
+
+
+# 节点事件
+class Node_Event(models.Model):
+    SEVERITY_CHOICES = [
+        ('Info', 'Info'),
+        ('Warning', 'Warning'),
+        ('Error', 'Error'),
+        ('Critical', 'Critical'),
+    ]
+    id = models.AutoField("事件ID", primary_key=True)
+    node = models.ForeignKey(Node, on_delete=models.CASCADE)
+    type = models.CharField("事件类型", max_length=100)
+    description = models.CharField("事件详细描述", max_length=200, null=True)
+    level = models.CharField(max_length=10, choices=SEVERITY_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'node_events'
+        db_table_comment = '节点事件'
+
+
+# 节点告警设置
+class Node_AlarmSetting(models.Model):
+    node = models.ForeignKey(Node, on_delete=models.CASCADE)
+    general_rules = models.ManyToManyField('GeneralAlarmRule')
+    disk_used_rules = models.ManyToManyField('DiskUsedAlarmRule')
+    network_rule = models.ForeignKey('NetworkAlarmRule', on_delete=models.CASCADE)
+
+    # 告警规则基类
+    class Base_AlarmRule(models.Model):
+        MODULE_CHOICES = [
+            ('CPU', 'CPU'),
+            ('Memory', 'Memory'),
+            ('Swap', 'Swap'),
+            ('Disk', 'Disk'),
+            ('Network', 'Network'),
+        ]
+        module = models.CharField(max_length=50, choices=MODULE_CHOICES)
+        enabled = models.BooleanField(default=True)
+        created_at = models.DateTimeField(auto_now_add=True)
+        updated_at = models.DateTimeField(auto_now=True)
+
+    class GeneralAlarmRule(Base_AlarmRule):
+        threshold = models.BigIntegerField("阈值")
+
+    class DiskUsedAlarmRule(Base_AlarmRule):
+        device = models.ForeignKey('Node_DiskPartition', on_delete=models.CASCADE)
+        threshold = models.IntegerField("磁盘空间百分比")
+
+    class NetworkAlarmRule(Base_AlarmRule):
+        send_threshold = models.BigIntegerField("发送最大阈值(bytes/s)")
+        receive_threshold = models.BigIntegerField("接收最大阈值(bytes/s)")
