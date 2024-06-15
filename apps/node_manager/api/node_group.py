@@ -1,4 +1,4 @@
-from apps.node_manager.models import Node_Group
+from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
 from apps.node_manager.utils.groupUtil import create_message_recipient_rules, node_group_id_exists, \
     get_node_group_by_id, get_group_nodes
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid, node_set_group
@@ -115,6 +115,26 @@ def edit_group(req):
 
 def get_group_by_id(req):
     """获取组详细"""
+
+    def _get_week_list(item: Node_MessageRecipientRule):
+        """根据布尔值返回对应的星期列表"""
+        week_list = []
+        if item.monday:
+            week_list.append('星期一')
+        if item.tuesday:
+            week_list.append('星期二')
+        if item.wednesday:
+            week_list.append('星期三')
+        if item.thursday:
+            week_list.append('星期四')
+        if item.friday:
+            week_list.append('星期五')
+        if item.saturday:
+            week_list.append('星期六')
+        if item.sunday:
+            week_list.append('星期日')
+        return week_list
+
     if req.method != 'GET':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     group_id: int = req.GET.get('group_id')
@@ -130,12 +150,17 @@ def get_group_by_id(req):
             "group_name": group.name,
             "group_leader": group.leader.userName,
             "group_desc": group.description,
-            "group_nodes": [{
-                'uuid':item.uuid,
-                'name':item.name,
-                'description':item.description,
-                'leader':item.group.leader,
+            "node_list": [{
+                'uuid': item.uuid,
+                'name': item.name,
+                'description': item.description,
+                'leader': item.group.leader.userName,
             } for item in get_group_nodes(group)],
-            "rules": group.time_slot_recipient.all()
+            "rules": [{
+                'week': _get_week_list(item),
+                'start_time': item.start_time.strftime("%H:%M"),
+                'end_time': item.end_time.strftime("%H:%M"),
+                'recipients': [user.userName for user in item.recipients.all()]
+            } for item in group.time_slot_recipient.all()]
         }
     })
