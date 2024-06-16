@@ -20,7 +20,6 @@ class Audit(models.Model):
 # 系统日志
 class System_Log(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
-
     time = models.DateTimeField("发生时间", auto_now_add=True)
     level = models.IntegerField("日志等级")
     module = models.CharField("模块", max_length=256)

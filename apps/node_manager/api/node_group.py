@@ -7,10 +7,10 @@ from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
-from django.forms.models import model_to_dict
+from django.http.request import HttpRequest
 
 
-def get_group_list(req):
+def get_group_list(req: HttpRequest):
     if req.method != 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
@@ -42,7 +42,7 @@ def get_group_list(req):
     })
 
 
-def create_group(req):
+def create_group(req: HttpRequest):
     """创建组"""
     if req.method != 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -83,7 +83,7 @@ def create_group(req):
     return ResponseJson({'status': 1, 'msg': '节点组创建成功'})
 
 
-def del_group(req):
+def del_group(req: HttpRequest):
     """删除组"""
     if req.method != 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -109,11 +109,11 @@ def del_group(req):
     return ResponseJson({'status': 1, 'msg': '节点组删除成功'})
 
 
-def edit_group(req):
+def edit_group(req: HttpRequest):
     """编辑组"""
 
 
-def get_group_by_id(req):
+def get_group_by_id(req: HttpRequest):
     """获取组详细"""
 
     def _get_week_list(item: Node_MessageRecipientRule):

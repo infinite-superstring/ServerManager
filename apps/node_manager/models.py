@@ -183,6 +183,7 @@ class Node_Event(models.Model):
 # 节点告警设置
 class Node_AlarmSetting(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
+    enable = models.BooleanField(default=False)
     delay_seconds = models.IntegerField("告警延迟时间(秒)", null=False, default=1)
     general_rules = models.ManyToManyField('GeneralAlarmRule')
     disk_used_rules = models.ManyToManyField('DiskUsedAlarmRule')
@@ -193,12 +194,11 @@ class Node_AlarmSetting(models.Model):
         MODULE_CHOICES = [
             ('CPU', 'CPU'),  # 百分比
             ('Memory', 'Memory'),  # 百分比
-            ('Swap', 'Swap'),  # 百分比
             ('Disk', 'Disk'),  # 设备 百分比
             ('Network', 'Network'),  # 最大Bytes
         ]
         module = models.CharField(max_length=50, choices=MODULE_CHOICES)
-        enabled = models.BooleanField(default=True)
+        enable = models.BooleanField(default=True)
         created_at = models.DateTimeField(auto_now_add=True)
         updated_at = models.DateTimeField(auto_now=True)
 

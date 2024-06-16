@@ -1,7 +1,7 @@
 from asgiref.sync import sync_to_async
 from django.utils.dateparse import parse_datetime
 
-from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData
+from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData, Node_AlarmSetting
 from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
 from util.passwordUtils import verify_password
 from util.logger import Log
@@ -149,8 +149,38 @@ async def update_disk_partition(node: Node, disk_partition: list):
         await disk.asave()
     await node_info.asave()
 
+
 async def read_performance_record(node: Node, start_time: str, end_time: str):
     """读取节点性能记录"""
     start_time = parse_datetime(start_time)
     end_time = parse_datetime(end_time)
     return Node_UsageData.objects.filter(node=node, timestamp__range=(start_time, end_time))
+
+
+def init_node_alarm_setting(node: Node):
+    """初始化节点告警设置"""
+    a_setting = Node_AlarmSetting.objects.create(
+        node=node,
+        enable=True,
+        delay_seconds=360,
+        network_rule=Node_AlarmSetting.NetworkAlarmRule.objects.create(
+            module="Network",
+            enabled=False,
+            send_threshold=600000000,
+            receive_threshold=600000000,
+        )
+    )
+    a_setting.general_rules.add(
+        Node_AlarmSetting.GeneralAlarmRule.objects.create(
+            module="CPU",
+            enabled=True,
+            threshold=85
+        )
+    )
+    a_setting.general_rules.add(
+        Node_AlarmSetting.GeneralAlarmRule.objects.create(
+            module="Memory",
+            enabled=True,
+            threshold=80
+        )
+    )
