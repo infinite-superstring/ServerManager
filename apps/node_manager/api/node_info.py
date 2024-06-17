@@ -1,7 +1,7 @@
 from django.http import HttpRequest
 
 from apps.node_manager.models import Node_DiskPartition, Node_AlarmSetting
-from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid
+from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid, init_node_alarm_setting
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
@@ -29,6 +29,7 @@ def get_disk_partition_list(req: HttpRequest):
         }
     })
 
+
 def get_alarm_setting(req: HttpRequest):
     """获取节点告警设置"""
     if req.method != 'POST':
@@ -48,7 +49,8 @@ def get_alarm_setting(req: HttpRequest):
     cpu_rule = alarm_setting.general_rules.filter(module="CPU").first() if alarm_setting else None
     memory_rule = alarm_setting.general_rules.filter(module="Memory").first() if alarm_setting else None
     network_rule = alarm_setting.network_rule if alarm_setting else None
-    disk_rules = alarm_setting.disk_used_rules if alarm_setting and alarm_setting.disk_used_rules.exists() else []
+    disk_rules = alarm_setting.disk_used_rules.all() if alarm_setting and alarm_setting.disk_used_rules.exists() else []
+    Log.debug(disk_rules)
     return ResponseJson({
         'status': 1,
         'data': {
@@ -72,8 +74,7 @@ def get_alarm_setting(req: HttpRequest):
             },
             'disk': [
                 {
-                    'enable': i.enable,
-                    'device': i.device,
+                    'device': i.device.device,
                     'threshold': i.threshold
                 } for i in disk_rules
             ]
@@ -90,9 +91,65 @@ def save_alarm_setting(req: HttpRequest):
     except Exception as e:
         Log.error(e)
         return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
-    node_uuid = req_json.get('node_uuid')
-    if node_uuid is None:
+    node_uuid: str = req_json.get('node_uuid')
+    setting: dict = req_json.get('setting')
+    if not (node_uuid and setting):
         ResponseJson({'status': -1, 'msg': '参数不完整'})
     if not node_uuid_exists(node_uuid):
         ResponseJson({'status': 0, 'msg': '节点不存在'})
     node = get_node_by_uuid(node_uuid)
+    if not Node_AlarmSetting.objects.filter(node=node).exists():
+        a_setting = init_node_alarm_setting(node)
+    else:
+        a_setting = Node_AlarmSetting.objects.filter(node=node).first()
+    for key, value in setting.items():
+        match key:
+            case 'enable':
+                a_setting.enable = value
+            case 'delay_seconds':
+                a_setting.delay_seconds = value
+            case 'cpu':
+                cpu_rule = a_setting.general_rules.filter(module="CPU").first()
+                cpu_rule.enable = value.get("enable")
+                cpu_rule.threshold = value.get("threshold")
+                cpu_rule.save()
+            case 'memory':
+                memory_rule = a_setting.general_rules.filter(module="Memory").first()
+                memory_rule.enable = value.get("enable")
+                memory_rule.threshold = value.get("threshold")
+                memory_rule.save()
+            case 'network':
+                network_rule = a_setting.network_rule
+                network_rule.enable = value.get("enable")
+                network_rule.send_threshold = value.get("send_threshold")
+                network_rule.receive_threshold = value.get("receive_threshold")
+                network_rule.save()
+            case 'disk':
+                disk_rules = a_setting.disk_used_rules
+                devices = []
+                for i in value:
+                    if not i.get('device'):
+                        continue
+                    device = Node_DiskPartition.objects.filter(node=node, device=i.get('device')).first()
+                    if not device:
+                        Log.warning(f"Disk {i.get('device')} does not exist")
+                        continue
+                    if device in devices:
+                        Log.warning(f"{i.get('device')} disk has been used")
+                        continue
+                    devices.append(device)
+                    if disk_rules.filter(device=device).exists():
+                        rule = disk_rules.filter(device=device).first()
+                        rule.threshold = i.get('threshold')
+                        rule.save()
+                    else:
+                        a_setting.disk_used_rules.add(Node_AlarmSetting.DiskUsedAlarmRule.objects.create(
+                            device=device,
+                            threshold=i.get('threshold'),
+                        ))
+                disk_rules.exclude(device__in=devices).delete()
+    a_setting.save()
+    return ResponseJson({
+        'status': 1,
+        'msg': '保存成功'
+    })

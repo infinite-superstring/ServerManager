@@ -75,7 +75,10 @@ def verify_node_token(node: Node, token) -> bool:
 async def refresh_node_info(node: Node, data):
     memory_data = data.get('memory')
     swap_data = data.get('swap')
-    node_info = await Node_BaseInfo.objects.aget(node=node)
+    try:
+        node_info = await Node_BaseInfo.objects.aget(node=node)
+    except apps.node_manager.models.Node_BaseInfo.DoesNotExist:
+        return False
     if not node_info:
         raise RuntimeError("Node does not exist.")
     flag = False
@@ -176,14 +179,15 @@ def init_node_alarm_setting(node: Node):
     a_setting.general_rules.add(
         Node_AlarmSetting.GeneralAlarmRule.objects.create(
             module="CPU",
-            enable=node_default_alarm_setting.cpu__enabled,
+            enable=node_default_alarm_setting.cpu__enable,
             threshold=node_default_alarm_setting.cpu__threshold
         )
     )
     a_setting.general_rules.add(
         Node_AlarmSetting.GeneralAlarmRule.objects.create(
             module="Memory",
-            enable=node_default_alarm_setting.memory__enabled,
+            enable=node_default_alarm_setting.memory__enable,
             threshold=node_default_alarm_setting.memory__threshold
         )
     )
+    return a_setting

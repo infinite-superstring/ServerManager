@@ -107,7 +107,7 @@ class node_client(AsyncWebsocketConsumer):
                 Log.error(f"解析Websocket消息时发生错误：\n{e}")
                 return
             action = json_data.get('action')
-            print(action)
+            Log.debug(action)
             data = json_data.get('data')
             match action:
                 case 'upload_running_data':

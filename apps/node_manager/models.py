@@ -112,7 +112,7 @@ class Node_UsageData(models.Model):
     # 网络
     network_usage = models.ManyToManyField("NetworkUsage", related_name='network_usage_mapping')
     # 系统平均负载
-    system_loadavg = models.OneToOneField("Loadavg", on_delete=models.DO_NOTHING, null=False)
+    system_loadavg = models.OneToOneField("Loadavg", on_delete=models.CASCADE, null=False)
 
     class Meta:
         db_table = 'node_usage_data'
