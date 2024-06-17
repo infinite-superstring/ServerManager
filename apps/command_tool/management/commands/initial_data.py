@@ -182,6 +182,42 @@ class Command(BaseCommand):
                 'value': 3000
             },
             {
+                'Settings': "node_default_alarm_setting.enable",
+                'value': False
+            },
+            {
+                'Settings': "node_default_alarm_setting.delay_seconds",
+                'value': 360
+            },
+            {
+                'Settings': "node_default_alarm_setting.cpu__enabled",
+                'value': True
+            },
+            {
+                'Settings': "node_default_alarm_setting.cpu__threshold",
+                'value': 80
+            },
+            {
+                'Settings': "node_default_alarm_setting.memory__enabled",
+                'value': True
+            },
+            {
+                'Settings': "node_default_alarm_setting.memory__threshold",
+                'value': 75
+            },
+            {
+                'Settings': "node_default_alarm_setting.network__enable",
+                'value': True
+            },
+            {
+                'Settings': "node_default_alarm_setting.network__send_threshold",
+                'value': 104858074
+            },
+            {
+                'Settings': "node_default_alarm_setting.network__receive_threshold",
+                'value': 104858074
+            },
+            {
                 'Settings': "message.message_send_type",
                 'value': "email"
             },
@@ -195,7 +231,7 @@ class Command(BaseCommand):
             },
             {
                 'Settings': "message.email_port",
-                'value': 8080
+                'value': ""
             },
             {
                 'Settings': "message.email_username",

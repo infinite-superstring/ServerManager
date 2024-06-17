@@ -1,4 +1,5 @@
 from asgiref.sync import sync_to_async
+from django.apps import apps
 from django.utils.dateparse import parse_datetime
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData, Node_AlarmSetting
@@ -6,6 +7,7 @@ from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_gro
 from util.passwordUtils import verify_password
 from util.logger import Log
 
+config = apps.get_app_config('setting').get_config
 
 def node_name_exists(node_name) -> bool:
     """检查节点名是否存在"""
@@ -158,29 +160,30 @@ async def read_performance_record(node: Node, start_time: str, end_time: str):
 
 
 def init_node_alarm_setting(node: Node):
+    node_default_alarm_setting = config().node_default_alarm_setting
     """初始化节点告警设置"""
     a_setting = Node_AlarmSetting.objects.create(
         node=node,
-        enable=True,
-        delay_seconds=360,
+        enable=node_default_alarm_setting.enable,
+        delay_seconds=node_default_alarm_setting.delay_seconds,
         network_rule=Node_AlarmSetting.NetworkAlarmRule.objects.create(
             module="Network",
-            enabled=False,
-            send_threshold=600000000,
-            receive_threshold=600000000,
+            enabled=node_default_alarm_setting.network__enable,
+            send_threshold=node_default_alarm_setting.network__send_threshold,
+            receive_threshold=node_default_alarm_setting.network__receive_threshold,
         )
     )
     a_setting.general_rules.add(
         Node_AlarmSetting.GeneralAlarmRule.objects.create(
             module="CPU",
-            enabled=True,
-            threshold=85
+            enabled=node_default_alarm_setting.cpu__enabled,
+            threshold=node_default_alarm_setting.cpu__threshold
         )
     )
     a_setting.general_rules.add(
         Node_AlarmSetting.GeneralAlarmRule.objects.create(
             module="Memory",
-            enabled=True,
-            threshold=80
+            enabled=node_default_alarm_setting.memory__enabled,
+            threshold=node_default_alarm_setting.memory__threshold
         )
     )

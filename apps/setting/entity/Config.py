@@ -3,6 +3,7 @@ class config:
     security = None
     node = None
     node_usage = None
+    node_default_alarm_setting = None
     message = None
 
     def __init__(self):
@@ -10,6 +11,7 @@ class config:
         self.security = security()
         self.node = node()
         self.node_usage = node_usage()
+        self.node_default_alarm_setting = node_default_alarm_setting()
         self.message = message()
 
 
@@ -54,6 +56,28 @@ class node_usage:
     data_save_interval: int = None
     # 使用数据存储时限（天）
     data_storage_time: int = None
+
+
+# 节点默认告警设置
+class node_default_alarm_setting:
+    # 启用告警设置
+    enable: bool = None
+    # 告警延迟时间
+    delay_seconds: int = None
+    # 启用CPU告警
+    cpu__enabled: bool = None
+    # CPU告警阈值
+    cpu__threshold: int = None
+    # 启用内存告警
+    memory__enabled: bool = None
+    # 内存告警阈值
+    memory__threshold: int = None
+    # 网络告警启用
+    network__enable: bool = None
+    # 网络告警-发送数据量
+    network__send_threshold: int = None
+    # 网络告警-接收数据量
+    network__receive_threshold: int = None
 
 
 # 消息设置
