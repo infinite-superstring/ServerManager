@@ -55,12 +55,12 @@ def get_alarm_setting(req: HttpRequest):
             'enable': alarm_setting.enable if alarm_setting else False,
             'delay_seconds': alarm_setting.delay_seconds if alarm_setting else None,
             'cpu': {
-                'enabled': cpu_rule.enable if cpu_rule else False,
+                'enable': cpu_rule.enable if cpu_rule else False,
                 'threshold': cpu_rule.threshold if cpu_rule else None,
                 'updated_at': cpu_rule.updated_at if cpu_rule else None,
             },
             'memory': {
-                'enabled': memory_rule.enable if memory_rule else False,
+                'enable': memory_rule.enable if memory_rule else False,
                 'threshold': memory_rule.threshold if memory_rule else None,
                 'updated_at': memory_rule.updated_at if memory_rule else None,
             },

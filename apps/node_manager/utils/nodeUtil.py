@@ -168,7 +168,7 @@ def init_node_alarm_setting(node: Node):
         delay_seconds=node_default_alarm_setting.delay_seconds,
         network_rule=Node_AlarmSetting.NetworkAlarmRule.objects.create(
             module="Network",
-            enabled=node_default_alarm_setting.network__enable,
+            enable=node_default_alarm_setting.network__enable,
             send_threshold=node_default_alarm_setting.network__send_threshold,
             receive_threshold=node_default_alarm_setting.network__receive_threshold,
         )
@@ -176,14 +176,14 @@ def init_node_alarm_setting(node: Node):
     a_setting.general_rules.add(
         Node_AlarmSetting.GeneralAlarmRule.objects.create(
             module="CPU",
-            enabled=node_default_alarm_setting.cpu__enabled,
+            enable=node_default_alarm_setting.cpu__enabled,
             threshold=node_default_alarm_setting.cpu__threshold
         )
     )
     a_setting.general_rules.add(
         Node_AlarmSetting.GeneralAlarmRule.objects.create(
             module="Memory",
-            enabled=node_default_alarm_setting.memory__enabled,
+            enable=node_default_alarm_setting.memory__enabled,
             threshold=node_default_alarm_setting.memory__threshold
         )
     )

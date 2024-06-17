@@ -65,11 +65,11 @@ class node_default_alarm_setting:
     # 告警延迟时间
     delay_seconds: int = None
     # 启用CPU告警
-    cpu__enabled: bool = None
+    cpu__enable: bool = None
     # CPU告警阈值
     cpu__threshold: int = None
     # 启用内存告警
-    memory__enabled: bool = None
+    memory__enable: bool = None
     # 内存告警阈值
     memory__threshold: int = None
     # 网络告警启用

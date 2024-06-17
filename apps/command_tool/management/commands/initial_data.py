@@ -190,7 +190,7 @@ class Command(BaseCommand):
                 'value': 360
             },
             {
-                'Settings': "node_default_alarm_setting.cpu__enabled",
+                'Settings': "node_default_alarm_setting.cpu__enable",
                 'value': True
             },
             {
@@ -198,7 +198,7 @@ class Command(BaseCommand):
                 'value': 80
             },
             {
-                'Settings': "node_default_alarm_setting.memory__enabled",
+                'Settings': "node_default_alarm_setting.memory__enable",
                 'value': True
             },
             {
