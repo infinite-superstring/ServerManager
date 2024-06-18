@@ -380,7 +380,7 @@ class node_client(AsyncWebsocketConsumer):
                 for disk in disk_data['partition_list']:
                     if disk['device'] != disk_rule.device:
                         continue
-                    if disk.threshold <= calculate_percentage(
+                    if disk_rule.threshold <= calculate_percentage(
                         disk['used'],
                         disk['total']
                     ):

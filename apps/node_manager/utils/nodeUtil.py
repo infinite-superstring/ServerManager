@@ -231,7 +231,11 @@ async def a_load_node_alarm_setting(node: Node) -> AlarmSetting:
     cpu_rule = await alarm_setting.general_rules.filter(module="CPU").afirst() if alarm_setting else None
     memory_rule = await alarm_setting.general_rules.filter(module="Memory").afirst() if alarm_setting else None
     network_rule = await sync_to_async(lambda: alarm_setting.network_rule)() if alarm_setting else None
-    disk_rules = await alarm_setting.disk_used_rules.all() if alarm_setting and await alarm_setting.disk_used_rules.aexists() else []
+    # disk_rules = await sync_to_async(alarm_setting.disk_used_rules.all)() if alarm_setting and alarm_setting.disk_used_rules.aexists() else []
+    # Log.debug(disk_rules)
+    # async for disk_rule in alarm_setting.disk_used_rules.all():
+    #     Log.debug(disk_rule)
+    #     Log.debug()
     setting: AlarmSetting = AlarmSetting(
         enable=alarm_setting.enable if alarm_setting else False,
         delay_seconds=alarm_setting.delay_seconds if alarm_setting else None,
@@ -248,9 +252,10 @@ async def a_load_node_alarm_setting(node: Node) -> AlarmSetting:
             send_threshold=network_rule.send_threshold if network_rule else None,
             receive_threshold=network_rule.receive_threshold if network_rule else None
         ),
+        # disk=[]
         disk=[disk(
-            device=i.device.device,
+            device=await sync_to_async(lambda: i.device.device)(),
             threshold=i.threshold
-        ) for i in disk_rules]
+        ) async for i in alarm_setting.disk_used_rules.all()]
     )
     return setting
