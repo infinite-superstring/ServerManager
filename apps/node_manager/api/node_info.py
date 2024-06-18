@@ -1,3 +1,5 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.http import HttpRequest
 
 from apps.node_manager.models import Node_DiskPartition, Node_AlarmSetting
@@ -50,7 +52,6 @@ def get_alarm_setting(req: HttpRequest):
     memory_rule = alarm_setting.general_rules.filter(module="Memory").first() if alarm_setting else None
     network_rule = alarm_setting.network_rule if alarm_setting else None
     disk_rules = alarm_setting.disk_used_rules.all() if alarm_setting and alarm_setting.disk_used_rules.exists() else []
-    Log.debug(disk_rules)
     return ResponseJson({
         'status': 1,
         'data': {
@@ -149,6 +150,10 @@ def save_alarm_setting(req: HttpRequest):
                         ))
                 disk_rules.exclude(device__in=devices).delete()
     a_setting.save()
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(f'NodeClient_{node_uuid}', {
+        'type': 'reload_alarm_setting',
+    })
     return ResponseJson({
         'status': 1,
         'msg': '保存成功'

@@ -2,12 +2,14 @@ from asgiref.sync import sync_to_async
 from django.apps import apps
 from django.utils.dateparse import parse_datetime
 
+from apps.node_manager.entity.alarm_setting import AlarmSetting, cpu, memory, network, disk
 from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData, Node_AlarmSetting
 from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
 from util.passwordUtils import verify_password
 from util.logger import Log
 
 config = apps.get_app_config('setting').get_config
+
 
 def node_name_exists(node_name) -> bool:
     """检查节点名是否存在"""
@@ -191,3 +193,64 @@ def init_node_alarm_setting(node: Node):
         )
     )
     return a_setting
+
+
+def load_node_alarm_setting(node: Node):
+    alarm_setting = Node_AlarmSetting.objects.filter(node=node).first()
+    cpu_rule = alarm_setting.general_rules.filter(module="CPU").first() if alarm_setting else None
+    memory_rule = alarm_setting.general_rules.filter(module="Memory").first() if alarm_setting else None
+    network_rule = alarm_setting.network_rule if alarm_setting else None
+    disk_rules = alarm_setting.disk_used_rules.all() if alarm_setting and alarm_setting.disk_used_rules.exists() else []
+    setting: AlarmSetting = AlarmSetting(
+        enable=alarm_setting.enable if alarm_setting else False,
+        delay_seconds=alarm_setting.delay_seconds if alarm_setting else None,
+        cpu=cpu(
+            enable=cpu_rule.enable if cpu_rule else False,
+            threshold=cpu_rule.threshold if cpu_rule else None
+        ),
+        memory=memory(
+            enable=memory_rule.enable if memory_rule else False,
+            threshold=memory_rule.threshold if memory_rule else None
+        ),
+        network=network(
+            enable=network_rule.enable if network_rule else False,
+            send_threshold=network_rule.send_threshold if network_rule else None,
+            receive_threshold=network_rule.receive_threshold if network_rule else None
+        ),
+        disk=[disk(
+            device=i.device.device,
+            threshold=i.threshold
+        ) for i in disk_rules]
+    )
+    return setting
+
+
+async def a_load_node_alarm_setting(node: Node) -> AlarmSetting:
+    Log.debug("load node alarm setting")
+    alarm_setting = await Node_AlarmSetting.objects.filter(node=node).afirst()
+    cpu_rule = await alarm_setting.general_rules.filter(module="CPU").afirst() if alarm_setting else None
+    memory_rule = await alarm_setting.general_rules.filter(module="Memory").afirst() if alarm_setting else None
+    network_rule = await sync_to_async(lambda: alarm_setting.network_rule)() if alarm_setting else None
+    disk_rules = await alarm_setting.disk_used_rules.all() if alarm_setting and await alarm_setting.disk_used_rules.aexists() else []
+    setting: AlarmSetting = AlarmSetting(
+        enable=alarm_setting.enable if alarm_setting else False,
+        delay_seconds=alarm_setting.delay_seconds if alarm_setting else None,
+        cpu=cpu(
+            enable=cpu_rule.enable if cpu_rule else False,
+            threshold=cpu_rule.threshold if cpu_rule else None
+        ),
+        memory=memory(
+            enable=memory_rule.enable if memory_rule else False,
+            threshold=memory_rule.threshold if memory_rule else None
+        ),
+        network=network(
+            enable=network_rule.enable if network_rule else False,
+            send_threshold=network_rule.send_threshold if network_rule else None,
+            receive_threshold=network_rule.receive_threshold if network_rule else None
+        ),
+        disk=[disk(
+            device=i.device.device,
+            threshold=i.threshold
+        ) for i in disk_rules]
+    )
+    return setting
