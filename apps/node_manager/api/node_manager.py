@@ -2,9 +2,11 @@ import secrets
 
 from django.db.models import Q
 
-from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
+from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData, Node_DiskPartition, Node_Event, \
+    Node_AlarmSetting
 from apps.node_manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists
-from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists, node_name_exists
+from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists, node_name_exists, \
+    init_node_alarm_setting
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from util.Request import RequestLoadJson
@@ -48,6 +50,7 @@ def add_node(req):
         for tag in tags:
             node.tags.add(tag)
     node.save()
+    init_node_alarm_setting(node)
     return ResponseJson({
         "status": 1,
         "msg": "节点创建成功",

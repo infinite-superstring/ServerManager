@@ -12,8 +12,10 @@ from django.apps import apps
 from django.core.cache import cache
 
 from apps.audit.util.auditTools import write_node_session_log
-from apps.node_manager.models import Node, Node_BaseInfo
-from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database
+from apps.node_manager.entity.alarm_setting import AlarmSetting
+from apps.node_manager.models import Node, Node_BaseInfo, Node_AlarmSetting
+from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database, \
+    a_load_node_alarm_setting
 from apps.setting.entity import Config
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
@@ -24,6 +26,8 @@ from util.logger import Log
 
 class node_client(AsyncWebsocketConsumer):
     __auth: bool = False
+    __alarm: bool = False
+    __alarm_setting: AlarmSetting
     __get_process_list: bool = False
     __check_get_process_list_activity_thread: Thread
     __config: Config
@@ -71,7 +75,7 @@ class node_client(AsyncWebsocketConsumer):
             }
         })
         await self.__node_online()
-
+        await self.__load_alarm_setting()
         clientIP = self.scope['client'][0]
         loop = asyncio.get_event_loop()
         loop.run_in_executor(None, write_node_session_log, self.__node.uuid, "上线", clientIP)
@@ -107,8 +111,9 @@ class node_client(AsyncWebsocketConsumer):
                 Log.error(f"解析Websocket消息时发生错误：\n{e}")
                 return
             action = json_data.get('action')
-            print(action)
+            Log.debug(action)
             data = json_data.get('data')
+            Log.debug(data)
             match action:
                 case 'upload_running_data':
                     await self.__save_running_data(data)
@@ -201,7 +206,10 @@ class node_client(AsyncWebsocketConsumer):
                 'action': 'start_get_process_list',
             })
             # 启动检查线程
-            self.__check_get_process_list_activity_thread = Thread(target=self.__check_get_process_list_activity, args=())
+            self.__check_get_process_list_activity_thread = Thread(
+                target=self.__check_get_process_list_activity,
+                args=()
+            )
             self.__check_get_process_list_activity_thread.start()
             self.__get_process_list = True
 
@@ -219,6 +227,10 @@ class node_client(AsyncWebsocketConsumer):
                     'tree_mode': tree_mode
                 }
             })
+
+    @Log.catch
+    async def reload_alarm_setting(self, event):
+        await self.__load_alarm_setting()
 
     @Log.catch
     async def __refresh_node_info(self, data):
@@ -246,6 +258,7 @@ class node_client(AsyncWebsocketConsumer):
         loadavg_data = data.get('loadavg')
         await refresh_node_info(self.__node, data)
         await update_disk_partition(self.__node, disk_data['partition_list'])
+        await self.__handle_alarm_event(data)
         cache_key: str = f"node_{self.__node.uuid}_usage_last_update_time"
         # 检查存储粒度
         if cache.get(cache_key) is None:
@@ -281,7 +294,8 @@ class node_client(AsyncWebsocketConsumer):
     @Log.catch
     async def __update_node_usage_update(self, usage_data):
         """更新节点使用率数据"""
-        cache.set(f"NodeUsageData_{self.__node.uuid}", usage_data, timeout=self.__config.node_usage.upload_data_interval+3)
+        cache.set(f"NodeUsageData_{self.__node.uuid}", usage_data,
+                  timeout=self.__config.node_usage.upload_data_interval + 3)
         await self.channel_layer.group_send(f"NodeControl_{self.__node.uuid}", {
             'type': 'update_node_usage_data',
             'usage_data': usage_data
@@ -303,7 +317,8 @@ class node_client(AsyncWebsocketConsumer):
 
     @Log.catch
     async def __update_cache_timeout(self):
-        cache.set(f"node_client_online_{self.__node.uuid}", self.channel_name, timeout=self.__config.node.heartbeat_time)
+        cache.set(f"node_client_online_{self.__node.uuid}", self.channel_name,
+                  timeout=self.__config.node.heartbeat_time)
 
     @Log.catch
     async def __process_list(self, data):
@@ -312,6 +327,65 @@ class node_client(AsyncWebsocketConsumer):
             'type': 'show_process_list',
             'process_list': data
         })
+
+    @Log.catch
+    async def __load_alarm_setting(self):
+        setting = await Node_AlarmSetting.objects.filter(node=self.__node).afirst()
+        if setting and setting.enable:
+            Log.debug(f"节点{self.__node.name}已启用告警")
+            self.__alarm = True
+            self.__alarm_setting = await a_load_node_alarm_setting(self.__node)
+        else:
+            self.__alarm = False
+
+    @Log.catch
+    async def __handle_alarm_event(self, data):
+        """处理告警事件"""
+        if not self.__alarm:
+            return
+        cpu_data = data.get('cpu')
+        memory_data = data.get('memory')
+        disk_data = data.get('disk')
+        network_data = data.get('network')
+        # 处理CPU告警
+        if (
+            self.__alarm_setting.cpu.is_enable() and
+            self.__alarm_setting.cpu.threshold <= cpu_data.get('usage')
+        ):
+            Log.warning("CPU告警触发")
+        # 处理内存告警
+        if (
+            self.__alarm_setting.memory.is_enable and
+            self.__alarm_setting.memory.threshold <= calculate_percentage(
+                memory_data.get('used'),
+                self.__node_base_info.memory_total
+            )
+        ):
+            Log.warning("内存告警触发")
+        # 处理发送流量告警
+        if (
+          self.__alarm_setting.network.is_enable and
+          self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_sent']
+        ):
+            Log.warning("发送流量告警触发")
+        # 处理接收流量告警
+        if (
+          self.__alarm_setting.network.is_enable and
+          self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_recv']
+        ):
+            Log.warning("接收流量告警触发")
+        # 处理磁盘告警
+        for disk_rule in self.__alarm_setting.disk:
+            if disk_rule.is_enable:
+                for disk in disk_data['partition_list']:
+                    if disk['device'] != disk_rule.device:
+                        continue
+                    if disk_rule.threshold <= calculate_percentage(
+                        disk['used'],
+                        disk['total']
+                    ):
+                        Log.warning(f"磁盘设备{disk['device']}告警触发")
+
 
     @Log.catch
     def __check_get_process_list_activity(self):

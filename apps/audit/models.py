@@ -20,7 +20,6 @@ class Audit(models.Model):
 # 系统日志
 class System_Log(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
-
     time = models.DateTimeField("发生时间", auto_now_add=True)
     level = models.IntegerField("日志等级")
     module = models.CharField("模块", max_length=256)
@@ -60,7 +59,7 @@ class FileChange_Log(models.Model):
 class User_Session_Log(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     ip = models.GenericIPAddressField("IP地址", null=True)
-    user = models.ForeignKey("user_manager.User", db_column="user", on_delete=models.DO_NOTHING)
+    user = models.ForeignKey("user_manager.User", db_column="user", on_delete=models.CASCADE)
     action = models.CharField("动作", max_length=512, default="未知")
     time = models.DateTimeField("操作时间", auto_now_add=True)
 
@@ -72,7 +71,7 @@ class User_Session_Log(models.Model):
 class Node_Session_Log(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     ip = models.GenericIPAddressField("IP地址", null=True)
-    node = models.ForeignKey("node_manager.Node", db_column="node", on_delete=models.DO_NOTHING)
+    node = models.ForeignKey("node_manager.Node", db_column="node", on_delete=models.CASCADE)
     action = models.CharField("动作", max_length=512, default="未知")
     time = models.DateTimeField("操作时间", auto_now_add=True)
 

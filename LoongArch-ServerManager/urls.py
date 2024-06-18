@@ -24,6 +24,7 @@ import apps.permission_manager.api.permission as permission_manager
 import apps.node_manager.api.node_manager as node_manager
 import apps.node_manager.api.node_tag as node_tag
 import apps.node_manager.api.node_group as node_group
+import apps.node_manager.api.node_info as node_info
 import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
 import apps.user_manager.api.userInfo as userInfo
@@ -50,8 +51,7 @@ urlpatterns = [
     path('api/admin/permissionManager/getPermissionList', permission_manager.getPermissionList),  # 获取权限列表（ALL）
     path('api/admin/permissionManager/addPermissionGroup', permission_manager.addPermissionGroup),  # 新增权限组列表 （POST）
     path('api/admin/permissionManager/delPermissionGroup', permission_manager.delPermissionGroup),  # 删除权限组 （POST）
-    path('api/admin/permissionManager/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),
-    # 获取权限组信息 （POST）
+    path('api/admin/permissionManager/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),  # 获取权限组信息 （POST）
     path('api/admin/permissionManager/setPermissionGroup', permission_manager.setPermissionGroup),  # 设置权限组 （POST）
     # 节点管理器
     path('api/node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
@@ -66,6 +66,9 @@ urlpatterns = [
     path('api/node_manager/node_group/createGroup', node_group.create_group),  # 创建组(POST)
     path('api/node_manager/node_group/delGroup', node_group.del_group),  # 删除节点组(POST)
     path('api/node_manager/node_group/getGroupById', node_group.get_group_by_id),  # 获取节点组详情
+    path('api/node_manager/node_info/get_disk_partition_list', node_info.get_disk_partition_list),  # 获取节点磁盘列表(POST)
+    path('api/node_manager/node_info/get_alarm_setting', node_info.get_alarm_setting),  # 获取节点告警设置(POST)
+    path('api/node_manager/node_info/save_alarm_setting', node_info.save_alarm_setting),  # 保存节点告警设置(POST)
     # 审计
     path('api/admin/auditAndLogger/audit', auditAndLogger.getAudit),  # 获取审计日志（POST）
     path('api/admin/auditAndLogger/accessLog', auditAndLogger.getAccessLog),  # 获取访问日志（POST）
