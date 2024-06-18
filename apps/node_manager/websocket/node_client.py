@@ -28,6 +28,7 @@ class node_client(AsyncWebsocketConsumer):
     __auth: bool = False
     __alarm: bool = False
     __alarm_setting: AlarmSetting
+    __alarm_status: dict
     __get_process_list: bool = False
     __check_get_process_list_activity_thread: Thread
     __config: Config
@@ -230,6 +231,7 @@ class node_client(AsyncWebsocketConsumer):
 
     @Log.catch
     async def reload_alarm_setting(self, event):
+        Log.info("重新加载告警设置......")
         await self.__load_alarm_setting()
 
     @Log.catch
@@ -334,6 +336,31 @@ class node_client(AsyncWebsocketConsumer):
         if setting and setting.enable:
             Log.debug(f"节点{self.__node.name}已启用告警")
             self.__alarm = True
+            self.__alarm_status = {
+                'cpu': {
+                    'alerted': False,
+                    'timestamps': [],
+                    'usages': []
+                },
+                'memory': {
+                    'alerted': False,
+                    'timestamps': [],
+                    'usages': []
+                },
+                'network': {
+                    'send': {
+                        'alerted': False,
+                        'timestamps': [],
+                        'usages': []
+                    },
+                    'recv': {
+                        'alerted': False,
+                        'timestamps': [],
+                        'usages': []
+                    }
+                },
+                'disk': []
+            }
             self.__alarm_setting = await a_load_node_alarm_setting(self.__node)
         else:
             self.__alarm = False
@@ -352,7 +379,12 @@ class node_client(AsyncWebsocketConsumer):
             self.__alarm_setting.cpu.is_enable() and
             self.__alarm_setting.cpu.threshold <= cpu_data.get('usage')
         ):
-            Log.warning("CPU告警触发")
+            self.__alarm_status['cpu']['timestamps'].append(datetime.now())
+            self.__alarm_status['cpu']['usages'].append(cpu_data.get('usage'))
+        else:
+            self.__alarm_status['cpu']['alerted'] = False
+            self.__alarm_status['cpu']['timestamps'] = []
+            self.__alarm_status['cpu']['usages'] = []
         # 处理内存告警
         if (
             self.__alarm_setting.memory.is_enable and
@@ -362,18 +394,24 @@ class node_client(AsyncWebsocketConsumer):
             )
         ):
             Log.warning("内存告警触发")
+        else:
+            pass
         # 处理发送流量告警
         if (
           self.__alarm_setting.network.is_enable and
           self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_sent']
         ):
             Log.warning("发送流量告警触发")
+        else:
+            pass
         # 处理接收流量告警
         if (
           self.__alarm_setting.network.is_enable and
           self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_recv']
         ):
             Log.warning("接收流量告警触发")
+        else:
+            pass
         # 处理磁盘告警
         for disk_rule in self.__alarm_setting.disk:
             if disk_rule.is_enable:
@@ -386,6 +424,12 @@ class node_client(AsyncWebsocketConsumer):
                     ):
                         Log.warning(f"磁盘设备{disk['device']}告警触发")
 
+    @Log.catch
+    async def __track_alarm_event(self, device, usage, timestamp):
+        """监听告警事件"""
+        if device in ['cpu', 'memory']:
+            self.__alarm_status[device]['timestamps'].append(timestamp)
+            self.__alarm_status[device]['usages'].append(usage)
 
     @Log.catch
     def __check_get_process_list_activity(self):

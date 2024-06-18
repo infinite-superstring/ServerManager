@@ -6,3 +6,4 @@ channels_redis
 apscheduler
 redis
 hiredis
+pyotp

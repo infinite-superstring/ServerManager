@@ -231,7 +231,7 @@ class Command(BaseCommand):
             },
             {
                 'Settings': "message.email_port",
-                'value': ""
+                'value': "8080"
             },
             {
                 'Settings': "message.email_username",
