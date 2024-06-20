@@ -190,6 +190,10 @@ class Command(BaseCommand):
                 'value': 360
             },
             {
+                "Settings": "node_default_alarm_setting.interval",
+                'value': 60
+            },
+            {
                 'Settings': "node_default_alarm_setting.cpu__enable",
                 'value': True
             },

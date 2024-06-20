@@ -203,7 +203,8 @@ def load_node_alarm_setting(node: Node):
     disk_rules = alarm_setting.disk_used_rules.all() if alarm_setting and alarm_setting.disk_used_rules.exists() else []
     setting: AlarmSetting = AlarmSetting(
         enable=alarm_setting.enable if alarm_setting else False,
-        delay_seconds=alarm_setting.delay_seconds if alarm_setting else None,
+        delay_seconds=alarm_setting.delay_seconds if alarm_setting else 360,
+        interval=alarm_setting.interval if alarm_setting else 60,
         cpu=cpu(
             enable=cpu_rule.enable if cpu_rule else False,
             threshold=cpu_rule.threshold if cpu_rule else None
@@ -231,14 +232,10 @@ async def a_load_node_alarm_setting(node: Node) -> AlarmSetting:
     cpu_rule = await alarm_setting.general_rules.filter(module="CPU").afirst() if alarm_setting else None
     memory_rule = await alarm_setting.general_rules.filter(module="Memory").afirst() if alarm_setting else None
     network_rule = await sync_to_async(lambda: alarm_setting.network_rule)() if alarm_setting else None
-    # disk_rules = await sync_to_async(alarm_setting.disk_used_rules.all)() if alarm_setting and alarm_setting.disk_used_rules.aexists() else []
-    # Log.debug(disk_rules)
-    # async for disk_rule in alarm_setting.disk_used_rules.all():
-    #     Log.debug(disk_rule)
-    #     Log.debug()
     setting: AlarmSetting = AlarmSetting(
         enable=alarm_setting.enable if alarm_setting else False,
-        delay_seconds=alarm_setting.delay_seconds if alarm_setting else None,
+        delay_seconds=alarm_setting.delay_seconds if alarm_setting else 360,
+        interval=alarm_setting.interval if alarm_setting else 60,
         cpu=cpu(
             enable=cpu_rule.enable if cpu_rule else False,
             threshold=cpu_rule.threshold if cpu_rule else None

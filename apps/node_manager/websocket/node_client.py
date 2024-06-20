@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 import time
 import uuid
 from uuid import UUID
@@ -16,6 +17,8 @@ from apps.node_manager.entity.alarm_setting import AlarmSetting
 from apps.node_manager.models import Node, Node_BaseInfo, Node_AlarmSetting
 from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database, \
     a_load_node_alarm_setting
+from apps.message.models import MessageBody
+from apps.message.utils.messageUtil import send as send_message
 from apps.setting.entity import Config
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
@@ -56,7 +59,6 @@ class node_client(AsyncWebsocketConsumer):
         if cache.get(f"node_client_online_{self.__node_uuid}") is not None:
             Log.warning(f"Node {node.name} has been online, unable to connect")
             return await self.close(1000)
-        cache.add(f"NodeClient_{self.__node_uuid}", self.channel_name, timeout=self.__config.node.timeout)
         self.__node = node
         self.__node_base_info = await Node_BaseInfo.objects.aget(node=node)
         self.__node_base_info.online = True
@@ -77,6 +79,7 @@ class node_client(AsyncWebsocketConsumer):
         })
         await self.__node_online()
         await self.__load_alarm_setting()
+        threading.Thread(target=self.__check_node_timeout, args=()).start()
         clientIP = self.scope['client'][0]
         loop = asyncio.get_event_loop()
         loop.run_in_executor(None, write_node_session_log, self.__node.uuid, "上线", clientIP)
@@ -312,6 +315,7 @@ class node_client(AsyncWebsocketConsumer):
 
     @Log.catch
     async def __node_online(self):
+        await self.__update_cache_timeout()
         """节点上线"""
         await self.channel_layer.group_send(f"NodeControl_{self.__node.uuid}", {
             'type': 'node_online',
@@ -319,8 +323,12 @@ class node_client(AsyncWebsocketConsumer):
 
     @Log.catch
     async def __update_cache_timeout(self):
-        cache.set(f"node_client_online_{self.__node.uuid}", self.channel_name,
-                  timeout=self.__config.node.heartbeat_time)
+        # 更新缓存超时时间
+        cache.set(
+            f"node_client_online_{self.__node.uuid}",
+            self.channel_name,
+            timeout=self.__config.node.timeout / 1000
+        )
 
     @Log.catch
     async def __process_list(self, data):
@@ -339,8 +347,8 @@ class node_client(AsyncWebsocketConsumer):
             self.__alarm_status = {
                 'cpu': {
                     'alerted': False,
-                    'timestamps': [],
-                    'usages': []
+                    'event_start_time': None,
+                    'event_end_time': None,
                 },
                 'memory': {
                     'alerted': False,
@@ -376,60 +384,94 @@ class node_client(AsyncWebsocketConsumer):
         network_data = data.get('network')
         # 处理CPU告警
         if (
-            self.__alarm_setting.cpu.is_enable() and
-            self.__alarm_setting.cpu.threshold <= cpu_data.get('usage')
+                self.__alarm_setting.cpu.is_enable() and
+                self.__alarm_setting.cpu.threshold <= cpu_data.get('usage')
         ):
-            self.__alarm_status['cpu']['timestamps'].append(datetime.now())
-            self.__alarm_status['cpu']['usages'].append(cpu_data.get('usage'))
-        else:
-            self.__alarm_status['cpu']['alerted'] = False
-            self.__alarm_status['cpu']['timestamps'] = []
-            self.__alarm_status['cpu']['usages'] = []
-        # 处理内存告警
-        if (
-            self.__alarm_setting.memory.is_enable and
-            self.__alarm_setting.memory.threshold <= calculate_percentage(
-                memory_data.get('used'),
-                self.__node_base_info.memory_total
+            if not self.__alarm_status['cpu']['event_start_time']:
+                self.__alarm_status['cpu']['event_start_time'] = datetime.now().timestamp()
+            await self.__send_alarm_event(
+                'cpu',
+                self.__alarm_status['cpu']['event_start_time']
             )
-        ):
-            Log.warning("内存告警触发")
         else:
-            pass
-        # 处理发送流量告警
-        if (
-          self.__alarm_setting.network.is_enable and
-          self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_sent']
-        ):
-            Log.warning("发送流量告警触发")
-        else:
-            pass
-        # 处理接收流量告警
-        if (
-          self.__alarm_setting.network.is_enable and
-          self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_recv']
-        ):
-            Log.warning("接收流量告警触发")
-        else:
-            pass
-        # 处理磁盘告警
-        for disk_rule in self.__alarm_setting.disk:
-            if disk_rule.is_enable:
-                for disk in disk_data['partition_list']:
-                    if disk['device'] != disk_rule.device:
-                        continue
-                    if disk_rule.threshold <= calculate_percentage(
-                        disk['used'],
-                        disk['total']
-                    ):
-                        Log.warning(f"磁盘设备{disk['device']}告警触发")
+            if self.__alarm_status['cpu']['event_start_time']:
+                self.__alarm_status['cpu']['event_end_time'] = datetime.now().timestamp()
+                await self.__send_alarm_event(
+                    'cpu',
+                    self.__alarm_status['cpu']['event_start_time'],
+                    self.__alarm_status['cpu']['event_end_time']
+                )
+
+        # # 处理内存告警
+        # if (
+        #     self.__alarm_setting.memory.is_enable and
+        #     self.__alarm_setting.memory.threshold <= calculate_percentage(
+        #         memory_data.get('used'),
+        #         self.__node_base_info.memory_total
+        #     )
+        # ):
+        #     Log.warning("内存告警触发")
+        # else:
+        #     pass
+        # # 处理发送流量告警
+        # if (
+        #   self.__alarm_setting.network.is_enable and
+        #   self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_sent']
+        # ):
+        #     Log.warning("发送流量告警触发")
+        # else:
+        #     pass
+        # # 处理接收流量告警
+        # if (
+        #   self.__alarm_setting.network.is_enable and
+        #   self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_recv']
+        # ):
+        #     Log.warning("接收流量告警触发")
+        # else:
+        #     pass
+        # # 处理磁盘告警
+        # for disk_rule in self.__alarm_setting.disk:
+        #     if disk_rule.is_enable:
+        #         for disk in disk_data['partition_list']:
+        #             if disk['device'] != disk_rule.device:
+        #                 continue
+        #             if disk_rule.threshold <= calculate_percentage(
+        #                 disk['used'],
+        #                 disk['total']
+        #             ):
+        #                 Log.warning(f"磁盘设备{disk['device']}告警触发")
 
     @Log.catch
-    async def __track_alarm_event(self, device, usage, timestamp):
-        """监听告警事件"""
-        if device in ['cpu', 'memory']:
-            self.__alarm_status[device]['timestamps'].append(timestamp)
-            self.__alarm_status[device]['usages'].append(usage)
+    async def __send_alarm_event(self, device, start_time, end_time=None):
+        # 处理开始告警消息
+        if (
+            (start_time + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
+            not self.__alarm_status[device]['alerted']
+        ):
+            Log.debug("发送告警开始消息")
+            self.__alarm_status[device]['alerted'] = True
+            if self.__node.group:
+                send_message(MessageBody(
+                    title=f"{device}告警中！",
+                    content=f"触发时间: {self.__alarm_status[device]['event_start_time'].strftime('%Y-%m-%d %H:%M:%S')}",
+                    node_groups=self.__node.group
+                ))
+            else:
+                Log.warning("未绑定节点组，无法发送消息")
+        # 处理结束告警消息
+        if end_time and start_time:
+            if self.__alarm_status[device]['alerted']:
+                Log.debug("发送告警结束消息")
+                self.__alarm_status[device]['alerted'] = False
+                if self.__node.group:
+                    send_message(MessageBody(
+                        title=f"{device}告警结束",
+                        content=f"{self.__alarm_status[device]['event_start_time'].strftime('%Y-%m-%d %H:%M:%S')} ———— {self.__alarm_status[device]['event_end_time'].strftime('%Y-%m-%d %H:%M:%S')}",
+                        node_groups=self.__node.group
+                    ))
+                else:
+                    Log.warning("未绑定节点组，无法发送消息")
+            self.__alarm_status[device]['event_start_time'] = None
 
     @Log.catch
     def __check_get_process_list_activity(self):
@@ -443,3 +485,10 @@ class node_client(AsyncWebsocketConsumer):
         asyncio.run(self.send_json({
             'action': 'stop_get_process_list',
         }))
+
+    @Log.catch
+    def __check_node_timeout(self):
+        """线程：检查节点是否超时"""
+        while cache.get(f"node_client_online_{self.__node.uuid}", False) == self.channel_name:
+            time.sleep(1)
+        asyncio.run(self.close(500))

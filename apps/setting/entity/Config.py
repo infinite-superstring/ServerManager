@@ -64,6 +64,8 @@ class node_default_alarm_setting:
     enable: bool = None
     # 告警延迟时间
     delay_seconds: int = None
+    # 告警间隔时间
+    interval: int = None
     # 启用CPU告警
     cpu__enable: bool = None
     # CPU告警阈值

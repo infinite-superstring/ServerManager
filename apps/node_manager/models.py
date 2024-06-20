@@ -185,6 +185,7 @@ class Node_AlarmSetting(models.Model):
     node = models.ForeignKey(Node, on_delete=models.CASCADE)
     enable = models.BooleanField(default=False)
     delay_seconds = models.IntegerField("告警延迟时间(秒)", null=False, default=1)
+    interval = models.IntegerField("告警间隔时间", null=False, default=60)
     general_rules = models.ManyToManyField('GeneralAlarmRule')
     disk_used_rules = models.ManyToManyField('DiskUsedAlarmRule')
     network_rule = models.ForeignKey('NetworkAlarmRule', on_delete=models.CASCADE)

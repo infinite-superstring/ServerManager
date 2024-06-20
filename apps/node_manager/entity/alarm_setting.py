@@ -1,14 +1,16 @@
 class AlarmSetting:
     enable: bool = None
     delay_seconds: int = None
+    interval: int = None
     cpu = None
     memory = None
     network = None
     disk: list[disk] = []
 
-    def __init__(self, enable, delay_seconds, cpu, memory, network, disk):
+    def __init__(self, enable, delay_seconds, interval, cpu, memory, network, disk):
         self.enable = enable
         self.delay_seconds = delay_seconds
+        self.interval = interval
         self.cpu = cpu
         self.memory = memory
         self.network = network
