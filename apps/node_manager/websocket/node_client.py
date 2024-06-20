@@ -9,6 +9,7 @@ from threading import Thread
 
 from channels.exceptions import StopConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
+from consumers.AsyncConsumer import AsyncBaseConsumer
 from django.apps import apps
 from django.core.cache import cache
 
@@ -23,11 +24,10 @@ from apps.setting.entity import Config
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
 from util.jsonEncoder import ComplexEncoder
-
 from util.logger import Log
 
 
-class node_client(AsyncWebsocketConsumer):
+class node_client(AsyncBaseConsumer):
     __auth: bool = False
     __alarm: bool = False
     __alarm_setting: AlarmSetting
@@ -104,61 +104,29 @@ class node_client(AsyncWebsocketConsumer):
             Log.success(f"节点：{node_name}已断开({close_code})")
         raise StopConsumer
 
-    @Log.catch
-    async def receive(self, text_data=None, bytes_data=None):
+    async def receive(self, *args, **kwargs):
         await self.__update_cache_timeout()
-        # 处理接收到的消息
-        if text_data:
-            try:
-                json_data = json.loads(text_data)
-            except Exception as e:
-                Log.error(f"解析Websocket消息时发生错误：\n{e}")
-                return
-            action = json_data.get('action')
-            Log.debug(action)
-            data = json_data.get('data')
-            Log.debug(data)
-            match action:
-                case 'upload_running_data':
-                    await self.__save_running_data(data)
-                case 'refresh_node_info':
-                    await self.__refresh_node_info(data)
-                case 'create_terminal_session':
-                    """创建tty会话返回"""
-                    index = UUID(data['index'])
-                    sid = data['uuid']
-                    Log.debug(self.__init_tty_queue)
-                    Log.debug(index)
-                    if index not in self.__init_tty_queue.keys():
-                        await self.send_json({
-                            'action': 'close_terminal',
-                            'data': {
-                                'uuid': sid
-                            }
-                        })
-                    else:
-                        self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
-                        self.__init_tty_queue.pop(index)
-                case "terminal_output":
-                    """终端内容输出"""
-                    channel = get_key_by_value(self.__tty_uuid, data['uuid'], True)
-                    if channel:
-                        await self.channel_layer.send(channel, {
-                            'type': "terminal_output",
-                            'output': data['output']
-                        })
-                case "process_list":
-                    await self.__process_list(data)
-                case 'ping':
-                    await self.send_json({
-                        'action': 'pong',
-                    })
-                case _:
-                    Log.warning(f'Unknown action:{action}')
+        await super().receive(*args, **kwargs)
 
-    @Log.catch
-    async def send_json(self, data):
-        await self.send(json.dumps(data, cls=ComplexEncoder))
+    # @Log.catch
+    # async def receive(self, text_data=None, bytes_data=None):
+    #     await self.__update_cache_timeout()
+    #     # 处理接收到的消息
+    #     if text_data:
+    #         try:
+    #             json_data = json.loads(text_data)
+    #         except Exception as e:
+    #             Log.error(f"解析Websocket消息时发生错误：\n{e}")
+    #             return
+    #         action = json_data.get('action')
+    #         Log.debug(action)
+    #         data = json_data.get('data')
+    #         Log.debug(data)
+    #         match action:
+    #             case "terminal_output":
+
+    #             case _:
+    #                 Log.warning(f'Unknown action:{action}')
 
     @Log.catch
     async def connect_terminal(self, event):
@@ -238,32 +206,34 @@ class node_client(AsyncWebsocketConsumer):
         await self.__load_alarm_setting()
 
     @Log.catch
-    async def __refresh_node_info(self, data):
+    @AsyncBaseConsumer.action_handler("refresh_node_info")
+    async def __refresh_node_info(self, payload=None):
         """刷新节点信息"""
-        self.__node_base_info.system = data['system']
-        self.__node_base_info.system_release = data['system_release']
-        self.__node_base_info.system_build_version = data['system_build_version']
-        self.__node_base_info.hostname = data['hostname']
-        self.__node_base_info.boot_time = data['boot_time']
-        self.__node_base_info.architecture = data['cpu']['architecture']
-        self.__node_base_info.core_count = data['cpu']['core']
-        self.__node_base_info.processor_count = data['cpu']['processor']
-        self.__node_base_info.memory_total = data['memory_total']
-        await update_disk_partition(self.__node, data['disks'])
+        self.__node_base_info.system = payload['system']
+        self.__node_base_info.system_release = payload['system_release']
+        self.__node_base_info.system_build_version = payload['system_build_version']
+        self.__node_base_info.hostname = payload['hostname']
+        self.__node_base_info.boot_time = payload['boot_time']
+        self.__node_base_info.architecture = payload['cpu']['architecture']
+        self.__node_base_info.core_count = payload['cpu']['core']
+        self.__node_base_info.processor_count = payload['cpu']['processor']
+        self.__node_base_info.memory_total = payload['memory_total']
+        await update_disk_partition(self.__node, payload['disks'])
         await self.__node_base_info.asave()
         self.__node_base_info = self.__node_base_info
 
-    async def __save_running_data(self, data):
+    @AsyncBaseConsumer.action_handler("upload_running_data")
+    async def __save_running_data(self, payload=None):
         """上传节点数据"""
-        cpu_data = data.get('cpu')
-        memory_data = data.get('memory')
-        swap_data = data.get('swap')
-        disk_data = data.get('disk')
-        network_data = data.get('network')
-        loadavg_data = data.get('loadavg')
-        await refresh_node_info(self.__node, data)
+        cpu_data = payload.get('cpu')
+        memory_data = payload.get('memory')
+        swap_data = payload.get('swap')
+        disk_data = payload.get('disk')
+        network_data = payload.get('network')
+        loadavg_data = payload.get('loadavg')
+        await refresh_node_info(self.__node, payload)
         await update_disk_partition(self.__node, disk_data['partition_list'])
-        await self.__handle_alarm_event(data)
+        await self.__handle_alarm_event(payload)
         cache_key: str = f"node_{self.__node.uuid}_usage_last_update_time"
         # 检查存储粒度
         if cache.get(cache_key) is None:
@@ -272,7 +242,7 @@ class node_client(AsyncWebsocketConsumer):
                 datetime.now().timestamp(),
                 timeout=self.__config.node_usage.data_save_interval * 60
             )
-            await save_node_usage_to_database(self.__node, data)
+            await save_node_usage_to_database(self.__node, payload)
         await self.__update_node_usage_update({
             "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'cpu_core': {f'CPU {index}': data for index, data in enumerate(cpu_data["core_usage"])},
@@ -297,6 +267,44 @@ class node_client(AsyncWebsocketConsumer):
         })
 
     @Log.catch
+    @AsyncBaseConsumer.action_handler("create_terminal_session")
+    async def __create_terminal_session(self, payload=None):
+        index = UUID(payload['index'])
+        sid = payload['uuid']
+        Log.debug(self.__init_tty_queue)
+        Log.debug(index)
+        if index not in self.__init_tty_queue.keys():
+            await self.send_json({
+                'action': 'close_terminal',
+                'data': {
+                    'uuid': sid
+                }
+            })
+        else:
+            self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
+            self.__init_tty_queue.pop(index)
+
+    @Log.catch
+    @AsyncBaseConsumer.action_handler("terminal_output")
+    async def __handle_terminal_output(self, payload=None):
+        """终端内容输出"""
+        channel = get_key_by_value(self.__tty_uuid, payload['uuid'], True)
+        if channel:
+            await self.channel_layer.send(channel, {
+                'type': "terminal_output",
+                'output': payload['output']
+            })
+
+
+    @Log.catch
+    @AsyncBaseConsumer.action_handler("ping")
+    async def __handle_ping(self):
+        await self.send_json({
+            'action': 'pong',
+        })
+
+
+    @Log.catch
     async def __update_node_usage_update(self, usage_data):
         """更新节点使用率数据"""
         cache.set(f"NodeUsageData_{self.__node.uuid}", usage_data,
@@ -306,12 +314,14 @@ class node_client(AsyncWebsocketConsumer):
             'usage_data': usage_data
         })
 
+
     @Log.catch
     async def __node_offline(self):
         """节点离线"""
         await self.channel_layer.group_send(f"NodeControl_{self.__node.uuid}", {
             'type': 'node_offline',
         })
+
 
     @Log.catch
     async def __node_online(self):
@@ -320,6 +330,7 @@ class node_client(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(f"NodeControl_{self.__node.uuid}", {
             'type': 'node_online',
         })
+
 
     @Log.catch
     async def __update_cache_timeout(self):
@@ -330,13 +341,16 @@ class node_client(AsyncWebsocketConsumer):
             timeout=self.__config.node.timeout / 1000
         )
 
+
     @Log.catch
+    @AsyncBaseConsumer.action_handler("process_list")
     async def __process_list(self, data):
         cache.set(f"node_{self.__node_uuid}_process_list", data, 5)
         await self.channel_layer.group_send(f"NodeControl_{self.__node_uuid}", {
             'type': 'show_process_list',
             'process_list': data
         })
+
 
     @Log.catch
     async def __load_alarm_setting(self):
@@ -372,6 +386,7 @@ class node_client(AsyncWebsocketConsumer):
             self.__alarm_setting = await a_load_node_alarm_setting(self.__node)
         else:
             self.__alarm = False
+
 
     @Log.catch
     async def __handle_alarm_event(self, data):
@@ -441,12 +456,13 @@ class node_client(AsyncWebsocketConsumer):
         #             ):
         #                 Log.warning(f"磁盘设备{disk['device']}告警触发")
 
+
     @Log.catch
     async def __send_alarm_event(self, device, start_time, end_time=None):
         # 处理开始告警消息
         if (
-            (start_time + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
-            not self.__alarm_status[device]['alerted']
+                (start_time + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
+                not self.__alarm_status[device]['alerted']
         ):
             Log.debug("发送告警开始消息")
             self.__alarm_status[device]['alerted'] = True
@@ -473,6 +489,7 @@ class node_client(AsyncWebsocketConsumer):
                     Log.warning("未绑定节点组，无法发送消息")
             self.__alarm_status[device]['event_start_time'] = None
 
+
     @Log.catch
     def __check_get_process_list_activity(self):
         """线程: 检查获取进程列表活动"""
@@ -486,9 +503,10 @@ class node_client(AsyncWebsocketConsumer):
             'action': 'stop_get_process_list',
         }))
 
+
     @Log.catch
     def __check_node_timeout(self):
         """线程：检查节点是否超时"""
         while cache.get(f"node_client_online_{self.__node.uuid}", False) == self.channel_name:
             time.sleep(1)
-        asyncio.run(self.close(500))
+        asyncio.run(self.close(3500))
