@@ -8,7 +8,6 @@ from datetime import datetime
 from threading import Thread
 
 from channels.exceptions import StopConsumer
-from channels.generic.websocket import AsyncWebsocketConsumer
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from django.apps import apps
 from django.core.cache import cache
@@ -23,7 +22,6 @@ from apps.message.utils.messageUtil import send as send_message
 from apps.setting.entity import Config
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
-from util.jsonEncoder import ComplexEncoder
 from util.logger import Log
 
 
@@ -275,14 +273,12 @@ class node_client(AsyncBaseConsumer):
                 'output': payload['output']
             })
 
-
     @Log.catch
     @AsyncBaseConsumer.action_handler("ping")
     async def __handle_ping(self):
         await self.send_json({
             'action': 'pong',
         })
-
 
     @Log.catch
     async def __update_node_usage_update(self, usage_data):
@@ -294,14 +290,12 @@ class node_client(AsyncBaseConsumer):
             'usage_data': usage_data
         })
 
-
     @Log.catch
     async def __node_offline(self):
         """节点离线"""
         await self.channel_layer.group_send(f"NodeControl_{self.__node.uuid}", {
             'type': 'node_offline',
         })
-
 
     @Log.catch
     async def __node_online(self):
@@ -310,7 +304,6 @@ class node_client(AsyncBaseConsumer):
         await self.channel_layer.group_send(f"NodeControl_{self.__node.uuid}", {
             'type': 'node_online',
         })
-
 
     @Log.catch
     async def __update_cache_timeout(self):
@@ -321,7 +314,6 @@ class node_client(AsyncBaseConsumer):
             timeout=self.__config.node.timeout / 1000
         )
 
-
     @Log.catch
     @AsyncBaseConsumer.action_handler("process_list")
     async def __process_list(self, data):
@@ -330,7 +322,6 @@ class node_client(AsyncBaseConsumer):
             'type': 'show_process_list',
             'process_list': data
         })
-
 
     @Log.catch
     async def __load_alarm_setting(self):
@@ -366,7 +357,6 @@ class node_client(AsyncBaseConsumer):
             self.__alarm_setting = await a_load_node_alarm_setting(self.__node)
         else:
             self.__alarm = False
-
 
     @Log.catch
     async def __handle_alarm_event(self, data):
@@ -436,7 +426,6 @@ class node_client(AsyncBaseConsumer):
         #             ):
         #                 Log.warning(f"磁盘设备{disk['device']}告警触发")
 
-
     @Log.catch
     async def __send_alarm_event(self, device, start_time, end_time=None):
         # 处理开始告警消息
@@ -469,7 +458,6 @@ class node_client(AsyncBaseConsumer):
                     Log.warning("未绑定节点组，无法发送消息")
             self.__alarm_status[device]['event_start_time'] = None
 
-
     @Log.catch
     def __check_get_process_list_activity(self):
         """线程: 检查获取进程列表活动"""
@@ -482,7 +470,6 @@ class node_client(AsyncBaseConsumer):
         asyncio.run(self.send_json({
             'action': 'stop_get_process_list',
         }))
-
 
     @Log.catch
     def __check_node_timeout(self):

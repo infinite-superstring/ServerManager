@@ -6,18 +6,18 @@ from django.utils import timezone
 from uuid import UUID, uuid1
 
 from channels.exceptions import StopConsumer
-from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.nodeUtil import read_performance_record
 from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
+from consumers.AsyncConsumer import AsyncBaseConsumer
 from util.jsonEncoder import ComplexEncoder
 from util.logger import Log
 
 
-class node_control(AsyncWebsocketConsumer):
+class node_control(AsyncBaseConsumer):
     __connect_terminal_flag: bool = False
     __node_uuid: UUID = None
     __userID: int = None
@@ -61,40 +61,6 @@ class node_control(AsyncWebsocketConsumer):
         if self.__connect_terminal_flag:
             await self.__close_terminal()
         raise StopConsumer
-
-    async def receive(self, text_data=None, bytes_data=None):
-        # 处理接收到的消息
-        if text_data:
-            try:
-                json_data = json.loads(text_data)
-                print(json_data)
-            except Exception as e:
-                Log.error(f"解析Websocket消息时发生错误：\n{e}")
-                return
-            match json_data['action']:
-                case 'connect_terminal':
-                    await self.__connect_terminal()
-                case 'close_terminal':
-                    await self.__close_terminal()
-                case 'terminal_input':
-                    if self.__connect_terminal:
-                        await self.terminal_input(json_data['data'])
-                case 'load_process_list':
-                    await self.__get_process_list()
-                case 'process_list:heartbeat':
-                    await self.__update_process_list_heartbeat()
-                case "kill_process":
-                    if json_data['data'].get('pid'):
-                        await self.__kill_process(json_data['data'].get('pid'), json_data['data'].get('tree'))
-                case "load_performance_record":
-                    await self.__load_performance_record()
-                case "get_performance_record":
-                    data = json_data['data']
-                    start_time = data.get('start_time')
-                    end_time = data.get('end_time')
-                    device = data.get('device', "_all")
-                    if start_time and end_time:
-                        await self.__load_performance_record(start_time, end_time, device)
 
     @Log.catch
     async def send_json(self, data):
@@ -163,6 +129,7 @@ class node_control(AsyncWebsocketConsumer):
         await self.send_json({'action': 'terminal_output', 'data': event['output']})
 
     @Log.catch
+    @AsyncBaseConsumer.action_handler("terminal_input")
     async def terminal_input(self, command):
         await self.channel_layer.group_send(f"NodeClient_{self.__node.uuid}", {
             "type": "input_command",
@@ -179,6 +146,7 @@ class node_control(AsyncWebsocketConsumer):
         })
 
     @Log.catch
+    @AsyncBaseConsumer.action_handler("connect_terminal")
     async def __connect_terminal(self):
         if self.__connect_terminal is True:
             raise RuntimeError("Terminal is already connected")
@@ -189,6 +157,7 @@ class node_control(AsyncWebsocketConsumer):
         })
 
     @Log.catch
+    @AsyncBaseConsumer.action_handler("close_terminal")
     async def __close_terminal(self):
         if not self.__connect_terminal:
             raise RuntimeError("Terminal not connected")
@@ -199,6 +168,7 @@ class node_control(AsyncWebsocketConsumer):
         })
 
     @Log.catch
+    @AsyncBaseConsumer.action_handler("load_process_list")
     async def __get_process_list(self):
         """获取进程列表"""
         cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=10)
@@ -213,19 +183,31 @@ class node_control(AsyncWebsocketConsumer):
             })
 
     @Log.catch
+    @AsyncBaseConsumer.action_handler("process_list:heartbeat")
     async def __update_process_list_heartbeat(self):
         """更新进程列表 - 心跳"""
         cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=10)
 
     @Log.catch
-    async def __kill_process(self, pid, tree_mode: bool = False):
+    @AsyncBaseConsumer.action_handler("kill_process")
+    async def __kill_process(self, data):
         await self.channel_layer.group_send(f"NodeClient_{self.__node_uuid}", {
             'type': 'kill_process',
-            'pid': pid,
-            'tree_mode': tree_mode
+            'pid': data.get('pid'),
+            'tree_mode': data.get('tree_mode')
         })
 
     @Log.catch
+    @AsyncBaseConsumer.action_handler("get_performance_record")
+    async def __get_performance_record(self, data):
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+        device = data.get('device', "_all")
+        if start_time and end_time:
+            await self.__load_performance_record(start_time, end_time, device)
+
+    @Log.catch
+    @AsyncBaseConsumer.action_handler("load_performance_record")
     async def __load_performance_record(self, start_time=None, end_time=None, device="_all"):
         start_time = (timezone.now() - timezone.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S') if not start_time else start_time
         end_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S') if not end_time else end_time
