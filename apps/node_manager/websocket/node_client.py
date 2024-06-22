@@ -7,6 +7,7 @@ from uuid import UUID
 from datetime import datetime
 from threading import Thread
 
+from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from django.apps import apps
@@ -18,7 +19,7 @@ from apps.node_manager.models import Node, Node_BaseInfo, Node_AlarmSetting
 from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database, \
     a_load_node_alarm_setting
 from apps.message.models import MessageBody
-from apps.message.utils.messageUtil import send as send_message
+from apps.message.api.message import send_email
 from apps.setting.entity import Config
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
@@ -428,18 +429,21 @@ class node_client(AsyncBaseConsumer):
 
     @Log.catch
     async def __send_alarm_event(self, device, start_time, end_time=None):
+        node_group = await sync_to_async(lambda: self.__node.group)()
         # 处理开始告警消息
         if (
                 (start_time + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
+                (self.__alarm_status[device]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp()) and
                 not self.__alarm_status[device]['alerted']
         ):
             Log.debug("发送告警开始消息")
             self.__alarm_status[device]['alerted'] = True
-            if self.__node.group:
-                send_message(MessageBody(
+            if node_group:
+                Log.debug(self.__alarm_status[device]['event_start_time'])
+                await sync_to_async(send_email)(MessageBody(
                     title=f"{device}告警中！",
-                    content=f"触发时间: {self.__alarm_status[device]['event_start_time'].strftime('%Y-%m-%d %H:%M:%S')}",
-                    node_groups=self.__node.group
+                    content=f"设备：{device}<br>事件：已达到设定阈值触发告警<br>触发时间: {datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')}",
+                    node_groups=node_group
                 ))
             else:
                 Log.warning("未绑定节点组，无法发送消息")
@@ -448,11 +452,11 @@ class node_client(AsyncBaseConsumer):
             if self.__alarm_status[device]['alerted']:
                 Log.debug("发送告警结束消息")
                 self.__alarm_status[device]['alerted'] = False
-                if self.__node.group:
-                    send_message(MessageBody(
+                if node_group:
+                    await sync_to_async(send_email)(MessageBody(
                         title=f"{device}告警结束",
-                        content=f"{self.__alarm_status[device]['event_start_time'].strftime('%Y-%m-%d %H:%M:%S')} ———— {self.__alarm_status[device]['event_end_time'].strftime('%Y-%m-%d %H:%M:%S')}",
-                        node_groups=self.__node.group
+                        content=f"设备：{device}<br>事件：离开设定阈值触发告警<br>触发时间: {datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')} ———— {datetime.fromtimestamp(self.__alarm_status[device]['event_end_time']).strftime('%Y-%m-%d %H:%M:%S')}",
+                        node_groups=node_group
                     ))
                 else:
                     Log.warning("未绑定节点组，无法发送消息")
