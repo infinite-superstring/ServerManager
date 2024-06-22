@@ -88,6 +88,7 @@ class node_control(AsyncBaseConsumer):
             }
         if node_system_info and await Node_UsageData.objects.filter(node=self.__node).aexists():
             usage_data: dict = cache.get(f"NodeUsageData_{self.__node.uuid}")
+        node_group = await sync_to_async(lambda: self.__node.group)()
         await self.send_json({
             "action": "init",
             "data": {
@@ -96,6 +97,7 @@ class node_control(AsyncBaseConsumer):
                     "node_name": self.__node.name,
                     "node_online": self.__node_base_info.online if self.__node_base_info else False,
                     "node_description": self.__node.description,
+                    "node_group": node_group.name if node_group else None,
                     "node_tags": await aget_node_tags(self.__node),
                     "node_system_info": node_system_info,
                 },

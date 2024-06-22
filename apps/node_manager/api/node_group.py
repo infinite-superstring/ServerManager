@@ -61,7 +61,7 @@ def create_group(req: HttpRequest):
     group_nodes: list = req_json.get('group_nodes')
     # 组消息发送规则
     rules: list = req_json.get('rules')
-    if not (group_name and group_leader and rules):
+    if not (group_name and group_leader):
         return ResponseJson({'status': -1, 'msg': '参数不完整'})
     if Node_Group.objects.filter(name=group_name).exists():
         return ResponseJson({"status": 0, "msg": "节点组已存在"})
@@ -77,9 +77,10 @@ def create_group(req: HttpRequest):
             Log.warning(f"节点{node}不存在")
             continue
         node_set_group(node, group.id)
-    rules = create_message_recipient_rules(rules)
-    for rule in rules:
-        group.time_slot_recipient.add(rule)
+    if group_nodes:
+        rules = create_message_recipient_rules(rules)
+        for rule in rules:
+            group.time_slot_recipient.add(rule)
     return ResponseJson({'status': 1, 'msg': '节点组创建成功'})
 
 
