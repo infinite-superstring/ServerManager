@@ -139,11 +139,16 @@ def get_email_content(msg: MessageBody, on_web_page=False):
     """
     封装消息到HTML
     """
+    content = (msg.content.replace('\n', '<br>')
+               .replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;')
+               .replace(' ', '&nbsp;').replace('\r', '')
+               .replace('\n\n', '<br><br>')
+               .replace('\n\n\n', '<br><br><br>'))
     with open('apps/message/emailTemplates/emailTemplates.html', 'r', encoding='utf-8') as f:
         html = f.read()
         # 解析HTML
         html = html.replace('{{title}}', msg.title)
-        html = html.replace('{{content}}', msg.content)
+        html = html.replace('{{content}}', content)
         html = html.replace('{{date}}', str(datetime.now()))
         html = html.replace('{{name}}', msg.name)
         if on_web_page:
@@ -153,7 +158,7 @@ def get_email_content(msg: MessageBody, on_web_page=False):
         return html
 
 
-def send_email(mes_obj: MessageBody, users: QuerySet[User]):
+def _send_email(mes_obj: MessageBody, users: QuerySet[User]):
     """
     发送邮件
     """
@@ -196,7 +201,7 @@ def send(mes_obj: MessageBody):
             if not users:
                 return
             # 执行发送
-            send_email(mes_obj=mes_obj, users=users)
+            _send_email(mes_obj=mes_obj, users=users)
             if mes_obj.email_sms_only:
                 return None
             return users

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'apps.audit',  # 审计
     'apps.message',  # 消息
     'apps.patrol',  # 巡检
+    "apps.task",  # 任务管理
     'django.contrib.contenttypes',
 ]
 

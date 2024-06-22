@@ -56,11 +56,12 @@ class FileChange_Log(models.Model):
         db_table_comment = "文件修改记录"
 
 
+# 用户会话日志
 class User_Session_Log(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     ip = models.GenericIPAddressField("IP地址", null=True)
     user = models.ForeignKey("user_manager.User", db_column="user", on_delete=models.CASCADE)
-    action = models.CharField("动作", max_length=512, default="未知")
+    action = models.IntegerField("动作")
     time = models.DateTimeField("操作时间", auto_now_add=True)
 
     class Meta:
@@ -68,11 +69,12 @@ class User_Session_Log(models.Model):
         db_table_comment = "用户会话记录"
 
 
+# 节点会话日志
 class Node_Session_Log(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     ip = models.GenericIPAddressField("IP地址", null=True)
     node = models.ForeignKey("node_manager.Node", db_column="node", on_delete=models.CASCADE)
-    action = models.CharField("动作", max_length=512, default="未知")
+    action = models.IntegerField("动作")
     time = models.DateTimeField("操作时间", auto_now_add=True)
 
     class Meta:

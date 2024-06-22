@@ -11,6 +11,7 @@ from util.Request import getClientIp, RequestLoadJson
 from util.Response import ResponseJson
 from apps.message.utils.messageUtil import send, send_err_handle, get_email_content, byUserGetUsername, send_ws
 from util.pageUtils import get_page_content, get_max_page
+from django.db.models import Case, When, IntegerField
 
 
 def send_email(message: MessageBody):
@@ -69,11 +70,11 @@ def get_message_list(request):
     if not method != 'all' and method != 'read' and method != 'unread':
         method = 'all'
     if method == "unread":
-        mlist = UserMessage.objects.filter(user_id=user.id, read=False)
+        mlist = UserMessage.objects.filter(user_id=user.id, read=False).order_by('-message__create_time')
     elif method == "read":
-        mlist = UserMessage.objects.filter(user_id=user.id, read=True)
+        mlist = UserMessage.objects.filter(user_id=user.id, read=True).order_by('-message__create_time')
     elif method == "all":
-        mlist = UserMessage.objects.filter(user_id=user.id)
+        mlist = UserMessage.objects.filter(user_id=user.id).order_by('read', '-message__create_time')
 
     page_result = _get_page_list(mlist, int(curr), pz=int(page_size))
     count = mlist.count()

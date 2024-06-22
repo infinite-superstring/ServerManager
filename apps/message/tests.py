@@ -1,17 +1,13 @@
 from datetime import datetime, time
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from django.test import TestCase
 
-from apps.message.api.message import get_message_list
-from apps.message.models import Message, MessageBody
+from apps.message.models import MessageBody
 from apps.message.utils.messageUtil import send
 from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
-from apps.node_manager.utils.groupUtil import create_message_recipient_rule, create_message_recipient_rules
+from apps.node_manager.utils.groupUtil import create_message_recipient_rules
 from apps.user_manager.models import User
 from util.passwordUtils import encrypt_password
-from apps.message.webSockets.message_client import MessageClient
 
 
 # Create your tests here.

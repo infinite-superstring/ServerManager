@@ -44,7 +44,7 @@ def AuthLogin(req: HttpRequest):
     user.lastLoginTime = datetime.datetime.now()
     user.save()
     write_audit(user.id, "用户登录", "用户认证", user.lastLoginIP)
-    write_user_session_log(user_id=user.id, action="登录", ip=user.lastLoginIP)
+    write_user_session_log(user_id=user.id, action=0, ip=user.lastLoginIP)
     return ResponseJson({"status": 1, "msg": "登录成功"})
 
 
@@ -54,7 +54,7 @@ def AuthOutLog(req: HttpRequest):
         user_id = req.session.get("userID")
         ip = getClientIp(req)
         write_audit(user_id, "退出登录", "用户认证", ip)
-        write_user_session_log(user_id=user_id, action="退出", ip=ip)
+        write_user_session_log(user_id=user_id, action=1, ip=ip)
         req.session.clear()
         return ResponseJson({"status": 1, "msg": "登出成功"})
     else:

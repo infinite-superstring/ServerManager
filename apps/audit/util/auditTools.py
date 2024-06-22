@@ -51,7 +51,7 @@ def write_file_change_log(user_id: int, action: str, filepath: str):
 
 
 @Log.catch
-def write_user_session_log(user_id: int, action: str, ip: str):
+def write_user_session_log(user_id: int, action: int, ip: str):
     """
     用户会话记录
     :param user_id: 用户ID
@@ -62,11 +62,11 @@ def write_user_session_log(user_id: int, action: str, ip: str):
 
 
 @Log.catch
-def write_node_session_log(node_uuid,  action: str, ip: str):
+def write_node_session_log(node_uuid, action: int, ip: str):
     """
     节点会话记录
     :param node_uuid: 节点
     :param action: 动作
     :param ip: IP地址
     """
-    Node_Session_Log.objects.create(node_id=node_uuid,  action=action, ip=ip)
+    Node_Session_Log.objects.create(node_id=node_uuid, action=action, ip=ip)
