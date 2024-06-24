@@ -432,8 +432,11 @@ class node_client(AsyncBaseConsumer):
         node_group = await sync_to_async(lambda: self.__node.group)()
         # 处理开始告警消息
         if (
+                #
                 (start_time + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
-                (self.__alarm_status[device]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp()) and
+                # 验证结束时间
+                (self.__alarm_status[device]['event_end_time'] is None or self.__alarm_status[device]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp()) and
+                # 检查周期内是否发送过消息
                 not self.__alarm_status[device]['alerted']
         ):
             Log.debug("发送告警开始消息")
@@ -441,7 +444,7 @@ class node_client(AsyncBaseConsumer):
             if node_group:
                 Log.debug(self.__alarm_status[device]['event_start_time'])
                 await sync_to_async(send_email)(MessageBody(
-                    title=f"{device}告警中！",
+                    title=f"{device}告警触发！",
                     content=f"设备：{device}<br>事件：已达到设定阈值触发告警<br>触发时间: {datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')}",
                     node_groups=node_group
                 ))
@@ -454,7 +457,7 @@ class node_client(AsyncBaseConsumer):
                 self.__alarm_status[device]['alerted'] = False
                 if node_group:
                     await sync_to_async(send_email)(MessageBody(
-                        title=f"{device}告警结束",
+                        title=f"{device}告警结束！",
                         content=f"设备：{device}<br>事件：离开设定阈值触发告警<br>触发时间: {datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')} ———— {datetime.fromtimestamp(self.__alarm_status[device]['event_end_time']).strftime('%Y-%m-%d %H:%M:%S')}",
                         node_groups=node_group
                     ))
