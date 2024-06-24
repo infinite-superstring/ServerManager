@@ -148,7 +148,7 @@ def get_node_list(req):
                     "hostname": node_base_info.hostname if node_base_info else "未知",
                     "online": online,
                     "cpu_usage": f"{node_usage.cpu_usage if node_usage else 0}%",
-                    "memory_used": f"{round((node_usage.memory_used / node_base_info.memory_total) * 100, 1)}%" if online and node_base_info else "0%",
+                    "memory_used": f"{round((node_usage.memory_used / node_base_info.memory_total) * 100, 1)}%" if online and node_base_info.memory_total else "0%",
                 }
             })
     return ResponseJson({

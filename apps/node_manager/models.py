@@ -173,7 +173,18 @@ class Node_Event(models.Model):
     type = models.CharField("事件类型", max_length=100)
     description = models.CharField("事件详细描述", max_length=200, null=True)
     level = models.CharField(max_length=10, choices=SEVERITY_CHOICES)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    start_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+    end_time = models.DateTimeField(null=True)
+    phase = models.ManyToManyField('EventPhase', related_name='event_phase_mapping')
+
+    class EventPhase(models.Model):
+        """
+        事件阶段
+        """
+        id = models.AutoField("ID", primary_key=True)
+        title = models.CharField(max_length=100)
+        description = models.CharField(max_length=200, null=True)
 
     class Meta:
         db_table = 'node_events'
@@ -186,8 +197,8 @@ class Node_AlarmSetting(models.Model):
     enable = models.BooleanField(default=False)
     delay_seconds = models.IntegerField("告警延迟时间(秒)", null=False, default=1)
     interval = models.IntegerField("告警间隔时间", null=False, default=60)
-    general_rules = models.ManyToManyField('GeneralAlarmRule')
-    disk_used_rules = models.ManyToManyField('DiskUsedAlarmRule')
+    general_rules = models.ManyToManyField('GeneralAlarmRule', related_name='alarm_rule_mapping')
+    disk_used_rules = models.ManyToManyField('DiskUsedAlarmRule', related_name='disk_used_rule_mapping')
     network_rule = models.ForeignKey('NetworkAlarmRule', on_delete=models.CASCADE)
 
     # 告警规则基类
