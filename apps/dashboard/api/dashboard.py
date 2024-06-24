@@ -2,8 +2,10 @@ from util.Response import *
 from util.Request import *
 from util.logger import Log
 from apps.dashboard.utils.api_call_count import get_hourly_api_call_count
-from apps.node_manager.utils.nodeUtil import get_node_count, get_node_online_count, get_node_offline_count, get_node_warning_count
+from apps.node_manager.utils.nodeUtil import get_node_count, get_node_online_count, get_node_offline_count, \
+    get_node_warning_count
 from django.http.request import HttpRequest
+from apps.task.api.task import getList
 
 
 def get_overview(req: HttpRequest):
@@ -36,4 +38,4 @@ def get_statistics(req: HttpRequest):
 
 def get_tasks(req: HttpRequest):
     """获取任务列表"""
-    pass
+    return getList(req)

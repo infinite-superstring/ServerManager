@@ -49,6 +49,6 @@ class MessageClient(AsyncWebsocketConsumer):
 
     async def newMessage(self, event):
         await self.send_json({
-            "type": "newMessage",
-            "data": event['data']
+            "type": event['data']['type'],
+            "data": event['data']['data']
         })

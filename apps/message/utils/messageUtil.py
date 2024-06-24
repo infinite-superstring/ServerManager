@@ -45,17 +45,7 @@ def byUserGetUsername(user: User) -> str:
     return name
 
 
-def __get_all_user_contact_way(way: str) -> list:
-    """
-    获取所有用户联系方式
-    """
-    if way == EMAIL_METHOD:
-        return [user.email for user in User.objects.all()]
-    elif way == SMS_METHOD:
-        return [user.phone for user in User.objects.all()]
-
-
-def get_week():
+def _get_week():
     weekday = datetime.now().weekday()  # 使用timezone.now()获取带时区意识的当前时间
     days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
     return days[weekday]
@@ -68,7 +58,7 @@ def _get_should_reception(node_group) -> QuerySet[Node_MessageRecipientRule]:
     now = datetime.now()
     hour, minute = now.hour, now.minute
     current_time = f"{hour:02d}:{minute:02d}"
-    curr_week = get_week()
+    curr_week = _get_week()
     conditions = {
         f'{curr_week}': True,
         'start_time__lte': current_time,
@@ -77,6 +67,30 @@ def _get_should_reception(node_group) -> QuerySet[Node_MessageRecipientRule]:
     should_receptions = node_group.time_slot_recipient.filter(**conditions)
     should_receptions = should_receptions.distinct()
     return should_receptions
+
+
+def _create_recipient(us: QuerySet[User], config_obj, message_obj):
+    """
+    封装用户列表，或写入数据库
+    """
+    for u in us:
+        # 只发送电子邮件则不需要存储至数据库
+        if not config_obj.email_sms_only:
+            UserMessage.objects.create(user=u, message=message_obj, read=False)
+    return us
+
+
+def _node_group_to_recipient(node_groups: Node_Group, u_list: QuerySet[User]):
+    """
+    根据节点组获取收件人
+    """
+    u_list = u_list | User.objects.filter(id=node_groups.leader.id)
+    # 节点接收人
+    tsr = _get_should_reception(node_groups)
+    for t in tsr:
+        recipients = t.recipients.all()
+        u_list = u_list | recipients
+    return u_list
 
 
 def _message_to_database(msg: MessageBody):
@@ -89,41 +103,26 @@ def _message_to_database(msg: MessageBody):
 
     message_obj = Message.objects.create(title=msg.title, content=msg.content, create_time=datetime.now())
 
-    def create_recipient(us: QuerySet[User]):
-        for u in us:
-            # 只发送电子邮件则不需要存储至数据库
-            if not msg.email_sms_only:
-                UserMessage.objects.create(user=u, message=message_obj, read=False)
-        return us
-
-    def node_group_to_recipient(node_groups: Node_Group, u_list: QuerySet[User]):
-        u_list = u_list | User.objects.filter(id=node_groups.leader.id)
-        # 节点接收人
-        tsr = _get_should_reception(node_groups)
-        for t in tsr:
-            recipients = t.recipients.all()
-            u_list = u_list | recipients
-        return u_list
-
     # 指定用户
     if msg.recipient:
         if isinstance(msg.recipient, User):
-            return create_recipient(us=User.objects.filter(id=msg.recipient.id))
+            return _create_recipient(us=User.objects.filter(id=msg.recipient.id), config_obj=msg,
+                                     message_obj=message_obj)
         else:
-            return create_recipient(us=msg.recipient)
+            return _create_recipient(us=msg.recipient, config_obj=msg, message_obj=message_obj)
     # 指定节点组组
     if msg.node_groups:
         us_list = User.objects.none()
         if isinstance(msg.node_groups, Node_Group):
-            us_list = node_group_to_recipient(msg.node_groups, us_list)
+            us_list = _node_group_to_recipient(msg.node_groups, us_list)
         else:
             for node_group in msg.node_groups:
-                us_list = node_group_to_recipient(node_group, us_list)
+                us_list = _node_group_to_recipient(node_group, us_list)
         if us_list is None:
             return
         # 去重
         us_list = us_list.distinct()
-        return create_recipient(us=us_list)
+        return _create_recipient(us=us_list, config_obj=msg, message_obj=message_obj)
 
         # 指定权限组
     if msg.permission:
@@ -132,7 +131,7 @@ def _message_to_database(msg: MessageBody):
             users = User.objects.filter(permission_id=msg.permission.id)
         else:
             users = User.objects.filter(permission_id__in=[p.id for p in msg.permission])
-        return create_recipient(us=users)
+        return _create_recipient(us=users, config_obj=msg, message_obj=message_obj)
 
 
 def get_email_content(msg: MessageBody, on_web_page=False):
@@ -200,6 +199,7 @@ def send(mes_obj: MessageBody):
             users: QuerySet[User] = _message_to_database(mes_obj)
             if not users:
                 return
+            send_ws(users)
             # 执行发送
             _send_email(mes_obj=mes_obj, users=users)
             if mes_obj.email_sms_only:
@@ -217,10 +217,10 @@ def send(mes_obj: MessageBody):
             raise TimeoutError
     # 发送短信
     elif config().message.message_send_type == SMS_METHOD:
-        return
+        return None
 
 
-def send_ws(user: QuerySet[User]):
+def send_ws(user: QuerySet[User], type='newMessage'):
     """
     向客户端发送套接字
     """
@@ -231,7 +231,10 @@ def send_ws(user: QuerySet[User]):
         u_msg = UserMessage.objects.filter(user=u, read=False)
         channel_layer = get_channel_layer()
         sync_send = async_to_sync(channel_layer.group_send)
-        sync_send(f"message_client_{u.id}", {"type": "newMessage", "data": u_msg.count()})
+        sync_send(f"message_client_{u.id}", {"type": 'newMessage', "data": {
+            'type': type,
+            'data': u_msg.count()
+        }})
 
 
 def send_err_handle(mes: str):

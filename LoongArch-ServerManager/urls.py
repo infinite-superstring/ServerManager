@@ -30,7 +30,8 @@ import apps.setting.api.settings as setting
 import apps.user_manager.api.userInfo as userInfo
 import apps.message.api.message as message
 import apps.dashboard.api.dashboard as dashboard
-from apps.patrol.api import patrol
+import apps.patrol.api.patrol as patrol
+import apps.task.api.task as task
 
 urlpatterns = [
     # 认证
@@ -51,7 +52,8 @@ urlpatterns = [
     path('api/admin/permissionManager/getPermissionList', permission_manager.getPermissionList),  # 获取权限列表（ALL）
     path('api/admin/permissionManager/addPermissionGroup', permission_manager.addPermissionGroup),  # 新增权限组列表 （POST）
     path('api/admin/permissionManager/delPermissionGroup', permission_manager.delPermissionGroup),  # 删除权限组 （POST）
-    path('api/admin/permissionManager/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),  # 获取权限组信息 （POST）
+    path('api/admin/permissionManager/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),
+    # 获取权限组信息 （POST）
     path('api/admin/permissionManager/setPermissionGroup', permission_manager.setPermissionGroup),  # 设置权限组 （POST）
     # 节点管理器
     path('api/node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
@@ -102,4 +104,7 @@ urlpatterns = [
     path('api/dashboard/getNodeList', dashboard.get_node_list),  # 获取节点列表(POST)
     path('api/dashboard/getStatistics', dashboard.get_statistics),  # 获取统计信息(GET)
     path('api/dashboard/getTasks', dashboard.get_tasks),  # 获取任务列表(GET)
+    # 任务
+    path('api/task/getCheckInStatus', task.getCheckInStatus),  # 获取签到状态(GET)
+    path('api/task/attendanceCheckIn', task.attendanceCheckIn),  # 签到(POST)
 ]

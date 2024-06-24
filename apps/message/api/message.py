@@ -1,6 +1,7 @@
 from datetime import datetime
 from smtplib import SMTPException, SMTPAuthenticationError, SMTPServerDisconnected
 
+from asgiref.sync import sync_to_async
 from django.db.models import QuerySet
 
 from apps.audit.util.auditTools import write_access_log
@@ -11,7 +12,11 @@ from util.Request import getClientIp, RequestLoadJson
 from util.Response import ResponseJson
 from apps.message.utils.messageUtil import send, send_err_handle, get_email_content, byUserGetUsername, send_ws
 from util.pageUtils import get_page_content, get_max_page
-from django.db.models import Case, When, IntegerField
+
+
+async def async_send(message: MessageBody):
+    # return as
+    await sync_to_async(send_email)(message)
 
 
 def send_email(message: MessageBody):
@@ -19,7 +24,7 @@ def send_email(message: MessageBody):
     发送邮件接口
     """
     try:
-        users = send(message)
+        send(message)
     except SMTPServerDisconnected as e:
         send_err_handle("连接错误，请尝试使用SSL连接")
     except SMTPAuthenticationError as e:
@@ -40,9 +45,7 @@ def send_email(message: MessageBody):
     except Exception as e:
         """未知错误"""
         send_err_handle("未知错误,请检查配置")
-    else:
-        send_ws(users)
-        return True
+    return True
 
 
 def get_message_list(request):
@@ -67,18 +70,30 @@ def get_message_list(request):
     curr = request.GET.get('currentPage')
     page_size = request.GET.get('pageSize', 10)
     mlist = None
+    unread = 0
+    read = 0
+    total = 0
     if not method != 'all' and method != 'read' and method != 'unread':
         method = 'all'
     if method == "unread":
         mlist = UserMessage.objects.filter(user_id=user.id, read=False).order_by('-message__create_time')
+        unread = mlist.count()
     elif method == "read":
         mlist = UserMessage.objects.filter(user_id=user.id, read=True).order_by('-message__create_time')
+        read = mlist.count()
     elif method == "all":
         mlist = UserMessage.objects.filter(user_id=user.id).order_by('read', '-message__create_time')
-
+        total = mlist.count()
     page_result = _get_page_list(mlist, int(curr), pz=int(page_size))
     count = mlist.count()
     max_page = get_max_page(count, int(page_size))
+
+    if unread == 0:
+        unread = UserMessage.objects.filter(user_id=user.id, read=False).count()
+    if read == 0:
+        read = UserMessage.objects.filter(user_id=user.id, read=True).count()
+    if total == 0:
+        total = UserMessage.objects.filter(user_id=user.id).count()
 
     result = []
     for m in page_result:
@@ -90,7 +105,13 @@ def get_message_list(request):
             "createTime": datetime.strftime(message.create_time, "%Y-%m-%d %H:%M:%S"),
             "read": m['read'],
         })
-    return ResponseJson({"status": 1, "msg": "获取成功", "data": {"list": result, "maxPage": max_page}})
+    return ResponseJson({"status": 1, "msg": "获取成功", "data": {
+        "list": result,
+        "maxPage": max_page,
+        'unread': unread,
+        'read': read,
+        'total': total,
+    }})
 
 
 def get_by_id(request):
@@ -122,6 +143,7 @@ def get_by_id(request):
         recipient=QuerySet[User](),  # 空的集合
     ),
         on_web_page=True)
+    send_ws(user=User.objects.filter(id=user.id), type='unread')
     return ResponseJson({"status": 1, "msg": "获取成功", "data": msg})
 
 
@@ -158,6 +180,7 @@ def read_all(request):
     write_access_log(request.session.get("userID"), getClientIp(request),
                      f"已读所有消息")
     UserMessage.objects.filter(user_id=request.session.get("userID"), read=False).update(read=True)
+    send_ws(user=User.objects.filter(id=request.session.get("userID")), type='unread')
     return ResponseJson({"status": 1, "msg": "操作成功"})
 
 

@@ -433,7 +433,7 @@ class node_client(AsyncBaseConsumer):
         # 处理开始告警消息
         if (
                 (start_time + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
-                (self.__alarm_status[device]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp()) and
+                # (self.__alarm_status[device]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp()) and
                 not self.__alarm_status[device]['alerted']
         ):
             Log.debug("发送告警开始消息")
