@@ -1,11 +1,14 @@
-from django.db.models import Model
+from datetime import datetime
+
 from django.forms import model_to_dict
 from django.http import HttpRequest
 
 from apps.task.models import Task
 from apps.task.utils.taskUtil import byUserIDGetAttendanceState, createAttendance, year_month_to_start_and_end_time, \
-    randomColor
+    get_current_time
+from util.Request import RequestLoadJson
 from util.Response import ResponseJson
+from util.logger import Log
 
 
 def getList(req: HttpRequest):
@@ -53,12 +56,23 @@ def attendanceCheckIn(req: HttpRequest):
     """
     if req.method != 'POST':
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-    user_id = req.session.get("userID")
-    status = byUserIDGetAttendanceState(user_id)
+
+    try:
+        data = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
+    user_id = data['userId']
+    timestamp = data['timestamp']
+    if user_id is None:
+        user_id = req.session.get("userID")
+        timestamp = get_current_time().strftime("%Y-%m-%d %H:%M:%S")
+
+    status = byUserIDGetAttendanceState(user_id, timestamp)
     if status:
         return ResponseJson({"status": 1, "msg": "今天已经签到过了", 'data': False})
     else:
-        task = createAttendance(user_id)
+        task = createAttendance(user_id, timestamp)
         return ResponseJson({"status": 1, "msg": "签到成功", 'date': model_to_dict(task)})
 
 

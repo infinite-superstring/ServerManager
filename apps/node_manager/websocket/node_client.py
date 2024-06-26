@@ -21,7 +21,7 @@ from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node
 from apps.message.models import MessageBody
 from apps.message.api.message import send_email
 from apps.setting.entity import Config
-from node_manager.utils.nodeEventUtil import NodeEventUtil, createEvent, createPhase, stopEvent
+from apps.node_manager.utils.nodeEventUtil import NodeEventUtil, createEvent, createPhase, stopEvent
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
 from util.logger import Log
