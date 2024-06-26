@@ -21,6 +21,7 @@ from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node
 from apps.message.models import MessageBody
 from apps.message.api.message import send_email
 from apps.setting.entity import Config
+from node_manager.utils.nodeEventUtil import NodeEventUtil, createEvent, createPhase, stopEvent
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
 from util.logger import Log
@@ -82,6 +83,7 @@ class node_client(AsyncBaseConsumer):
         loop = asyncio.get_event_loop()
         loop.run_in_executor(None, write_node_session_log, self.__node.uuid, 0, clientIP)
         threading.Thread(target=self.__check_node_timeout, args=()).start()
+        await createEvent(node, "节点已连接", "", end_directly=True)
         Log.success(f"节点：{node_name}已连接")
 
     async def disconnect(self, close_code):
@@ -100,6 +102,7 @@ class node_client(AsyncBaseConsumer):
             loop = asyncio.get_event_loop()
             loop.run_in_executor(None, write_node_session_log, self.__node.uuid, 1, clientIP)
             await self.__node_offline()
+            await createEvent(self.__node, "节点已断开", "", end_directly=True)
             Log.success(f"节点：{node_name}已断开({close_code})")
         raise StopConsumer
 
@@ -335,6 +338,7 @@ class node_client(AsyncBaseConsumer):
                     'alerted': False,
                     'event_start_time': None,
                     'event_end_time': None,
+                    'event': None
                 },
                 'memory': {
                     'alerted': False,
@@ -375,18 +379,11 @@ class node_client(AsyncBaseConsumer):
         ):
             if not self.__alarm_status['cpu']['event_start_time']:
                 self.__alarm_status['cpu']['event_start_time'] = datetime.now().timestamp()
-            await self.__send_alarm_event(
-                'cpu',
-                self.__alarm_status['cpu']['event_start_time']
-            )
+            await self.__send_alarm_event('cpu', cpu_data.get('usage'))
         else:
             if self.__alarm_status['cpu']['event_start_time']:
                 self.__alarm_status['cpu']['event_end_time'] = datetime.now().timestamp()
-                await self.__send_alarm_event(
-                    'cpu',
-                    self.__alarm_status['cpu']['event_start_time'],
-                    self.__alarm_status['cpu']['event_end_time']
-                )
+                await self.__send_alarm_event('cpu', end=True)
 
         # # 处理内存告警
         # if (
@@ -428,31 +425,35 @@ class node_client(AsyncBaseConsumer):
         #                 Log.warning(f"磁盘设备{disk['device']}告警触发")
 
     @Log.catch
-    async def __send_alarm_event(self, device, start_time, end_time=None):
+    async def __send_alarm_event(self, device, value: int, end: bool = False):
         node_group = await sync_to_async(lambda: self.__node.group)()
         # 处理开始告警消息
         if (
-                #
-                (start_time + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
+                (self.__alarm_status[device]['event_start_time'] + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
                 # 验证结束时间
-                (self.__alarm_status[device]['event_end_time'] is None or self.__alarm_status[device]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp()) and
-                # 检查周期内是否发送过消息
-                not self.__alarm_status[device]['alerted']
+                (self.__alarm_status[device]['event_end_time'] is None or self.__alarm_status[device]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp())
         ):
-            Log.debug("发送告警开始消息")
-            self.__alarm_status[device]['alerted'] = True
-            if node_group:
+            if not self.__alarm_status[device]['event']:
+                self.__alarm_status[device]['event'] = await createEvent(self.__node, f"节点{device}超过告警阈值", "", "Warning")
+            else:
+                await createPhase(self.__alarm_status[device]['event'], "占用率", str(value))
+
+            if node_group and not self.__alarm_status[device]['alerted']:
+                Log.debug("发送告警开始消息")
                 Log.debug(self.__alarm_status[device]['event_start_time'])
                 await sync_to_async(send_email)(MessageBody(
                     title=f"{device}告警触发！",
                     content=f"设备：{device}<br>事件：已达到设定阈值触发告警<br>触发时间: {datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')}",
                     node_groups=node_group
                 ))
-            else:
-                Log.warning("未绑定节点组，无法发送消息")
+                self.__alarm_status[device]['alerted'] = True
+
         # 处理结束告警消息
-        if end_time and start_time:
+        if self.__alarm_status[device]['event_start_time'] and end:
             if self.__alarm_status[device]['alerted']:
+                # 关闭事件
+                if self.__alarm_status[device]['event']:
+                    await stopEvent(self.__alarm_status[device]['event'])
                 Log.debug("发送告警结束消息")
                 self.__alarm_status[device]['alerted'] = False
                 if node_group:
