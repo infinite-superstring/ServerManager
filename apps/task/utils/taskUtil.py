@@ -1,3 +1,5 @@
+import calendar
+import random
 from datetime import datetime
 
 from apps.task.models import Task
@@ -56,3 +58,32 @@ def createAttendance(user_id: int):
                 description="签到",
                 result="")
     task.save()
+    return task
+
+
+def year_month_to_start_and_end_time(years: str):
+    """
+    根据字符串年月转换为 年月的开始时间和结束时间
+    """
+    year, month = years.split("-")
+    year = int(year)
+    month = int(month)
+
+    # 一个月的第一天的最开始
+    start_time = datetime(year, month, 1, 0, 0, 0)
+
+    # 获取当前月份的天数
+    last_day = calendar.monthrange(year, month)[1]
+
+    # 一个月的最后一天的最后的时间
+    end_time = datetime(year, month, last_day, 23, 59, 59, 999999)
+
+    return start_time, end_time
+
+
+def randomColor():
+    """
+    随机获取一个颜色
+    """
+    colors = ['blue', 'indigo', 'deep-purple', 'cyan', 'green', 'orange', 'grey darken-1']
+    return colors[int(random.randint(0, len(colors) - 1))]

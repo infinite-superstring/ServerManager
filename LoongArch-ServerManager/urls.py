@@ -41,7 +41,7 @@ urlpatterns = [
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
     path('api/auth/bindOTP', otp.send_bind_otp_auth_code),
     # 用户管理
-    path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（ALL）
+    path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（POST）
     path('api/admin/userManager/addUser', user_manager.addUser),  # 新增用户（POST）
     path('api/admin/userManager/delUser', user_manager.delUser),  # 删除用户（POST）
     path('api/admin/userManager/getUserPermission', user_manager.getUserPermission),  # 获取用户权限（POST）
@@ -88,7 +88,7 @@ urlpatterns = [
     path('api/userInfo/getAvatar', userInfo.getAvatar),  # 获取头像（GET）
     path("api/userInfo/setPassword", userInfo.setPassword),  # 设置密码（POST）
     # 消息
-    path('api/message/list', message.get_message_list),  # 获取消息列表（GET）
+    path('api/message/getList', message.get_message_list),  # 获取消息列表（GET）
     path('api/message/getById', message.get_by_id),  # 按ID获取消息(GET)
     path('api/message/deleteAll', message.delete_all),  # 删除所有消息(DELETE)
     path('api/message/readAll', message.read_all),  # 已读所有消息(PUT)
@@ -107,4 +107,6 @@ urlpatterns = [
     # 任务
     path('api/task/getCheckInStatus', task.getCheckInStatus),  # 获取签到状态(GET)
     path('api/task/attendanceCheckIn', task.attendanceCheckIn),  # 签到(POST)
+    # 任务-值班记录
+    path('api/task/getDuty', task.getDuty)  # 获取值班记录(GET)
 ]
