@@ -139,6 +139,7 @@ class node_control(AsyncBaseConsumer):
             'sender': self.channel_name,
         })
 
+
     @Log.catch
     async def show_process_list(self, event):
         """展示进程列表"""
