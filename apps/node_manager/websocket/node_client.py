@@ -191,12 +191,15 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     async def reload_alarm_setting(self, event):
         Log.info("重新加载告警设置......")
-        if self.__alarm_status['cpu']['event'] is not None: await stopEvent(self.__alarm_status['cpu']['event'])
-        if self.__alarm_status['memory']['event'] is not None: await stopEvent(self.__alarm_status['memory']['event'])
-        if self.__alarm_status['network']['send']['event'] is not None: await stopEvent(self.__alarm_status['network']['send']['event'])
-        if self.__alarm_status['network']['recv']['event'] is not None: await stopEvent(self.__alarm_status['network']['recv']['event'])
-        for i in self.__alarm_status['disk']:
-            if i['event'] is not None: await stopEvent(i['event'])
+        try:
+            if self.__alarm_status['cpu']['event'] is not None: await stopEvent(self.__alarm_status['cpu']['event'])
+            if self.__alarm_status['memory']['event'] is not None: await stopEvent(self.__alarm_status['memory']['event'])
+            if self.__alarm_status['network']['send']['event'] is not None: await stopEvent(self.__alarm_status['network']['send']['event'])
+            if self.__alarm_status['network']['recv']['event'] is not None: await stopEvent(self.__alarm_status['network']['recv']['event'])
+            for i in self.__alarm_status['disk']:
+                if i['event'] is not None: await stopEvent(i['event'])
+        except Exception as e:
+            Log.error(e)
         await self.__load_alarm_setting()
 
     @Log.catch
