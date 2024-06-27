@@ -383,7 +383,7 @@ class node_client(AsyncBaseConsumer):
                         'event': None
                     }
                 },
-                'disk': []
+                'disk': {}
             }
             self.__alarm_setting = await a_load_node_alarm_setting(self.__node)
         else:
@@ -451,17 +451,30 @@ class node_client(AsyncBaseConsumer):
             if self.__alarm_status['network']['recv']['event_start_time']:
                 self.__alarm_status['network']['recv']['event_start_time'] = datetime.now().timestamp()
                 await self.__network_send_alarm_event('recv', end=True)
-        # # 处理磁盘告警
-        # for disk_rule in self.__alarm_setting.disk:
-        #     if disk_rule.is_enable:
-        #         for disk in disk_data['partition_list']:
-        #             if disk['device'] != disk_rule.device:
-        #                 continue
-        #             if disk_rule.threshold <= calculate_percentage(
-        #                 disk['used'],
-        #                 disk['total']
-        #             ):
-        #                 Log.warning(f"磁盘设备{disk['device']}告警触发")
+        # 处理磁盘告警
+        for disk_rule in self.__alarm_setting.disk:
+            if not disk_rule.is_enable:
+                continue
+            for disk in disk_data['partition_list']:
+                if disk['device'] != disk_rule.device:
+                    continue
+                if disk_rule.threshold <= calculate_percentage(
+                    disk['used'],
+                    disk['total']
+                ):
+                    if not self.__alarm_status['disk'].get(disk_rule.device): self.__alarm_status['disk'][disk_rule.device] = {
+                        'alerted': False,
+                        'event_start_time': None,
+                        'event_end_time': None,
+                        'event': None
+                    }
+                    if not self.__alarm_status['disk'][disk_rule.device]['event_start_time']:
+                        self.__alarm_status['disk'][disk_rule.device]['event_start_time'] = datetime.now().timestamp()
+                    await self.__disk_send_alarm_event(disk_rule.device, calculate_percentage(disk['used'], disk['total']))
+                else:
+                    if self.__alarm_status['disk'].get(disk_rule.device) and self.__alarm_status['disk'][disk_rule.device]['event_start_time']:
+                        self.__alarm_status['disk'][disk_rule.device]['event_end_time'] = datetime.now().timestamp()
+                    await self.__disk_send_alarm_event(disk_rule.device, calculate_percentage(disk['used'], disk['total']), end=True)
 
     @Log.catch
     async def __general_send_alarm_event(self, device, value: int = 0, end: bool = False):
@@ -603,6 +616,60 @@ class node_client(AsyncBaseConsumer):
         :param value: 告警值
         :param end: 结束告警事件
         """
+        node_group = await sync_to_async(lambda: self.__node.group)()
+        if disk not in self.__alarm_status['disk'].keys():
+            raise RuntimeError(f"Nonexistent disk configuration: {disk}")
+        # 处理开始告警消息
+        if (
+                (self.__alarm_status['disk'][disk][
+                     'event_start_time'] + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
+                # 验证结束时间
+                (self.__alarm_status['disk'][disk]['event_end_time'] is None or
+                 self.__alarm_status['disk'][disk][
+                     'event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp())
+        ):
+            if not self.__alarm_status['disk'][disk]['event']:
+                self.__alarm_status['disk'][disk]['event'] = await createEvent(
+                    self.__node,
+                    f"{disk}磁盘使用量超过告警阈值",
+                    f"当前值：{value}%",
+                    "Warning"
+                )
+            if node_group and not self.__alarm_status['disk'][disk]['alerted']:
+                Log.debug(f"发送告警开始消息: disk：{disk}")
+                start_time = datetime.fromtimestamp(
+                    self.__alarm_status['disk'][disk]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
+                await sync_to_async(send_email)(MessageBody(
+                    title=f"节点：{self.__node.name}告警触发！",
+                    content=f"节点：{self.__node.name}<br>事件：{disk}使用率已达到设定阈值触发告警<br>触发时: {value}%<br>触发时间: {start_time}",
+                    node_groups=node_group
+                ))
+                self.__alarm_status['disk'][disk]['alerted'] = True
+
+            # 处理结束告警消息
+            if self.__alarm_status['disk'][disk]['event_start_time'] and end:
+                if self.__alarm_status['disk'][disk]['alerted']:
+                    # 关闭事件
+                    if self.__alarm_status['disk'][disk]['event']:
+                        await stopEvent(self.__alarm_status['disk'][disk]['event'])
+                    self.__alarm_status['disk'][disk]['alerted'] = False
+                    # 发送告警结束信息
+                    if node_group:
+                        Log.debug(f"发送告警结束消息: disk：{disk}")
+                        start_time = datetime.fromtimestamp(
+                            self.__alarm_status['disk'][disk]['event_start_time']).strftime(
+                            '%Y-%m-%d %H:%M:%S')
+                        end_time = datetime.fromtimestamp(
+                            self.__alarm_status['disk'][disk]['event_end_time']).strftime(
+                            '%Y-%m-%d %H:%M:%S')
+                        await sync_to_async(send_email)(MessageBody(
+                            title=f"节点：{self.__node.name}告警结束！",
+                            content=f"节点：{self.__node.name}<br>事件：{disk}使用率离开设定阈值触发告警区间<br>开始时间: {start_time}<br>结束时间: {end_time}",
+                            node_groups=node_group
+                        ))
+                    else:
+                        Log.warning("未绑定节点组，无法发送消息")
+                self.__alarm_status['disk'][disk]['event_end_time'] = None
 
     @Log.catch
     def __check_get_process_list_activity(self):

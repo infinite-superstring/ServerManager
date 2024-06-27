@@ -250,7 +250,6 @@ async def a_load_node_alarm_setting(node: Node) -> AlarmSetting:
             send_threshold=network_rule.send_threshold if network_rule else None,
             receive_threshold=network_rule.receive_threshold if network_rule else None
         ),
-        # disk=[]
         disk=[disk(
             device=await sync_to_async(lambda: i.device.device)(),
             threshold=i.threshold
