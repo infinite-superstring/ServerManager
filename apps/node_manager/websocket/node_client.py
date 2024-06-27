@@ -43,9 +43,6 @@ class node_client(AsyncBaseConsumer):
     __tty_uuid: dict[str:str] = {}
 
 
-
-
-
     async def connect(self):
         # 在建立连接时执行的操作
         self.__node_uuid = self.scope["session"].get("node_uuid")
@@ -194,6 +191,12 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     async def reload_alarm_setting(self, event):
         Log.info("重新加载告警设置......")
+        if self.__alarm_status['cpu']['event'] is not None: await stopEvent(self.__alarm_status['cpu']['event'])
+        if self.__alarm_status['memory']['event'] is not None: await stopEvent(self.__alarm_status['memory']['event'])
+        if self.__alarm_status['network']['send']['event'] is not None: await stopEvent(self.__alarm_status['network']['send']['event'])
+        if self.__alarm_status['network']['recv']['event'] is not None: await stopEvent(self.__alarm_status['network']['recv']['event'])
+        for i in self.__alarm_status['disk']:
+            if i['event'] is not None: await stopEvent(i['event'])
         await self.__load_alarm_setting()
 
     @Log.catch
@@ -256,6 +259,14 @@ class node_client(AsyncBaseConsumer):
                 "fifteen_minute": loadavg_data[2],
             }
         })
+
+    @Log.catch
+    @AsyncBaseConsumer.action_handler("upload_node_msg")
+    async def __upload_node_msg(self, payload):
+        type = payload.get('type')
+        desc = payload.get('desc')
+        level = payload.get('level', "Info")
+        await createEvent(self.__node, type, desc, level, end_directly=True)
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("create_terminal_session")
