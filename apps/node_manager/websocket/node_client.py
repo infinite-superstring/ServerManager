@@ -21,7 +21,7 @@ from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node
 from apps.message.models import MessageBody
 from apps.message.api.message import send_email
 from apps.setting.entity import Config
-from node_manager.utils.nodeEventUtil import NodeEventUtil, createEvent, createPhase, stopEvent
+from apps.node_manager.utils.nodeEventUtil import NodeEventUtil, createEvent, createPhase, stopEvent
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
 from util.format import format_bytes
@@ -41,6 +41,10 @@ class node_client(AsyncBaseConsumer):
     __node_base_info: Node_BaseInfo
     __init_tty_queue: dict[str:str] = {}
     __tty_uuid: dict[str:str] = {}
+
+
+
+
 
     async def connect(self):
         # 在建立连接时执行的操作
@@ -119,7 +123,11 @@ class node_client(AsyncBaseConsumer):
         await self.send_json({
             'action': 'init_terminal',
             'data': {
-                'index': index
+                'index': index,
+                'host':'127.0.0.1',
+                'port':22,
+                'username':'fsj',
+                'password':'123456'
             }
         })
 
