@@ -25,6 +25,7 @@ import apps.node_manager.api.node_manager as node_manager
 import apps.node_manager.api.node_tag as node_tag
 import apps.node_manager.api.node_group as node_group
 import apps.node_manager.api.node_info as node_info
+import apps.node_manager.api.node_event as node_event
 import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
 import apps.user_manager.api.userInfo as userInfo
@@ -41,7 +42,7 @@ urlpatterns = [
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
     path('api/auth/bindOTP', otp.send_bind_otp_auth_code),
     # 用户管理
-    path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（ALL）
+    path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（POST）
     path('api/admin/userManager/addUser', user_manager.addUser),  # 新增用户（POST）
     path('api/admin/userManager/delUser', user_manager.delUser),  # 删除用户（POST）
     path('api/admin/userManager/getUserPermission', user_manager.getUserPermission),  # 获取用户权限（POST）
@@ -71,6 +72,8 @@ urlpatterns = [
     path('api/node_manager/node_info/get_disk_partition_list', node_info.get_disk_partition_list),  # 获取节点磁盘列表(POST)
     path('api/node_manager/node_info/get_alarm_setting', node_info.get_alarm_setting),  # 获取节点告警设置(POST)
     path('api/node_manager/node_info/save_alarm_setting', node_info.save_alarm_setting),  # 保存节点告警设置(POST)
+    path('api/node_manager/node_event/get_node_events', node_event.get_node_events),  # 获取节点事件列表(POST)
+    path('api/node_manager/node_event/get_event_info', node_event.get_event_info),
     # 审计
     path('api/admin/auditAndLogger/audit', auditAndLogger.getAudit),  # 获取审计日志（POST）
     path('api/admin/auditAndLogger/accessLog', auditAndLogger.getAccessLog),  # 获取访问日志（POST）
@@ -88,7 +91,7 @@ urlpatterns = [
     path('api/userInfo/getAvatar', userInfo.getAvatar),  # 获取头像（GET）
     path("api/userInfo/setPassword", userInfo.setPassword),  # 设置密码（POST）
     # 消息
-    path('api/message/list', message.get_message_list),  # 获取消息列表（GET）
+    path('api/message/getList', message.get_message_list),  # 获取消息列表（GET）
     path('api/message/getById', message.get_by_id),  # 按ID获取消息(GET)
     path('api/message/deleteAll', message.delete_all),  # 删除所有消息(DELETE)
     path('api/message/readAll', message.read_all),  # 已读所有消息(PUT)
@@ -107,4 +110,6 @@ urlpatterns = [
     # 任务
     path('api/task/getCheckInStatus', task.getCheckInStatus),  # 获取签到状态(GET)
     path('api/task/attendanceCheckIn', task.attendanceCheckIn),  # 签到(POST)
+    # 任务-值班记录
+    path('api/task/getDuty', task.getDuty)  # 获取值班记录(GET)
 ]
