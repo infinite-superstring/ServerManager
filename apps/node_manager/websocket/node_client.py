@@ -24,6 +24,7 @@ from apps.setting.entity import Config
 from node_manager.utils.nodeEventUtil import NodeEventUtil, createEvent, createPhase, stopEvent
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
+from util.format import format_bytes
 from util.logger import Log
 
 
@@ -342,19 +343,22 @@ class node_client(AsyncBaseConsumer):
                 },
                 'memory': {
                     'alerted': False,
-                    'timestamps': [],
-                    'usages': []
+                    'event_start_time': None,
+                    'event_end_time': None,
+                    'event': None
                 },
                 'network': {
                     'send': {
                         'alerted': False,
-                        'timestamps': [],
-                        'usages': []
+                        'event_start_time': None,
+                        'event_end_time': None,
+                        'event': None
                     },
                     'recv': {
                         'alerted': False,
-                        'timestamps': [],
-                        'usages': []
+                        'event_start_time': None,
+                        'event_end_time': None,
+                        'event': None
                     }
                 },
                 'disk': []
@@ -379,39 +383,52 @@ class node_client(AsyncBaseConsumer):
         ):
             if not self.__alarm_status['cpu']['event_start_time']:
                 self.__alarm_status['cpu']['event_start_time'] = datetime.now().timestamp()
-            await self.__send_alarm_event('cpu', cpu_data.get('usage'))
+            await self.__general_send_alarm_event('cpu', cpu_data.get('usage'))
         else:
             if self.__alarm_status['cpu']['event_start_time']:
                 self.__alarm_status['cpu']['event_end_time'] = datetime.now().timestamp()
-                await self.__send_alarm_event('cpu', end=True)
+                await self.__general_send_alarm_event('cpu', end=True)
 
-        # # 处理内存告警
-        # if (
-        #     self.__alarm_setting.memory.is_enable and
-        #     self.__alarm_setting.memory.threshold <= calculate_percentage(
-        #         memory_data.get('used'),
-        #         self.__node_base_info.memory_total
-        #     )
-        # ):
-        #     Log.warning("内存告警触发")
-        # else:
-        #     pass
-        # # 处理发送流量告警
-        # if (
-        #   self.__alarm_setting.network.is_enable and
-        #   self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_sent']
-        # ):
-        #     Log.warning("发送流量告警触发")
-        # else:
-        #     pass
-        # # 处理接收流量告警
-        # if (
-        #   self.__alarm_setting.network.is_enable and
-        #   self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_recv']
-        # ):
-        #     Log.warning("接收流量告警触发")
-        # else:
-        #     pass
+        # 处理内存告警
+        if (
+                self.__alarm_setting.memory.is_enable() and
+                self.__alarm_setting.memory.threshold <= calculate_percentage(
+                    memory_data.get('used'),
+                    self.__node_base_info.memory_total
+                )
+        ):
+            if not self.__alarm_status['memory']['event_start_time']:
+                self.__alarm_status['memory']['event_start_time'] = datetime.now().timestamp()
+            await self.__general_send_alarm_event('memory', calculate_percentage(memory_data.get('used'),
+                                                                                 self.__node_base_info.memory_total))
+        else:
+            if self.__alarm_status['memory']['event_start_time']:
+                self.__alarm_status['memory']['event_end_time'] = datetime.now().timestamp()
+                await self.__general_send_alarm_event('memory', end=True)
+        # 处理发送流量告警
+        if (
+                self.__alarm_setting.network.is_enable() and
+                self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_sent']
+        ):
+            if not self.__alarm_status['network']['send']['event_start_time']:
+                self.__alarm_status['network']['send']['event_start_time'] = datetime.now().timestamp()
+            await self.__network_send_alarm_event('send', network_data['io']['_all']['bytes_sent'])
+        else:
+            if self.__alarm_status['network']['send']['event_start_time']:
+                self.__alarm_status['network']['send']['event_start_time'] = datetime.now().timestamp()
+                await self.__network_send_alarm_event('send', end=True)
+        # 处理接收流量告警
+        if (
+                self.__alarm_setting.network.is_enable() and
+                self.__alarm_setting.network.send_threshold <= network_data['io']['_all']['bytes_recv']
+        ):
+            if not self.__alarm_status['network']['recv']['event_start_time']:
+                self.__alarm_status['network']['recv']['event_start_time'] = datetime.now().timestamp()
+            await self.__network_send_alarm_event('recv', network_data['io']['_all']['bytes_recv'])
+        else:
+            if self.__alarm_status['network']['recv']['event_start_time']:
+                self.__alarm_status['network']['recv']['event_start_time'] = datetime.now().timestamp()
+                await self.__network_send_alarm_event('recv', end=True)
         # # 处理磁盘告警
         # for disk_rule in self.__alarm_setting.disk:
         #     if disk_rule.is_enable:
@@ -425,25 +442,47 @@ class node_client(AsyncBaseConsumer):
         #                 Log.warning(f"磁盘设备{disk['device']}告警触发")
 
     @Log.catch
-    async def __send_alarm_event(self, device, value: int, end: bool = False):
+    async def __general_send_alarm_event(self, device, value: int = 0, end: bool = False):
+        """
+        通用发送告警事件
+        :param device: 设备
+        :param value: 告警值
+        :param end: 结束告警事件
+        """
+        device_name_mapping = {
+            "cpu": "cpu",
+            "memory": "内存",
+        }
+
         node_group = await sync_to_async(lambda: self.__node.group)()
         # 处理开始告警消息
         if (
-                (self.__alarm_status[device]['event_start_time'] + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
+                (self.__alarm_status[device][
+                     'event_start_time'] + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
                 # 验证结束时间
-                (self.__alarm_status[device]['event_end_time'] is None or self.__alarm_status[device]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp())
+                (self.__alarm_status[device]['event_end_time'] is None or self.__alarm_status[device][
+                    'event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp())
         ):
             if not self.__alarm_status[device]['event']:
-                self.__alarm_status[device]['event'] = await createEvent(self.__node, f"节点{device}超过告警阈值", "", "Warning")
+                self.__alarm_status[device]['event'] = await createEvent(
+                    self.__node,
+                    f"{device_name_mapping.get(device, device)}占用率超过告警阈值",
+                    f"告警值{value}%",
+                    "Warning"
+                )
             else:
-                await createPhase(self.__alarm_status[device]['event'], "占用率", str(value))
+                await createPhase(
+                    self.__alarm_status[device]['event'],
+                    "占用率",
+                    f"{value}%"
+                )
 
             if node_group and not self.__alarm_status[device]['alerted']:
-                Log.debug("发送告警开始消息")
-                Log.debug(self.__alarm_status[device]['event_start_time'])
+                Log.debug(f"发送告警开始消息：{device}")
+                start_time = datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
                 await sync_to_async(send_email)(MessageBody(
-                    title=f"{device}告警触发！",
-                    content=f"设备：{device}<br>事件：已达到设定阈值触发告警<br>触发时间: {datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')}",
+                    title=f"节点：{self.__node.name}告警触发！",
+                    content=f"节点：{self.__node.name}<br>事件：{device_name_mapping.get(device, device)}占用率已达到设定阈值触发告警<br>触发时值: {value}%<br>触发时间: {start_time}",
                     node_groups=node_group
                 ))
                 self.__alarm_status[device]['alerted'] = True
@@ -454,17 +493,94 @@ class node_client(AsyncBaseConsumer):
                 # 关闭事件
                 if self.__alarm_status[device]['event']:
                     await stopEvent(self.__alarm_status[device]['event'])
-                Log.debug("发送告警结束消息")
+                Log.debug(f"发送告警结束消息：{device}")
                 self.__alarm_status[device]['alerted'] = False
                 if node_group:
+                    start_time = datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
+                    end_time = datetime.fromtimestamp(self.__alarm_status[device]['event_end_time']).strftime('%Y-%m-%d %H:%M:%S')
                     await sync_to_async(send_email)(MessageBody(
-                        title=f"{device}告警结束！",
-                        content=f"设备：{device}<br>事件：离开设定阈值触发告警<br>触发时间: {datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')} ———— {datetime.fromtimestamp(self.__alarm_status[device]['event_end_time']).strftime('%Y-%m-%d %H:%M:%S')}",
+                        title=f"节点：{self.__node.name}告警结束！",
+                        content=f"节点：{self.__node.name}<br>事件：{device_name_mapping.get(device, device)}占用率离开设定阈值触发告警区间<br>开始时间: {start_time}<br>结束时间: {end_time}",
                         node_groups=node_group
                     ))
                 else:
                     Log.warning("未绑定节点组，无法发送消息")
             self.__alarm_status[device]['event_start_time'] = None
+
+    @Log.catch
+    async def __network_send_alarm_event(self, data_direction, value: int = 0, end: bool = False):
+        """
+        发送网络告警事件
+        :param data_direction: 数据方向
+        :param value: 告警值
+        :param end: 结束告警事件
+        """
+        data_direction_mapping = {
+            'send': '发送',
+            'recv': '接收'
+        }
+        node_group = await sync_to_async(lambda: self.__node.group)()
+        if data_direction not in data_direction_mapping.keys():
+            raise RuntimeError(f"Invalid data direction {data_direction}")
+        # 处理开始告警消息
+        if (
+                (self.__alarm_status['network'][data_direction]['event_start_time'] + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
+                # 验证结束时间
+                (self.__alarm_status['network'][data_direction]['event_end_time'] is None or
+                 self.__alarm_status['network'][data_direction]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp())
+        ):
+            if not self.__alarm_status['network'][data_direction]['event']:
+                self.__alarm_status['network'][data_direction]['event'] = await createEvent(
+                    self.__node,
+                    f"{data_direction_mapping.get(data_direction)}数据量超过告警阈值",
+                    f"告警值{format_bytes(value)}",
+                    "Warning"
+                )
+            else:
+                await createPhase(
+                    self.__alarm_status['network'][data_direction]['event'],
+                    f"{data_direction_mapping.get(data_direction)}已超过阈值",
+                    format_bytes(value)
+                )
+            if node_group and not self.__alarm_status['network'][data_direction]['alerted']:
+                Log.debug(f"发送告警开始消息: {data_direction}")
+                start_time = datetime.fromtimestamp(self.__alarm_status['network'][data_direction]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
+                await sync_to_async(send_email)(MessageBody(
+                    title=f"节点：{self.__node.name}告警触发！",
+                    content=f"节点：{self.__node.name}<br>事件：{data_direction_mapping.get(data_direction)}已达到设定阈值触发告警<br>触发时值: {format_bytes(value)}<br>触发时间: {start_time}",
+                    node_groups=node_group
+                ))
+                self.__alarm_status['network'][data_direction]['alerted'] = True
+
+            # 处理结束告警消息
+            if self.__alarm_status['network'][data_direction]['event_start_time'] and end:
+                if self.__alarm_status['network'][data_direction]['alerted']:
+                    # 关闭事件
+                    if self.__alarm_status['network'][data_direction]['event']:
+                        await stopEvent(self.__alarm_status['network'][data_direction]['event'])
+                    self.__alarm_status['network'][data_direction]['alerted'] = False
+                    # 发送告警结束信息
+                    if node_group:
+                        Log.debug(f"发送告警结束消息: {data_direction}")
+                        start_time = datetime.fromtimestamp(self.__alarm_status['network'][data_direction]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
+                        end_time = datetime.fromtimestamp(self.__alarm_status['network'][data_direction]['event_end_time']).strftime('%Y-%m-%d %H:%M:%S')
+                        await sync_to_async(send_email)(MessageBody(
+                            title=f"节点：{self.__node.name}告警结束！",
+                            content=f"节点：{self.__node.name}<br>事件：{data_direction_mapping.get(data_direction)}离开设定阈值触发告警区间<br>开始时间: {start_time}<br>结束时间: {end_time}",
+                            node_groups=node_group
+                        ))
+                    else:
+                        Log.warning("未绑定节点组，无法发送消息")
+                self.__alarm_status['network'][data_direction]['event_end_time'] = None
+
+    @Log.catch
+    async def __disk_send_alarm_event(self, disk, value: int = 0, end: bool = False):
+        """
+        发送磁盘空间告警事件
+        :param disk: 磁盘设备
+        :param value: 告警值
+        :param end: 结束告警事件
+        """
 
     @Log.catch
     def __check_get_process_list_activity(self):

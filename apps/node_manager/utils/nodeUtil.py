@@ -3,7 +3,8 @@ from django.apps import apps
 from django.utils.dateparse import parse_datetime
 
 from apps.node_manager.entity.alarm_setting import AlarmSetting, cpu, memory, network, disk
-from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData, Node_AlarmSetting
+from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData, Node_AlarmSetting, \
+    Node_Event
 from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
 from util.passwordUtils import verify_password
 from util.logger import Log
@@ -48,7 +49,7 @@ def get_node_offline_count() -> int:
 
 def get_node_warning_count() -> int:
     """获取正在告警的节点数量"""
-    return 0
+    return Node_Event.objects.filter(level__in=["Warning", "Error"]).filter(end_time=None).count()
 
 
 def node_set_group(node_uuid, group_id) -> bool:

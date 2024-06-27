@@ -185,6 +185,7 @@ class Node_Event(models.Model):
         id = models.AutoField("ID", primary_key=True)
         title = models.CharField(max_length=100)
         description = models.CharField(max_length=200, null=True)
+        timestamp = models.DateTimeField("更新时间", auto_now_add=True)
 
     class Meta:
         db_table = 'node_events'

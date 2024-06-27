@@ -25,7 +25,7 @@ def get_node_events(req: HttpRequest):
     PageContent: list = []
     page = req_json.get("page", 1)
     pageSize = req_json.get("pageSize", 20)
-    result = getNodeEvents(node)
+    result = getNodeEvents(node).order_by('-id')
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
         for item in pageQuery:
@@ -66,5 +66,5 @@ def get_event_info(req: HttpRequest):
         "start_time": event.start_time,
         "update_time": event.update_time,
         "end_time": event.end_time,
-        'phase': [{'title': i.title, 'desc': i.description} for i in event.phase.all()]
+        'phase': [{'title': i.title, 'desc': i.description, 'timestamp': i.timestamp} for i in event.phase.all()]
     }})

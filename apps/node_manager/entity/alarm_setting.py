@@ -26,7 +26,7 @@ class cpu:
         self.threshold = threshold
 
     def is_enable(self):
-        return self.enable and self.threshold
+        return bool(self.enable and self.threshold)
 
 
 class memory:
@@ -38,7 +38,7 @@ class memory:
         self.threshold = threshold
 
     def is_enable(self):
-        return self.enable and self.threshold
+        return bool(self.enable and self.threshold)
 
 
 class network:
@@ -52,7 +52,7 @@ class network:
         self.receive_threshold = receive_threshold
 
     def is_enable(self):
-        return self.enable and self.send_threshold and self.receive_threshold
+        return bool(self.enable and self.send_threshold and self.receive_threshold)
 
 
 class disk:
@@ -64,4 +64,4 @@ class disk:
         self.threshold = threshold
 
     def is_enable(self):
-        return self.device and self.threshold
+        return bool(self.device and self.threshold)
