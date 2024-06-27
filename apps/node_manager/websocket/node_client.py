@@ -40,6 +40,10 @@ class node_client(AsyncBaseConsumer):
     __init_tty_queue: dict[str:str] = {}
     __tty_uuid: dict[str:str] = {}
 
+
+
+
+
     async def connect(self):
         # 在建立连接时执行的操作
         self.__node_uuid = self.scope["session"].get("node_uuid")
@@ -115,7 +119,11 @@ class node_client(AsyncBaseConsumer):
         await self.send_json({
             'action': 'init_terminal',
             'data': {
-                'index': index
+                'index': index,
+                'host':'127.0.0.1',
+                'port':22,
+                'username':'fsj',
+                'password':'123456'
             }
         })
 
