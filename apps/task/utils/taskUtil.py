@@ -32,11 +32,10 @@ def get_current_time():
     return datetime.now()
 
 
-def byUserIDGetAttendanceState(user_id: int, strTime: str):
+def byUserIDGetAttendanceState(user_id: int, time: datetime):
     """
     根据用户ID获取用户当天的签到状态
     """
-    time = datetime.strptime(strTime, "%Y-%m-%d %H:%M:%S")
 
     task: Task = Task.objects.filter(
         type=0,
@@ -46,11 +45,10 @@ def byUserIDGetAttendanceState(user_id: int, strTime: str):
     return task
 
 
-def createAttendance(user_id: int, date: str):
+def createAttendance(user_id: int, time: datetime):
     """
     创建用户当天的签到任务
     """
-    time = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
 
     task = Task(init_User_id=1,
                 target_user_id=user_id,
