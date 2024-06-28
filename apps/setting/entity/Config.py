@@ -101,3 +101,8 @@ class message:
     email_from_address: str = None
     # 邮件发件人
     email_from_name: str = None
+
+
+class web_status:
+    heartbeat: int = None
+    timeout: int = None

@@ -73,7 +73,23 @@ class Command(BaseCommand):
                 'permission': 'clearAudit',
                 'description': '允许用户清除审计数据',
                 'translate': '管理审计数据'
-            }
+            },
+            {
+                'permission': 'viewDuty',
+                'description': '允许用户查看值班记录',
+                'translate': '管理值班记录'
+            },
+            {
+                'permission': 'viewWebStatus',
+                'description': '允许用户查看网站监控',
+                'translate': '管理网站监控'
+            },
+            {
+                "permission": "viewPatrol",
+                "description": "允许用户查看巡检记录",
+                "translate": "管理巡检记录",
+            },
+
         ]
 
         for item in PermissionItem:
@@ -256,6 +272,15 @@ class Command(BaseCommand):
             {
                 "Settings": "message.email_from_name",
                 'value': ""
+            },
+            #     网站监控设置
+            {
+                'Settings': "web_status.heartbeat",
+                'value': 5
+            },
+            {
+                'Settings': "web_status.timeout",
+                'value': 3
             }
         ]
 
@@ -286,4 +311,4 @@ class Command(BaseCommand):
         )
         Log.success("用户初始化成功")
 
-        print("*"*10+"默认账户"+"*"*10+"\n"+f"用户名：{adminUser['username']}\n密码：{defaultPassword}")
+        print("*" * 10 + "默认账户" + "*" * 10 + "\n" + f"用户名：{adminUser['username']}\n密码：{defaultPassword}")

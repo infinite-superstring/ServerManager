@@ -4,10 +4,12 @@ from apps.user_manager.util.userUtils import get_user_by_id
 from util.Response import ResponseJson
 from apps.permission_manager.util.permission import groupPermission
 
+
 class PermissionsMiddleware(MiddlewareMixin):
     """
     权限校验中间件
     """
+
     def process_request(self, request):
         userId = request.session.get("userID")
         path_info = request.path_info
@@ -48,6 +50,9 @@ class PermissionsMiddleware(MiddlewareMixin):
                 "/admin/api/auditAndLogger/accessLog": "viewAudit",
                 "/admin/api/auditAndLogger/fileChangeLog": "viewAudit",
                 "/admin/api/auditAndLogger/systemLog": "viewAudit",
+
+                "api/task/getDuty": 'viewDuty',
+
             }
         }
 

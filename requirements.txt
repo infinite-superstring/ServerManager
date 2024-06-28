@@ -7,3 +7,4 @@ apscheduler
 redis
 hiredis
 pyotp
+requests

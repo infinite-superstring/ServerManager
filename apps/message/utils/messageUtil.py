@@ -1,7 +1,6 @@
 import smtplib
 from smtplib import SMTPException, SMTPAuthenticationError
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.header import Header
 

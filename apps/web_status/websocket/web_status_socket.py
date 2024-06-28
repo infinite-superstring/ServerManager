@@ -1,14 +1,14 @@
 import json
 
-from apps.user_manager.util.userUtils import get_user_by_id
+from consumers.AsyncConsumer import AsyncBaseConsumer
 from util.jsonEncoder import ComplexEncoder
 from util.logger import Log
 
-from channels.generic.websocket import AsyncWebsocketConsumer
 
-
-class MessageClient(AsyncWebsocketConsumer):
-    __userID: int = None
+class WebStatusClient(AsyncBaseConsumer):
+    __NAME = 'WebStatusClient_'
+    __url_base64 = None
+    __userID = None
 
     @Log.catch
     async def send_json(self, data):
@@ -16,13 +16,14 @@ class MessageClient(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.__userID = self.scope['session']['userID']
+        self.__url_base64 = self.scope['url_route']['kwargs']['url_base64']
         if not self.__userID:
             await self.close(0)
             return
         # 校验通过
         await self.accept()
         await self.channel_layer.group_add(
-            f"message_client_{self.__userID}",
+            f"{self.__NAME}{self.__url_base64}",
             self.channel_name
         )
         await self.send_json({
@@ -32,7 +33,7 @@ class MessageClient(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
-            f"message_client_{self.__userID}",
+            f"{self.__NAME}{self.__userID}",
             self.channel_name
         )
         await self.close()
@@ -41,10 +42,4 @@ class MessageClient(AsyncWebsocketConsumer):
         await self.send_json({
             "type": "receive",
             "data": "over!"
-        })
-
-    async def newMessage(self, event):
-        await self.send_json({
-            "type": event['data']['type'],
-            "data": event['data']['data']
         })

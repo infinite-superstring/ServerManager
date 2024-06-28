@@ -33,6 +33,7 @@ import apps.message.api.message as message
 import apps.dashboard.api.dashboard as dashboard
 import apps.patrol.api.patrol as patrol
 import apps.task.api.task as task
+import apps.web_status.api.webStatus as webStatus
 
 urlpatterns = [
     # 认证
@@ -111,5 +112,8 @@ urlpatterns = [
     path('api/task/getCheckInStatus', task.getCheckInStatus),  # 获取签到状态(GET)
     path('api/task/attendanceCheckIn', task.attendanceCheckIn),  # 签到(POST)
     # 任务-值班记录
-    path('api/task/getDuty', task.getDuty)  # 获取值班记录(GET)
+    path('api/task/getDuty', task.getDuty),  # 获取值班记录(GET)
+    # Web状态
+    path('api/webStatus/getList', webStatus.getList),  # 获取Web状态列表(POST)
+    path('api/webStatus/addWeb', webStatus.addWeb),  # 添加Web状态(POST)
 ]
