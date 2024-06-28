@@ -5,6 +5,7 @@ class config:
     node_usage = None
     node_default_alarm_setting = None
     message = None
+    terminal_audit = None
 
     def __init__(self):
         self.base = base()
@@ -13,6 +14,7 @@ class config:
         self.node_usage = node_usage()
         self.node_default_alarm_setting = node_default_alarm_setting()
         self.message = message()
+        self.terminal_audit = terminal_audit()
 
 
 # 基础配置
@@ -106,3 +108,17 @@ class message:
 class web_status:
     heartbeat: int = None
     timeout: int = None
+
+
+# 终端审计设置
+class terminal_audit:
+    # 启用终端审计
+    enable: bool = None
+    # 禁用Tab键
+    disable_tab_key: bool = None
+    # 警告命令列表
+    warn_command_list: str = None
+    # 危险命令列表
+    danger_command_list: str = None
+    # 禁止命令列表
+    disable_command_list: str = None
