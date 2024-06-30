@@ -1,6 +1,9 @@
 from django.apps import AppConfig
+
+
 from util.logger import Log
 from apps.setting.entity.Config import config
+
 
 class SettingConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
@@ -9,6 +12,7 @@ class SettingConfig(AppConfig):
 
     def __init__(self, *args, **kwargs):
         super(SettingConfig, self).__init__(*args, **kwargs)
+
     def ready(self):
         from apps.setting.util.Config import loadConfig
         try:
@@ -18,8 +22,12 @@ class SettingConfig(AppConfig):
             Log.error(f"从数据库加载配置失败！\n{err}")
         Log.success("Setting: Initialization complete")
 
-    def get_config(self):
+    def get_config(self) -> config:
         return self.__config
 
     def update_config(self, config):
         self.__config = config
+
+    def test(self):
+        self.get_config()
+

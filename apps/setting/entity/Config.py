@@ -5,6 +5,7 @@ class config:
     node_usage = None
     node_default_alarm_setting = None
     message = None
+    web_status = None
 
     def __init__(self):
         self.base = base()
@@ -13,6 +14,7 @@ class config:
         self.node_usage = node_usage()
         self.node_default_alarm_setting = node_default_alarm_setting()
         self.message = message()
+        self.web_status = web_status()
 
 
 # 基础配置
@@ -106,3 +108,4 @@ class message:
 class web_status:
     heartbeat: int = None
     timeout: int = None
+

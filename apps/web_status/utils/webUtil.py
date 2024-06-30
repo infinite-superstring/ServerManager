@@ -1,5 +1,6 @@
 import re
-from apps.web_status.models import Web_Status
+from apps.web_status.models import Web_Site, Web_Site_Log, Web_Site_Abnormal_Log
+from util import httpCode
 
 
 def is_valid_host(host):
@@ -13,25 +14,56 @@ def is_valid_host(host):
         return False
 
 
-def is_valid_port(port):
-    """
-    检查给定的端口是否为有效的端口号。
-    :param port: 用户输入的端口号字符串
-    :return: 如果端口号是合法的则返回True，否则返回False
-    """
-    try:
-        port = int(port)
-        return 0 < port < 65536
-    except ValueError:
-        return False
-
-
 def hostIsExist(host):
     """
     检查给定的主机是否已经存在。
     """
-    web = Web_Status.objects.filter(host=host)
+    web = Web_Site.objects.filter(host=host)
     if web:
         return True
     else:
         return False
+
+
+def createLog(web_id, status, delay):
+    """
+    创建日志
+    """
+    if Web_Site_Log.objects.filter(web_id=web_id).count() >= 30:
+        Web_Site_Log.objects.filter(web_id=web_id).first().delete()
+    return Web_Site_Log.objects.create(
+        web_id=web_id,
+        status=status,
+        delay=delay,
+    )
+
+
+def createErrLog(web_id, status, error_info=''):
+    """
+    创建异常日志
+    """
+    if not error_info:
+        error_info = byStatusCodeGetErrInfo(status)
+    Web_Site_Abnormal_Log.objects.create(
+        web_id=web_id,
+        status=status,
+        error_type=byStatusCodeGetErrType(status),
+        error_info=error_info,
+    )
+
+
+def byStatusCodeGetErrInfo(status):
+    """
+    根据状态码获取错误信息
+    """
+    return httpCode.httpCodeMap.get(status, '未知错误')
+
+
+def byStatusCodeGetErrType(status):
+    """
+    根据状态码获取错误类型
+    """
+    if str(status).startswith('4'):
+        return '客户端错误'
+    if str(status).startswith('5'):
+        return '服务器错误'

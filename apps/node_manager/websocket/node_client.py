@@ -121,7 +121,7 @@ class node_client(AsyncBaseConsumer):
             'action': 'init_terminal',
             'data': {
                 'index': index,
-                'host':'127.0.0.1',
+                'web_id':'127.0.0.1',
                 'port':22,
                 'username':'fsj',
                 'password':'123456'

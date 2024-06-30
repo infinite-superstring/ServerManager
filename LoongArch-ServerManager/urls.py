@@ -114,6 +114,7 @@ urlpatterns = [
     # 任务-值班记录
     path('api/task/getDuty', task.getDuty),  # 获取值班记录(GET)
     # Web状态
-    path('api/webStatus/getList', webStatus.getList),  # 获取Web状态列表(POST)
+    path('api/webStatus/getList', webStatus.getList),  # 获取Web状态列表(GET)
     path('api/webStatus/addWeb', webStatus.addWeb),  # 添加Web状态(POST)
+    path('api/webStatus/delWeb/<str:id>', webStatus.delWeb),  # 删除监控的web(DELETE)
 ]

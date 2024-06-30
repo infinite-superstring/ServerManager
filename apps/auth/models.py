@@ -7,7 +7,7 @@ from apps.user_manager.models import User
 
 class OTP(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    token = models.CharField(max_length=32, unique=True, default=pyotp.random_base32())
+    token = models.CharField(max_length=32, unique=True,null=True)
     scanned = models.BooleanField(unique=True, default=False)
 
     class Meta:

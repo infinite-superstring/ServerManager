@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'apps.patrol',  # 巡检
     "apps.task",  # 任务管理
     "apps.web_status",  # 网站监控
-    "apps.web_status.web_task.web_task.WebTask",  # 网站监控任务
     'django.contrib.contenttypes',
 ]
 

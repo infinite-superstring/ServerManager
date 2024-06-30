@@ -13,5 +13,5 @@ websocket_urlpatterns = [
     # 消息通知
     path(r"ws/message", MessageClient.as_asgi()),
     # 网站监控
-    path(r"ws/web_status/<str:url_base64>/", WebStatusClient.as_asgi()),
+    path(r"ws/web_status", WebStatusClient.as_asgi()),
 ]
