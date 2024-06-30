@@ -281,6 +281,26 @@ class Command(BaseCommand):
             {
                 'Settings': "web_status.timeout",
                 'value': 3
+            },
+            {
+                'Settings': 'terminal_audit.enable',
+                'value': False
+            },
+            {
+                'Settings': 'terminal_audit.disable_tab_key',
+                'value': True
+            },
+            {
+                'Settings': 'terminal_audit.warn_command_list',
+                'value': ""
+            },
+            {
+                'Settings': 'terminal_audit.danger_command_list',
+                'value': ""
+            },
+            {
+                'Settings': 'terminal_audit.disable_command_list',
+                'value': ""
             }
         ]
 
