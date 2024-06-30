@@ -136,6 +136,19 @@ class node_client(AsyncBaseConsumer):
         else:
             Log.error(f"{sender} does not own a terminal session")
 
+    async def terminal_resize(self, event):
+        sender = event['sender']
+        cols = event['cols']
+        rows = event['rows']
+        if sender in self.__tty_uuid:
+            await self.send_action('terminal:resize', {
+                'uuid': self.__tty_uuid[sender],
+                'cols': cols,
+                'rows': rows
+            })
+        else:
+            Log.error(f"{sender} does not own a terminal session")
+
     @Log.catch
     async def input_command(self, event):
         sender = event['sender']

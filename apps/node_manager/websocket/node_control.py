@@ -133,9 +133,11 @@ class node_control(AsyncBaseConsumer):
     @AsyncBaseConsumer.action_handler('terminal:resize')
     async def terminal_resize(self, event):
         await self.channel_layer.group_send(f"NodeClient_{self.__node.uuid}", {
-
+            'type': 'terminal_resize',
+            'sender': self.channel_name,
+            'cols': event['cols'],
+            'rows': event['rows'],
         })
-
 
     @Log.catch
     async def show_process_list(self, event):
