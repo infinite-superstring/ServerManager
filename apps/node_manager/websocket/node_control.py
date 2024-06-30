@@ -63,11 +63,6 @@ class node_control(AsyncBaseConsumer):
         raise StopConsumer
 
     @Log.catch
-    async def send_json(self, data):
-        """发送Json数据"""
-        await self.send(json.dumps(data, cls=ComplexEncoder))
-
-    @Log.catch
     async def __init_data(self):
         """初始化页面数据"""
         usage_data = None
@@ -89,20 +84,17 @@ class node_control(AsyncBaseConsumer):
         if node_system_info and await Node_UsageData.objects.filter(node=self.__node).aexists():
             usage_data: dict = cache.get(f"NodeUsageData_{self.__node.uuid}")
         node_group = await sync_to_async(lambda: self.__node.group)()
-        await self.send_json({
-            "action": "init",
-            "data": {
-                "base_info": {
-                    "node_uuid": self.__node_uuid,
-                    "node_name": self.__node.name,
-                    "node_online": self.__node_base_info.online if self.__node_base_info else False,
-                    "node_description": self.__node.description,
-                    "node_group": node_group.name if node_group else None,
-                    "node_tags": await aget_node_tags(self.__node),
-                    "node_system_info": node_system_info,
-                },
-                "usage": usage_data if usage_data else None
-            }
+        await self.send_action('init', {
+            "base_info": {
+                "node_uuid": self.__node_uuid,
+                "node_name": self.__node.name,
+                "node_online": self.__node_base_info.online if self.__node_base_info else False,
+                "node_description": self.__node.description,
+                "node_group": node_group.name if node_group else None,
+                "node_tags": await aget_node_tags(self.__node),
+                "node_system_info": node_system_info,
+            },
+            "usage": usage_data if usage_data else None
         })
 
     @Log.catch
@@ -110,68 +102,68 @@ class node_control(AsyncBaseConsumer):
         """
         更新节点使用率数据
         """
-        await self.send_json({
-            'action': 'update_node_usage_data',
-            'data': event['usage_data']
-        })
+        await self.send_action('node:update_usage_data', event['usage_data'])
 
     @Log.catch
     async def node_online(self, event):
         """节点上线"""
-        await self.send_json({'action': 'node_online'})
+        await self.send_action('node:online')
         await self.__init_data()
 
     @Log.catch
     async def node_offline(self, event):
         """节点离线"""
-        await self.send_json({'action': 'node_offline'})
+        await self.send_action('node:offline')
 
     @Log.catch
     async def terminal_output(self, event):
-        await self.send_json({'action': 'terminal_output', 'data': event['output']})
+        """显示终端输出"""
+        await self.send_action('terminal:output', event['output'])
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("terminal_input")
+    @AsyncBaseConsumer.action_handler("terminal:input")
     async def terminal_input(self, command):
-        await self.channel_layer.group_send(f"NodeClient_{self.__node.uuid}", {
-            "type": "input_command",
+        """终端输入"""
+        await self.__send_group_to_client('input_command', {
             "command": command,
             'sender': self.channel_name,
+        })
+
+    @Log.catch
+    @AsyncBaseConsumer.action_handler('terminal:resize')
+    async def terminal_resize(self, event):
+        await self.channel_layer.group_send(f"NodeClient_{self.__node.uuid}", {
+
         })
 
 
     @Log.catch
     async def show_process_list(self, event):
         """展示进程列表"""
-        await self.send_json({
-            'action': 'show_process_list',
-            'data': event['process_list']
-        })
+        await self.send_action('process_list:show', event['process_list'])
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("connect_terminal")
+    @AsyncBaseConsumer.action_handler("terminal:connect")
     async def __connect_terminal(self):
         if self.__connect_terminal is True:
             raise RuntimeError("Terminal is already connected")
         self.__connect_terminal_flag = True
-        await self.channel_layer.group_send(f"NodeClient_{self.__node.uuid}", {
-            'type': 'connect_terminal',
+        await self.__send_group_to_client('connect_terminal', {
             'sender': self.channel_name,
         })
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("close_terminal")
+    @AsyncBaseConsumer.action_handler("terminal:close")
     async def __close_terminal(self):
         if not self.__connect_terminal:
             raise RuntimeError("Terminal not connected")
         self.__connect_terminal_flag = False
-        await self.channel_layer.group_send(f"NodeClient_{self.__node.uuid}", {
-            'type': 'close_terminal',
+        await self.__send_group_to_client('close_terminal', {
             'sender': self.channel_name,
         })
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("load_process_list")
+    @AsyncBaseConsumer.action_handler("process_list:load")
     async def __get_process_list(self):
         """获取进程列表"""
         cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=10)
@@ -180,10 +172,7 @@ class node_control(AsyncBaseConsumer):
             'sender': self.channel_name,
         })
         if cache.get(f"node_{self.__node_uuid}_process_list"):
-            await self.send_json({
-                'action': 'show_process_list',
-                'data': cache.get(f"node_{self.__node_uuid}_process_list")
-            })
+            await self.send_action('process_list:show', cache.get(f"node_{self.__node_uuid}_process_list"))
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("process_list:heartbeat")
@@ -192,16 +181,15 @@ class node_control(AsyncBaseConsumer):
         cache.set(f"node_{self.__node_uuid}_get_process_list_activity", time.time(), timeout=10)
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("kill_process")
+    @AsyncBaseConsumer.action_handler("process_list:kill")
     async def __kill_process(self, data):
-        await self.channel_layer.group_send(f"NodeClient_{self.__node_uuid}", {
-            'type': 'kill_process',
+        await self.__send_group_to_client('kill_process', {
             'pid': data.get('pid'),
             'tree_mode': data.get('tree_mode')
         })
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("get_performance_record")
+    @AsyncBaseConsumer.action_handler("performance_record:get")
     async def __get_performance_record(self, data):
         start_time = data.get('start_time')
         end_time = data.get('end_time')
@@ -210,7 +198,7 @@ class node_control(AsyncBaseConsumer):
             await self.__load_performance_record(start_time, end_time, device)
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("load_performance_record")
+    @AsyncBaseConsumer.action_handler("performance_record:load")
     async def __load_performance_record(self, start_time=None, end_time=None, device="_all"):
         start_time = (timezone.now() - timezone.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S') if not start_time else start_time
         end_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S') if not end_time else end_time
@@ -261,12 +249,14 @@ class node_control(AsyncBaseConsumer):
                     }
                 })
             temp.append(item)
-        return await self.send_json({
-            'action': 'load_performance_record',
-            'data': {
-                "device": device,
-                "start_time": start_time,
-                "end_time": end_time,
-                "usage_data": temp
-            }
+        await self.send_action('performance_record:show', {
+            "device": device,
+            "start_time": start_time,
+            "end_time": end_time,
+            "usage_data": temp
         })
+
+    async def __send_group_to_client(self, type: str, data: dict):
+        await self.channel_layer.group_send(f"NodeClient_{self.__node_uuid}", {**{
+            'type': type,
+        }, **data})

@@ -98,6 +98,14 @@ class AsyncBaseConsumer(AsyncWebsocketConsumer, ABC):
         pass
 
     @Log.catch
+    async def send_action(self, action, payload=None):
+        """发送动作数据"""
+        await self.send_json({
+            "action": action,
+            "data": payload
+        })
+
+    @Log.catch
     async def send_json(self, data: dict):
         """发送Json数据"""
         await self.send(json.dumps(data, cls=ComplexEncoder))

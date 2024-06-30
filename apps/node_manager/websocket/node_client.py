@@ -117,26 +117,20 @@ class node_client(AsyncBaseConsumer):
         index = uuid.uuid1()
         sender = event['sender']
         self.__init_tty_queue[index] = sender
-        await self.send_json({
-            'action': 'init_terminal',
-            'data': {
-                'index': index,
-                'host':'127.0.0.1',
-                'port':22,
-                'username':'fsj',
-                'password':'123456'
-            }
+        await self.send_action('terminal:create_session', {
+            'index': index,
+            'host': '127.0.0.1',
+            'port': 22,
+            'username': 'fsj',
+            'password': '123456'
         })
 
     @Log.catch
     async def close_terminal(self, event):
         sender = event['sender']
         if sender in self.__tty_uuid:
-            await self.send_json({
-                'action': 'close_terminal',
-                'data': {
-                    'uuid': self.__tty_uuid[sender]
-                }
+            await self.send_action('terminal:close_session', {
+                'uuid': self.__tty_uuid[sender]
             })
             self.__tty_uuid.pop(sender)
         else:
@@ -147,12 +141,9 @@ class node_client(AsyncBaseConsumer):
         sender = event['sender']
         command = event['command']
         if sender in self.__tty_uuid:
-            await self.send_json({
-                'action': 'input_command',
-                'data': {
-                    'command': command,
-                    'uuid': self.__tty_uuid[sender]
-                }
+            await self.send_action('terminal:input', {
+                'command': command,
+                'uuid': self.__tty_uuid[sender]
             })
         else:
             Log.error(f"{sender} does not own a terminal session")
@@ -162,9 +153,7 @@ class node_client(AsyncBaseConsumer):
         """开始获取进程列表"""
         Log.debug("用户请求获取进程列表")
         if self.__get_process_list is False:
-            await self.send_json({
-                'action': 'start_get_process_list',
-            })
+            await self.send_action('process_list:start')
             # 启动检查线程
             self.__check_get_process_list_activity_thread = Thread(
                 target=self.__check_get_process_list_activity,
@@ -180,12 +169,9 @@ class node_client(AsyncBaseConsumer):
         pid: int = event['pid']
         tree_mode = event['tree_mode']
         if pid:
-            await self.send_json({
-                'action': 'kill_process',
-                'data': {
-                    'pid': pid,
-                    'tree_mode': tree_mode
-                }
+            await self.send_action('process_list:kill', {
+                'pid': pid,
+                'tree_mode': tree_mode
             })
 
     @Log.catch
@@ -203,7 +189,7 @@ class node_client(AsyncBaseConsumer):
         await self.__load_alarm_setting()
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("refresh_node_info")
+    @AsyncBaseConsumer.action_handler("node:refresh_info")
     async def __refresh_node_info(self, payload=None):
         """刷新节点信息"""
         self.__node_base_info.system = payload['system']
@@ -219,7 +205,7 @@ class node_client(AsyncBaseConsumer):
         await self.__node_base_info.asave()
         self.__node_base_info = self.__node_base_info
 
-    @AsyncBaseConsumer.action_handler("upload_running_data")
+    @AsyncBaseConsumer.action_handler("node:upload_running_data")
     async def __save_running_data(self, payload=None):
         """上传节点数据"""
         cpu_data = payload.get('cpu')
@@ -264,7 +250,7 @@ class node_client(AsyncBaseConsumer):
         })
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("upload_node_msg")
+    @AsyncBaseConsumer.action_handler("node:upload_msg")
     async def __upload_node_msg(self, payload):
         type = payload.get('type')
         desc = payload.get('desc')
@@ -272,25 +258,33 @@ class node_client(AsyncBaseConsumer):
         await createEvent(self.__node, type, desc, level, end_directly=True)
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("create_terminal_session")
+    @AsyncBaseConsumer.action_handler("terminal:return_session")
     async def __create_terminal_session(self, payload=None):
         index = UUID(payload['index'])
         sid = payload['uuid']
         Log.debug(self.__init_tty_queue)
         Log.debug(index)
         if index not in self.__init_tty_queue.keys():
-            await self.send_json({
-                'action': 'close_terminal',
-                'data': {
-                    'uuid': sid
-                }
+            await self.send_action('terminal:close_session', {
+                'uuid': sid
             })
         else:
             self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
             self.__init_tty_queue.pop(index)
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("terminal_output")
+    @AsyncBaseConsumer.action_handler("safe:Terminal_not_enabled")
+    async def __terminal_not_enabled(self, payload=None):
+        index = UUID(payload['index'])
+        await self.channel_layer.send(self.__init_tty_queue[index], {
+            'type': "terminal_output",
+            'output': "节点安全设置:节点终端未启用",
+            'update_status': 'close'
+        })
+        del self.__init_tty_queue[index]
+
+    @Log.catch
+    @AsyncBaseConsumer.action_handler("terminal:output")
     async def __handle_terminal_output(self, payload=None):
         """终端内容输出"""
         channel = get_key_by_value(self.__tty_uuid, payload['uuid'], True)
@@ -303,9 +297,7 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("ping")
     async def __handle_ping(self):
-        await self.send_json({
-            'action': 'pong',
-        })
+        await self.send_action('pong')
 
     @Log.catch
     async def __update_node_usage_update(self, usage_data):
@@ -342,7 +334,7 @@ class node_client(AsyncBaseConsumer):
         )
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("process_list")
+    @AsyncBaseConsumer.action_handler("process_list:show")
     async def __process_list(self, data):
         cache.set(f"node_{self.__node_uuid}_process_list", data, 5)
         await self.channel_layer.group_send(f"NodeControl_{self.__node_uuid}", {
@@ -680,9 +672,7 @@ class node_client(AsyncBaseConsumer):
         # 缓存被销毁时发出结束获取进程列表信号
         Log.debug("停止获取进程列表")
         self.__get_process_list = False
-        asyncio.run(self.send_json({
-            'action': 'stop_get_process_list',
-        }))
+        asyncio.run(self.send_action('process_list:stop'))
 
     @Log.catch
     def __check_node_timeout(self):
