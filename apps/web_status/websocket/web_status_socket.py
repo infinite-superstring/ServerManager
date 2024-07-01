@@ -113,10 +113,10 @@ class WebStatusClient(AsyncBaseConsumer):
                     'type': 'newData',
                     'data': {
                         web.host: {
-                            'time': runtime.time.strftime("%H:%M:%S"),
-                            'data': int(runtime.delay),
-                            'online': str(runtime.status).startswith('2'),
-                            'status_code': runtime.status
+                            'time': runtime.time.strftime("%H:%M:%S") if runtime else None,
+                            'data': int(runtime.delay) if runtime else None,
+                            'online': str(runtime.status).startswith('2')  if runtime else None,
+                            'status_code': runtime.status  if runtime else None
                         }
                     }
                 }
