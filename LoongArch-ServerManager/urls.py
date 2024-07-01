@@ -14,7 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path, re_path
+import django_eventstream
+from django.urls import path, re_path, include
 
 import apps.auth.api.user_auth as user_auth
 import apps.auth.api.node_auth as node_auth
@@ -41,7 +42,9 @@ urlpatterns = [
     path('api/auth/logout', user_auth.AuthOutLog),  # 用户登出（ALL）
     path('api/auth/getUserLoginStatus', user_auth.getLoginStatus),  # 获取用户登录状态 (ALL)
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
-    path('api/auth/bindOTP', otp.send_bind_otp_auth_code),
+    path('api/auth/OTP/sendEmailCode', otp.send_email_code),  # 发送邮箱验证码
+    path('api/auth/OTP/checkEmailCode', otp.check_emali_code),  # 检查邮箱验证码
+    path('api/auth/OTP/checkOTP_Code', otp.check_bind_otp),
     # 用户管理
     path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（POST）
     path('api/admin/userManager/addUser', user_manager.addUser),  # 新增用户（POST）
@@ -74,7 +77,8 @@ urlpatterns = [
     path('api/node_manager/node_info/get_alarm_setting', node_info.get_alarm_setting),  # 获取节点告警设置(POST)
     path('api/node_manager/node_info/save_alarm_setting', node_info.save_alarm_setting),  # 保存节点告警设置(POST)
     path('api/node_manager/node_event/get_node_events', node_event.get_node_events),  # 获取节点事件列表(POST)
-    path('api/node_manager/node_event/get_event_info', node_event.get_event_info),
+    path('api/node_manager/node_event/get_event_info', node_event.get_event_info),  # 获取事件信息
+    path('event/node_manager/updateNodeList', include(django_eventstream.urls), {"channels": ["updateNodeList"]}),
     # 审计
     path('api/admin/auditAndLogger/audit', auditAndLogger.getAudit),  # 获取审计日志（POST）
     path('api/admin/auditAndLogger/accessLog', auditAndLogger.getAccessLog),  # 获取访问日志（POST）

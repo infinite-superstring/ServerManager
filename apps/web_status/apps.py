@@ -1,3 +1,4 @@
+from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
 import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -14,10 +15,14 @@ class WebStatusConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.web_status'
 
+    def __init__(self, *args, **kwargs):
+        Log.info("Web Status: Initializing start")
+        super().__init__(*args, **kwargs)
+
     def ready(self):
         # 启动一个新的异步事件循环
-        loop = asyncio.get_event_loop()
-        scheduler = AsyncIOScheduler(event_loop=loop)
+        # loop = asyncio.get_event_loop()
+        scheduler = BackgroundScheduler()
         # 添加一个定时任务
         config = apps.get_app_config('setting').get_config
         if not config():
@@ -25,21 +30,15 @@ class WebStatusConfig(AppConfig):
         heartbeat = config().web_status.heartbeat
         if heartbeat is None:
             return
-        print(heartbeat)
-        scheduler.add_job(self.monitor, IntervalTrigger(seconds=heartbeat))
+        scheduler.add_job(self.__start_monitor, IntervalTrigger(seconds=heartbeat))
         # 启动调度器
-        Log.info("启动网站监控")
         scheduler.start()
+        Log.success("Web Status: Initialization complete")
 
-    async def monitor(self):
-        # 你的异步逻辑代码
-        await self.__start_monitor()
-        await asyncio.sleep(1)
-
-    async def __start_monitor(self):
+    def __start_monitor(self):
         from apps.web_status.models import Web_Site
         web_list = Web_Site.objects.all()
-        async for web in web_list:
+        for web in web_list:
             t = Thread(target=self.__getWebStatus, args=(web,))
             t.start()
 

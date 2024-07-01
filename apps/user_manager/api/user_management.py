@@ -14,6 +14,7 @@ from util.logger import Log
 from util.passwordUtils import verifyPasswordRules, encrypt_password
 from apps.permission_manager.util.permission import groupPermission
 
+config = apps.get_app_config('setting').get_config
 
 # 获取用户列表
 @Log.catch
@@ -87,9 +88,10 @@ def addUser(req: HttpRequest):
         return ResponseJson({"status": 0, "msg": "该用户已有账户"})
     if email and email_exists(email):
         return ResponseJson({"status": 0, "msg": "邮箱已使用过"})
-    if not verifyPasswordRules(password):
+    pv, pv_msg = verifyPasswordRules(password, config().security.password_level)
+    if not pv:
         return ResponseJson(
-            {"status": 0, "msg": "密码不符合安全要求（至少6字符，必须含有数字，小写字母，大写字母，特殊字符）"}
+            {"status": 0, "msg": f"密码不符合安全要求（{pv_msg}）"}
         )
     hashed_password, salt = encrypt_password(password)
     createUser = User.objects.create(
@@ -248,11 +250,12 @@ def setUserInfo(req: HttpRequest):
             f"{User.email}-->{email}")
         User.email = email
     if password:
-        if not verifyPasswordRules(password):
+        pv, pv_msg = verifyPasswordRules(password, config().security.password_level)
+        if not pv:
             return ResponseJson(
                 {
                     "status": 0,
-                    "msg": "密码不符合安全要求（至少6字符，必须含有数字，小写字母，大写字母，特殊字符）"
+                    "msg": f"密码不符合安全要求（{pv_msg}）"
                 }
             )
         write_user_new_password_to_database(User, password)

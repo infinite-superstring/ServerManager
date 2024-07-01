@@ -25,6 +25,7 @@ def send_email(message: MessageBody):
     """
     try:
         send(message)
+        return True
     except SMTPServerDisconnected as e:
         send_err_handle("连接错误，请尝试使用SSL连接")
     except SMTPAuthenticationError as e:

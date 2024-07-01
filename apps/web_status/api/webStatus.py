@@ -23,7 +23,8 @@ def getList(req: HttpRequest):
     web_list = Web_Site.objects.filter(title__contains=name, host__contains=name, description__contains=name)
     result = []
     for web in web_list:
-        runtime: Web_Site_Log = cache.get(f'web_status_log_{web.id}')
+        runtime: Web_Site_Log = cache.get(f'web_status_log_{web.id}') if cache.get(
+            f'web_status_log_{web.id}') else Web_Site_Log()
         result.append({
             "id": web.id,
             "title": web.title,
@@ -73,6 +74,7 @@ def addWeb(req: HttpRequest):
     if hostIsExist(host):
         return ResponseJson({"status": 0, "msg": "主机地址已存在"})
     web = Web_Site.objects.create(title=title, host=host, description=description)
+    cache.delete(f'WebStatusClient_web_list')
     return ResponseJson({"status": 1, "msg": "添加成功"})
 
 
@@ -86,4 +88,5 @@ def delWeb(req: HttpRequest, id):
         if not Web_Site.objects.get(id=int(id)):
             return ResponseJson({"status": 0, "msg": "主机不存在"})
     Web_Site.objects.filter(id=int(id)).delete()
+    cache.delete(f'WebStatusClient_web_list')
     return ResponseJson({"status": 1, "msg": "删除成功"})

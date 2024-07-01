@@ -3,7 +3,7 @@ import json
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from django.core.cache import cache
 
 from apps.web_status.models import Web_Site_Log, Web_Site
@@ -41,6 +41,7 @@ class WebStatusClient(AsyncBaseConsumer):
         })
         # 开始轮询发送消息
         self._startPolling()
+        await sync_to_async(cache.set)(f'{self.__NAME}web_list', self.__web_list)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
@@ -76,7 +77,7 @@ class WebStatusClient(AsyncBaseConsumer):
                     result[current_host] = {
                         'time': times,
                         'data': datas,
-                        'online': any(str(status).startswith('2') for status in statuses),
+                        'online': bool(str(statuses[-1]).startswith('2')),
                         'status_code': statuses
                     }
                 current_host = log['web__host']
@@ -93,7 +94,8 @@ class WebStatusClient(AsyncBaseConsumer):
             result[current_host] = {
                 'time': times,
                 'data': datas,
-                'online': any(str(status).startswith('2') for status in statuses)
+                'online': bool(str(statuses[-1]).startswith('2')),
+                'status_code': statuses
             }
 
         return result
@@ -106,6 +108,9 @@ class WebStatusClient(AsyncBaseConsumer):
         self._polling_send.start()
 
     async def _sendNewData(self):
+        w = cache.get(f'{self.__NAME}web_list')
+        if not w:
+            self.__web_list = Web_Site.objects.all()
         async for web in self.__web_list:
             runtime: Web_Site_Log = cache.get(f'web_status_log_{web.id}')
             await self.send_json(
@@ -113,10 +118,10 @@ class WebStatusClient(AsyncBaseConsumer):
                     'type': 'newData',
                     'data': {
                         web.host: {
-                            'time': runtime.time.strftime("%H:%M:%S"),
-                            'data': int(runtime.delay),
-                            'online': str(runtime.status).startswith('2'),
-                            'status_code': runtime.status
+                            'time': runtime.time.strftime("%H:%M:%S") if runtime else None,
+                            'data': int(runtime.delay) if runtime else None,
+                            'online': str(runtime.status).startswith('2')  if runtime else None,
+                            'status_code': runtime.status  if runtime else None
                         }
                     }
                 }

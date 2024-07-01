@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os.path
 import threading
 import time
 import uuid
@@ -27,6 +28,7 @@ from util.dictUtils import get_key_by_value
 from util.format import format_bytes
 from util.logger import Log
 
+save_dir_base = apps.get_app_config('node_manager').terminal_record_save_dir
 
 class node_client(AsyncBaseConsumer):
     __auth: bool = False
@@ -39,8 +41,10 @@ class node_client(AsyncBaseConsumer):
     __node_uuid: str
     __node: Node
     __node_base_info: Node_BaseInfo
+    __node_terminal_record_dir: str
     __init_tty_queue: dict[str:str] = {}
     __tty_uuid: dict[str:str] = {}
+    __terminal_record_fd: dict[str: any] = {}
 
 
     async def connect(self):
@@ -67,6 +71,7 @@ class node_client(AsyncBaseConsumer):
         await self.__node_base_info.asave()
         await self.accept()
         self.__auth = True
+        self.__node_terminal_record_dir = os.path.join(save_dir_base, str(self.__node.uuid))
         # 加入组
         await self.channel_layer.group_add(
             f"NodeClient_{self.__node.uuid}",
@@ -136,6 +141,7 @@ class node_client(AsyncBaseConsumer):
             await self.send_action('terminal:close_session', {
                 'uuid': self.__tty_uuid[sender]
             })
+            self.__terminal_record_fd[self.__tty_uuid[sender]].close()
             self.__tty_uuid.pop(sender)
         else:
             Log.error(f"{sender} does not own a terminal session")
@@ -281,6 +287,8 @@ class node_client(AsyncBaseConsumer):
         sid = payload['uuid']
         Log.debug(self.__init_tty_queue)
         Log.debug(index)
+        if not os.path.exists(self.__node_terminal_record_dir):
+            os.mkdir(self.__node_terminal_record_dir)
         if index not in self.__init_tty_queue.keys():
             await self.send_action('terminal:close_session', {
                 'uuid': sid
@@ -288,6 +296,17 @@ class node_client(AsyncBaseConsumer):
         else:
             self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
             self.__init_tty_queue.pop(index)
+            self.__terminal_record_fd[sid] = open(os.path.join(self.__node_terminal_record_dir, sid+".txt"), "w+")
+            await self.__terminal_ready(sid)
+
+    @Log.catch
+    async def __terminal_ready(self, sid):
+        """终端就绪"""
+        channel = get_key_by_value(self.__tty_uuid, sid, True)
+        if channel:
+            await self.channel_layer.send(channel, {
+                'type': "terminal_ready"
+            })
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("safe:Terminal_not_enabled")
@@ -311,6 +330,10 @@ class node_client(AsyncBaseConsumer):
                 'type': "terminal_output",
                 'output': payload['output']
             })
+            try:
+                self.__terminal_record_fd[payload['uuid']].write(payload['output'])
+            except Exception as e:
+                Log.error(f"终端记录写入错误！{e}")
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("ping")
