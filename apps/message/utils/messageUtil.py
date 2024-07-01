@@ -198,7 +198,9 @@ def send(mes_obj: MessageBody):
             users: QuerySet[User] = _message_to_database(mes_obj)
             if not users:
                 return
-            send_ws(users)
+
+            if mes_obj.email_sms_only:
+                send_ws(users)
             # 执行发送
             _send_email(mes_obj=mes_obj, users=users)
             if mes_obj.email_sms_only:
