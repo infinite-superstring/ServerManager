@@ -121,6 +121,10 @@ class node_control(AsyncBaseConsumer):
         await self.send_action('terminal:output', event['output'])
 
     @Log.catch
+    async def terminal_ready(self, event):
+        await self.send_action('terminal:ready')
+
+    @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:input")
     async def terminal_input(self, command):
         """终端输入"""
