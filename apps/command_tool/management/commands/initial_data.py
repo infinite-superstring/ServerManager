@@ -158,6 +158,10 @@ class Command(BaseCommand):
                 'value': 0
             },
             {
+                'Settings': "security.password_level",
+                'value': 1
+            },
+            {
                 'Settings': "security.auth_code_resend_interval",
                 'value': 60
             },

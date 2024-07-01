@@ -3,6 +3,7 @@ import base64
 import hashlib
 import os
 
+from django.apps import apps
 from django.http import FileResponse
 from apps.user_manager.models import  User as Users
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, \
@@ -14,6 +15,7 @@ from util.logger import Log
 from apps.audit.util.auditTools import write_audit, write_access_log, write_file_change_log
 from apps.permission_manager.util.permission import groupPermission
 
+config = apps.get_app_config('setting').get_config
 
 @Log.catch
 def setPassword(req):
@@ -36,8 +38,9 @@ def setPassword(req):
             if not (userId or data or oldPassword or newPassword):
                 return ResponseJson({"status": -1, "msg": "参数不完整"})
             User = get_user_by_id(userId)
-            if not verifyPasswordRules(newPassword):
-                return ResponseJson({"status": 0, "msg": "新密码格式不合规（至少6字符，必须含有数字，小写字母，大写字母，特殊字符）"})
+            pv, pv_msg = verifyPasswordRules(newPassword, config().security.password_level)
+            if not pv:
+                return ResponseJson({"status": 0, "msg": f"新密码格式不合规（{pv_msg}）"})
             if not verify_username_and_password(User, oldPassword):
                 return ResponseJson({"status": 0, "msg": "原密码不正确"})
             write_user_new_password_to_database(userId, newPassword)

@@ -3,6 +3,8 @@ import random
 import re
 import secrets
 import string
+from re import Match
+from typing import Tuple
 
 # import app.util.Config
 from django.apps import apps
@@ -17,13 +19,27 @@ def GeneratePassword(length=12):
     return password
 
 
-def verifyPasswordRules(password):
+def verifyPasswordRules(password, level=0) -> tuple[Match[str] | None, str] | tuple[bool, str]:
     """
     验证密码是否符合规则
     :param password: str 密码
-    :return: bool
+    :param level: int
+    :return: tuple[Match[str] | None, str] | tuple[bool, str]
+    1.无限制(仅限制长度 6-16位)
+    2.弱密码(限制数字+英文 6-16位)
+    3.中密码(限制数字+英文大小写 8-20位)
+    4.强密码(限制数字+英文大小写+特殊符号 8-20位)
     """
-    return re.match('^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[^\w\s]).{6,16}', password)
+    match level:
+        case 1:
+            return re.match(r'^.{6,16}$', password), "仅限制长度 6-16位"
+        case 2:
+            return re.match(r'^(?=.*\d)(?=.*[a-zA-Z]).{6,16}$', password), "数字+英文 6-16位"
+        case 3:
+            return re.match(r'^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,20}$', password), "数字+英文大小写 8-20位"
+        case 4:
+            return re.match(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[^\w\s]).{8,20}', password), "数字+英文大小写+特殊符号 8-20位"
+    return False, "未知的密码等级"
 
 
 def encrypt_password(password):
