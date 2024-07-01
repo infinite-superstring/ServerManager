@@ -35,8 +35,9 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
-    'channels',
+    'daphne',  # WebSocket
+    'channels',  # CHANNEL_LAYER
+    'django_eventstream',  # SSE
     'apps.command_tool',  # 命令工具
     'apps.setting',  # 配置与设置
     'apps.user_manager',  # 用户管理器

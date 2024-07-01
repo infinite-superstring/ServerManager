@@ -137,6 +137,10 @@ def get_node_list(req):
             node_base_info = Node_BaseInfo.objects.filter(node=node).first()
             node_usage = Node_UsageData.objects.filter(node=node).last()
             online = node_base_info.online if node_base_info else False
+            try:
+                memory_used = round((node_usage.memory_used / node_base_info.memory_total) * 100, 1)
+            except:
+                memory_used = 0
             PageContent.append({
                 "uuid": item.get("uuid"),
                 "name": item.get("name"),
@@ -148,7 +152,7 @@ def get_node_list(req):
                     "hostname": node_base_info.hostname if node_base_info else "未知",
                     "online": online,
                     "cpu_usage": f"{node_usage.cpu_usage if node_usage else 0}%",
-                    "memory_used": f"{round((node_usage.memory_used / node_base_info.memory_total) * 100, 1)}%" if online and node_base_info.memory_total else "0%",
+                    "memory_used": f"{memory_used}%" if online and node_base_info.memory_total else "0%",
                 }
             })
     return ResponseJson({

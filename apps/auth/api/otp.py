@@ -1,14 +1,21 @@
 import time
+import pyotp
+from django.apps import apps
 
 from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse
 
-from apps.auth.utils.authCodeUtils import user_otp_is_binding, send_auth_code
+from apps.auth.utils.authCodeUtils import user_otp_is_binding, send_auth_code, check_auth_code
 from apps.user_manager.util.userUtils import get_user_by_id
+from apps.auth.models import OTP
+from util.Request import RequestLoadJson
 from util.Response import ResponseJson
+from util.logger import Log
+
+config = apps.get_app_config('setting').get_config
 
 
-def send_bind_otp_auth_code(request: HttpRequest) -> HttpResponse:
+def send_email_code(request: HttpRequest) -> HttpResponse:
     """发送绑定用验证码"""
     uid = request.session['userID']
     user = get_user_by_id(uid)
@@ -20,20 +27,86 @@ def send_bind_otp_auth_code(request: HttpRequest) -> HttpResponse:
     if cache.get(f"getAuthCode_{user.id}") and cache.get(f"getAuthCode_{user.id}")['end_time'] > time.time():
         return ResponseJson({
             'status': 0,
-            'msg': f'冷却中! 请等待{cache.get(f"getAuthCode_{user.id}")["end_time"] - time.time()}秒'
+            'msg': f'冷却中! 请等待{int(cache.get(f"getAuthCode_{user.id}")["end_time"] - time.time())}秒'
         })
-    try:
-        send_auth_code(user)
-    except Exception as e:
+    if send_auth_code(user):
+        return ResponseJson({
+            'status': 1,
+            'msg': '发件成功，请检查收件箱',
+            'data': {
+                'code_len': config().security.auth_code_length
+            }
+        })
+    else:
         return ResponseJson({
             'status': -1,
-            'msg': '发件失败'
+            'msg': '发件失败',
         })
+
+
+def check_emali_code(request: HttpRequest) -> HttpResponse:
+    """检查邮箱验证码并获取OPT二维码"""
+    uid = request.session['userID']
+    user = get_user_by_id(uid)
+    if not request.method == 'POST':
+        return ResponseJson({"status": -1, "msg": "请求方法不正确"}, 405)
+    try:
+        req_json = RequestLoadJson(request)
+        Log.debug(str(req_json))
+    except:
+        return ResponseJson({"status": -1, "msg": "Json解析失败"}, 400)
+    if user_otp_is_binding(user):
+        return ResponseJson({
+            'status': 0,
+            'msg': '您已绑定过OTP!'
+        })
+    auth_code = req_json.get('code')
+    if not auth_code or not check_auth_code(user, auth_code):
+        return ResponseJson({'status': 1, 'msg': '验证码不正确', 'data': {
+            'status': 0
+        }})
+    token = pyotp.random_base32()
+    OTP.objects.create(user=user, token=token, scanned=False)
     return ResponseJson({
         'status': 1,
-        'msg': '发件成功，请检查收件箱'
+        'data': {
+            'status': 1,
+            'qrcode': pyotp.totp.TOTP(token).provisioning_uri(name=user.userName+"@"+user.realName, issuer_name='LoongArch-ServerManager')
+        }
     })
 
 
-def bind_otp_token(req: HttpRequest) -> HttpResponse:
-    pass
+def check_bind_otp(request: HttpRequest) -> HttpResponse:
+    """检查OTP验证码"""
+    if not request.method == 'POST':
+        return ResponseJson({"status": -1, "msg": "请求方法不正确"}, 405)
+    try:
+        req_json = RequestLoadJson(request)
+        Log.debug(str(req_json))
+    except:
+        return ResponseJson({"status": -1, "msg": "Json解析失败"}, 400)
+    uid = request.session['userID']
+    user = get_user_by_id(uid)
+    otp_code = req_json.get('code')
+    if user_otp_is_binding(user):
+        return ResponseJson({
+            'status': 0,
+            'msg': '您已绑定过OTP!'
+        })
+    if not otp_code:
+        return ResponseJson({'status': -1, 'msg': '参数不完整'})
+    otp = OTP.objects.filter(user=user).first()
+    if not otp or (otp and not otp.token):
+        return ResponseJson({'status': 0, 'msg': '绑定错误，请尝试重新绑定'})
+    print(otp.token)
+    totp = pyotp.TOTP(otp.token)
+    print(totp.now())
+    if pyotp.TOTP(otp.token).verify(otp_code):
+        otp.scanned = True
+        otp.save()
+        return ResponseJson({'status': 1, 'msg': '绑定成功', 'data': {
+            'status': 1,
+        }})
+    return ResponseJson({'status': 1, 'msg': '绑定失败，请检查验证码', 'data': {
+        'status': 0
+    }})
