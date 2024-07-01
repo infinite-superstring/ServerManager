@@ -115,6 +115,9 @@ class node_control(AsyncBaseConsumer):
         """节点离线"""
         await self.send_action('node:offline')
 
+
+
+
     @Log.catch
     async def terminal_output(self, event):
         """显示终端输出"""
@@ -127,6 +130,18 @@ class node_control(AsyncBaseConsumer):
         await self.__send_group_to_client('input_command', {
             "command": command,
             'sender': self.channel_name,
+        })
+
+    @Log.catch
+    @AsyncBaseConsumer.action_handler("terminal:login")
+    async def terminal_login(self, event):
+        """终端登录"""
+        await self.__send_group_to_client('connect_terminal', {
+            'host': event['host'],
+            'port': event['port'],
+            'username': event['username'],
+            'password': event['password'],
+            'sender': self.channel_name
         })
 
     @Log.catch
@@ -202,7 +217,8 @@ class node_control(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("performance_record:load")
     async def __load_performance_record(self, start_time=None, end_time=None, device="_all"):
-        start_time = (timezone.now() - timezone.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S') if not start_time else start_time
+        start_time = (timezone.now() - timezone.timedelta(days=1)).strftime(
+            '%Y-%m-%d %H:%M:%S') if not start_time else start_time
         end_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S') if not end_time else end_time
         performance_record = await read_performance_record(self.__node, start_time, end_time)
         temp = []

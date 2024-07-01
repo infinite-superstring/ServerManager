@@ -1,6 +1,6 @@
 FROM cr.loongnix.cn/library/debian:buster
 
-LABEL maintainer="fsj,yf"
+LABEL maintainer="yf"
 
 EXPOSE 80
 
@@ -26,6 +26,10 @@ RUN tar zxf rust-1.78.0-loongarch64-unknown-linux-gnu.tar.gz
 
 RUN ./rust-1.78.0-loongarch64-unknown-linux-gnu/install.sh
 
+RUN rm rust-1.78.0-loongarch64-unknown-linux-gnu.tar.gz
+
+RUN rm -rf ./rust-1.78.0-loongarch64-unknown-linux-gnu/
+
 ARG ARCH
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then \
@@ -40,6 +44,7 @@ RUN ARCH=$(uname -m) && \
         make install && \
         cd .. && \
         rm -rf cpython-3.10.2 v3.10.2.zip; \
+        rm -rf ./cpython-3.10.2 v3.10.2; \
     else \
         echo "Unsupported architecture" && exit 1; \
     fi

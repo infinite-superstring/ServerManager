@@ -115,14 +115,18 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     async def connect_terminal(self, event):
         index = uuid.uuid1()
+        host = event['host']
+        port = event['port']
+        username = event['username']
+        password = event['password']
         sender = event['sender']
         self.__init_tty_queue[index] = sender
         await self.send_action('terminal:create_session', {
             'index': index,
-            'host': '127.0.0.1',
-            'port': 22,
-            'username': 'fsj',
-            'password': '123456'
+            'host': host,
+            'port': port,
+            'username': username,
+            'password': password
         })
 
     @Log.catch
@@ -302,6 +306,7 @@ class node_client(AsyncBaseConsumer):
         """终端内容输出"""
         channel = get_key_by_value(self.__tty_uuid, payload['uuid'], True)
         if channel:
+            print(channel)
             await self.channel_layer.send(channel, {
                 'type': "terminal_output",
                 'output': payload['output']
