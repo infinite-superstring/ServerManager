@@ -8,6 +8,7 @@ from django.http import FileResponse
 from apps.user_manager.models import  User as Users
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, \
     verify_username_and_password, username_exists
+from auth.utils.authCodeUtils import user_otp_is_binding
 from util.passwordUtils import verifyPasswordRules
 from util.Request import RequestLoadJson, getClientIp
 from util.Response import ResponseJson
@@ -68,6 +69,7 @@ def getUserInfo(req):
             "id": User.id,
             "userName": User.userName,
             "realName": User.realName,
+            'enableOTP': user_otp_is_binding(User),
             "email": User.email,
             "group": User_Permission.get_group_name() if User_Permission else None,
             "permissions": User_Permission.get_permissions_list() if User_Permission else None,

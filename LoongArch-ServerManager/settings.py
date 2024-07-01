@@ -40,10 +40,10 @@ INSTALLED_APPS = [
     'django_eventstream',  # SSE
     'apps.command_tool',  # 命令工具
     'apps.setting',  # 配置与设置
+    'apps.auth',  # 认证
     'apps.user_manager',  # 用户管理器
     'apps.permission_manager',  # 权限管理器
     'apps.node_manager',  # 节点管理器
-    'apps.auth',  # 认证
     'apps.dashboard',  # 仪表盘
     'apps.audit',  # 审计
     'apps.message',  # 消息

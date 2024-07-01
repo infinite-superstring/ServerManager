@@ -66,7 +66,10 @@ def check_emali_code(request: HttpRequest) -> HttpResponse:
             'status': 0
         }})
     token = pyotp.random_base32()
-    OTP.objects.create(user=user, token=token, scanned=False)
+    if not OTP.objects.filter(user=user).exists():
+        OTP.objects.create(user=user, token=token, scanned=False)
+    else:
+        OTP.objects.filter(user=user).update(token=token)
     return ResponseJson({
         'status': 1,
         'data': {
