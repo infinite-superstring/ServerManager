@@ -115,9 +115,6 @@ class node_control(AsyncBaseConsumer):
         """节点离线"""
         await self.send_action('node:offline')
 
-
-
-
     @Log.catch
     async def terminal_output(self, event):
         """显示终端输出"""
@@ -125,7 +122,8 @@ class node_control(AsyncBaseConsumer):
 
     @Log.catch
     async def terminal_ready(self, event):
-        await self.send_action('terminal:ready')
+        await self.send_action('node:terminal_ready',event['status'])
+
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:input")
@@ -154,8 +152,8 @@ class node_control(AsyncBaseConsumer):
         await self.channel_layer.group_send(f"NodeClient_{self.__node.uuid}", {
             'type': 'terminal_resize',
             'sender': self.channel_name,
-            'cols': event['cols'],
-            'rows': event['rows'],
+            'cols': 20 if event['cols']==0 else event['cols'],
+            'rows': 20 if event['rows']==0 else event['rows']
         })
 
     @Log.catch

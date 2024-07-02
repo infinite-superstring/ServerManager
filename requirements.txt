@@ -1,7 +1,8 @@
+
 loguru~=0.7.2
 django~=4.2.7
 daphne
-channels~=4.0.0
+channels==3.0.4
 channels_redis
 django-eventstream
 apscheduler
