@@ -25,7 +25,8 @@ class Web_Site_Abnormal_Log(models.Model):
     status = models.IntegerField("状态码", default=500)
     error_type = models.CharField("错误类型", max_length=256)
     error_info = models.CharField("错误信息", max_length=256)
-    time = models.DateTimeField("时间", auto_now_add=True)
+    start_time = models.DateTimeField("开始时间", null=True)
+    end_time = models.DateTimeField("结束时间", null=True)
 
     class Meta:
         db_table = "web_status_abnormal_log"

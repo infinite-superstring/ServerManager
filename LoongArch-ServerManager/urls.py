@@ -121,4 +121,5 @@ urlpatterns = [
     path('api/webStatus/getList', webStatus.getList),  # 获取Web状态列表(GET)
     path('api/webStatus/addWeb', webStatus.addWeb),  # 添加Web状态(POST)
     path('api/webStatus/delWeb/<str:id>', webStatus.delWeb),  # 删除监控的web(DELETE)
+    path('api/webStatus/update', webStatus.update),  # 更新Web状态(PUT)
 ]

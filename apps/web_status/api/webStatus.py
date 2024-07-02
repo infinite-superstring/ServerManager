@@ -4,8 +4,9 @@ from django.core.cache import cache
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from apps.web_status.models import Web_Site, Web_Site_Log
+from apps.web_status.models import Web_Site, Web_Site_Log, Web_Site_Abnormal_Log
 from apps.web_status.utils.webUtil import is_valid_host, hostIsExist
+from util import result
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
@@ -25,6 +26,8 @@ def getList(req: HttpRequest):
     for web in web_list:
         runtime: Web_Site_Log = cache.get(f'web_status_log_{web.id}') if cache.get(
             f'web_status_log_{web.id}') else Web_Site_Log()
+        error_time: Web_Site_Abnormal_Log = Web_Site_Abnormal_Log.objects.filter(web=web).order_by('-end_time')[0] if \
+            Web_Site_Abnormal_Log.objects.filter(web=web).order_by('-end_time') else Web_Site_Abnormal_Log()
         result.append({
             "id": web.id,
             "title": web.title,
@@ -33,6 +36,7 @@ def getList(req: HttpRequest):
             "delay": int(runtime.delay),
             "online": str(runtime.status).startswith("2"),
             "description": web.description,
+            'last_error_info': error_time.end_time if error_time.end_time else error_time.start_time,
         })
 
     return ResponseJson({"status": 1, "msg": "获取成功", "data": {"list": result, }})
@@ -68,13 +72,17 @@ def addWeb(req: HttpRequest):
         return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
     title = data['title']
     host = data['host']
-    description = data['description']
+    description = data.get('description', '')
+
+    if not title or not host:
+        return ResponseJson({"status": 0, "msg": "标题和主机不能为空"})
+
     if not is_valid_host(host):
         return ResponseJson({"status": 0, "msg": "主机地址不合法"})
     if hostIsExist(host):
         return ResponseJson({"status": 0, "msg": "主机地址已存在"})
     web = Web_Site.objects.create(title=title, host=host, description=description)
-    cache.delete(f'WebStatusClient_web_list')
+    cache.delete(f'web_status_web_list')
     return ResponseJson({"status": 1, "msg": "添加成功"})
 
 
@@ -88,5 +96,28 @@ def delWeb(req: HttpRequest, id):
         if not Web_Site.objects.get(id=int(id)):
             return ResponseJson({"status": 0, "msg": "主机不存在"})
     Web_Site.objects.filter(id=int(id)).delete()
-    cache.delete(f'WebStatusClient_web_list')
+    cache.delete(f'web_status_web_list')
     return ResponseJson({"status": 1, "msg": "删除成功"})
+
+
+def update(req: HttpRequest):
+    """
+    更新监控站点
+    """
+    if req.method != "PUT":
+        return result.api_error("请求方式错误", 405)
+    try:
+        data = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return result.api_error("JSON解析失败")
+    id = data.get('id', None)
+    if not id:
+        return result.error('id不能为空')
+    site = Web_Site.objects.get(id=int(id))
+    if not site:
+        return result.error('主机不存在')
+    site.title = data.get('title', site.title)
+    site.description = data.get('description', site.description)
+    site.save()
+    return result.success(msg='更新成功')

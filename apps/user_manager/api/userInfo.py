@@ -5,10 +5,11 @@ import os
 
 from django.apps import apps
 from django.http import FileResponse
-from apps.user_manager.models import  User as Users
+
+from apps.auth.utils.authCodeUtils import user_otp_is_binding
+from apps.user_manager.models import User as Users
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, \
     verify_username_and_password, username_exists
-from auth.utils.authCodeUtils import user_otp_is_binding
 from util.passwordUtils import verifyPasswordRules
 from util.Request import RequestLoadJson, getClientIp
 from util.Response import ResponseJson
@@ -17,6 +18,7 @@ from apps.audit.util.auditTools import write_audit, write_access_log, write_file
 from apps.permission_manager.util.permission import groupPermission
 
 config = apps.get_app_config('setting').get_config
+
 
 @Log.catch
 def setPassword(req):
@@ -46,8 +48,8 @@ def setPassword(req):
                 return ResponseJson({"status": 0, "msg": "原密码不正确"})
             write_user_new_password_to_database(userId, newPassword)
             write_audit(userId, "Set Password(设置密码)",
-                       "User Info(用户信息)",
-                       "")
+                        "User Info(用户信息)",
+                        "")
             return ResponseJson({"status": 1, "msg": "密码修改成功"})
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"})
@@ -77,6 +79,7 @@ def getUserInfo(req):
     else:
         return ResponseJson({"status": -1, "msg": "未登录"})
 
+
 def setUserInfo(req):
     """
     设置用户信息
@@ -99,8 +102,8 @@ def setUserInfo(req):
                 if (userName and userName != User.userName) and username_exists(userName):
                     return ResponseJson({"status": 0, "msg": "用户名已存在"})
                 write_audit(userId, "Set user info(设置用户信息): Update user name(更新用户名)",
-                           "User Info(用户信息)",
-                           f"{User.userName}-->{userName}")
+                            "User Info(用户信息)",
+                            f"{User.userName}-->{userName}")
                 User.userName = userName
                 req.session["user"] = userName
                 if email and email != User.email:
@@ -108,8 +111,8 @@ def setUserInfo(req):
                     if users.count() >= 1:
                         return ResponseJson({"status": 0, "msg": "邮箱已被使用过啦"})
                     write_audit(userId, "Set user info(设置用户信息): update email(更新电子邮箱)",
-                               "User Info(用户信息)",
-                               f"{User.email}-->{email}")
+                                "User Info(用户信息)",
+                                f"{User.email}-->{email}")
                     User.email = email
                 User.save()
                 return ResponseJson({"status": 1, "msg": "成功", "data": {
@@ -170,8 +173,8 @@ def uploadAvatar(req):
                         User.avatar = avatarImgHash
                         User.save()
                         write_audit(userId, "Upload avatar(上传头像)",
-                                   "User Info(用户信息)",
-                                   saveFileMd5)
+                                    "User Info(用户信息)",
+                                    saveFileMd5)
                         write_file_change_log(userId, "Upload file(avatar)", os.path.join("avatar", f"{avatarImgHash}"))
                         return ResponseJson({"status": 1, "msg": "上传成功"})
                     else:
@@ -180,11 +183,13 @@ def uploadAvatar(req):
                             os.remove(os.path.join("avatar", f"{avatarImgHash}"))
                         except Exception as err:
                             Log.error(err)
-                        return ResponseJson({"status": 0, "msg": f"Md5验证失败(发送时：{avatarImgHash} 接收时：{saveFileMd5})"}, 400)
+                        return ResponseJson(
+                            {"status": 0, "msg": f"Md5验证失败(发送时：{avatarImgHash} 接收时：{saveFileMd5})"}, 400)
             else:
                 return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+
 
 def getAvatar(req):
     """

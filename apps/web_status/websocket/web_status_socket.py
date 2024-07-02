@@ -41,7 +41,7 @@ class WebStatusClient(AsyncBaseConsumer):
         })
         # 开始轮询发送消息
         self._startPolling()
-        await sync_to_async(cache.set)(f'{self.__NAME}web_list', self.__web_list)
+        await sync_to_async(cache.set)(f'web_status_web_list', self.__web_list)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
@@ -108,7 +108,7 @@ class WebStatusClient(AsyncBaseConsumer):
         self._polling_send.start()
 
     async def _sendNewData(self):
-        w = cache.get(f'{self.__NAME}web_list')
+        w = cache.get(f'web_status_web_list')
         if not w:
             self.__web_list = Web_Site.objects.all()
         async for web in self.__web_list:
@@ -120,8 +120,8 @@ class WebStatusClient(AsyncBaseConsumer):
                         web.host: {
                             'time': runtime.time.strftime("%H:%M:%S") if runtime else None,
                             'data': int(runtime.delay) if runtime else None,
-                            'online': str(runtime.status).startswith('2')  if runtime else None,
-                            'status_code': runtime.status  if runtime else None
+                            'online': str(runtime.status).startswith('2') if runtime else None,
+                            'status_code': runtime.status if runtime else None
                         }
                     }
                 }

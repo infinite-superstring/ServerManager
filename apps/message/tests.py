@@ -67,5 +67,14 @@ class MessageTest(TestCase):
         send(MessageBody(title="test", content="test", name="test", node_groups=Node_Group.objects.filter()))
 
     def test3(self):
-
         send(MessageBody(title="test", content="test", name="test", recipient=User.objects.get(id=1)))
+
+    def test4(self):
+        l = [1, 2, 3, 4, 5, 6, 7]
+        handelList(l)
+        print(l)
+
+
+def handelList(l):
+    print(l)
+    l.pop()
