@@ -22,7 +22,7 @@ from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node
 from apps.message.models import MessageBody
 from apps.message.api.message import send_email
 from apps.setting.entity import Config
-from apps.node_manager.utils.nodeEventUtil import NodeEventUtil, createEvent, createPhase, stopEvent
+from apps.node_manager.utils.nodeEventUtil import createEvent, createPhase, stopEvent
 from util.calculate import calculate_percentage
 from util.dictUtils import get_key_by_value
 from util.format import format_bytes
@@ -296,7 +296,11 @@ class node_client(AsyncBaseConsumer):
         else:
             self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
             self.__init_tty_queue.pop(index)
-            self.__terminal_record_fd[sid] = open(os.path.join(self.__node_terminal_record_dir, sid+".txt"), "w+")
+            self.__terminal_record_fd[sid] = open(
+                os.path.join(self.__node_terminal_record_dir, sid+".txt"),
+                "w+",
+                encoding='utf-8'
+            )
             await self.__terminal_ready(sid)
 
     @Log.catch
@@ -305,7 +309,8 @@ class node_client(AsyncBaseConsumer):
         channel = get_key_by_value(self.__tty_uuid, sid, True)
         if channel:
             await self.channel_layer.send(channel, {
-                'type': "terminal_ready"
+                'type': "terminal_ready",
+                'session_id': sid
             })
 
     @Log.catch
