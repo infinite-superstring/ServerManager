@@ -46,9 +46,6 @@ class node_client(AsyncBaseConsumer):
     __tty_uuid: dict[str:str] = {}
     __terminal_record_fd: dict[str: any] = {}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(args, kwargs)
-        self.__node_terminal_login = None
 
     async def connect(self):
         # 在建立连接时执行的操作
@@ -214,7 +211,6 @@ class node_client(AsyncBaseConsumer):
             Log.error(e)
         await self.__load_alarm_setting()
 
-
     @Log.catch
     @AsyncBaseConsumer.action_handler("node:refresh_info")
     async def __refresh_node_info(self, payload=None):
@@ -231,7 +227,6 @@ class node_client(AsyncBaseConsumer):
         await update_disk_partition(self.__node, payload['disks'])
         await self.__node_base_info.asave()
         self.__node_base_info = self.__node_base_info
-
 
     @AsyncBaseConsumer.action_handler("node:upload_running_data")
     async def __save_running_data(self, payload=None):
@@ -289,7 +284,6 @@ class node_client(AsyncBaseConsumer):
     @AsyncBaseConsumer.action_handler("terminal:return_session")
     async def __create_terminal_session(self, payload=None):
         index = UUID(payload['index'])
-        login_status = payload['login_status']
         sid = payload['uuid']
         Log.debug(self.__init_tty_queue)
         Log.debug(index)
@@ -303,17 +297,17 @@ class node_client(AsyncBaseConsumer):
             self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
             self.__init_tty_queue.pop(index)
             self.__terminal_record_fd[sid] = open(os.path.join(self.__node_terminal_record_dir, sid+".txt"), "w+")
-            await self.__terminal_ready(sid,login_status)
+            await self.__terminal_ready(sid)
 
     @Log.catch
-    async def __terminal_ready(self, sid,login_status):
+    async def __terminal_ready(self, sid):
         """终端就绪"""
         channel = get_key_by_value(self.__tty_uuid, sid, True)
         if channel:
             await self.channel_layer.send(channel, {
-                'type': "terminal_ready",
-                'status':login_status
+                'type': "terminal_ready"
             })
+
     @Log.catch
     @AsyncBaseConsumer.action_handler("safe:Terminal_not_enabled")
     async def __terminal_not_enabled(self, payload=None):

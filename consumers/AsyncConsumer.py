@@ -82,7 +82,6 @@ class AsyncBaseConsumer(AsyncWebsocketConsumer, ABC):
         except Exception as e:
             return Log.error(f"try load json error: {e}")
         action = data.get('action')  # 获取 action 类型
-        print(f"动作：{action}")
         payload = data.get('data', None)  # 获取可选参数 data
         Log.debug(f"action: {action}, payload: {payload}")
         # 根据 action 类型调用相应的处理函数

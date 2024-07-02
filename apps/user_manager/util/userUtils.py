@@ -18,11 +18,6 @@ def get_user_by_id(uid) -> bool | User:
 def get_user_by_username(username) -> User:
     return User.objects.get(userName=username)
 
-
-def user_id_exist(user_id) -> bool:
-    return User.objects.filter(id=user_id).exists()
-
-
 def username_exists(username) -> bool:
     return User.objects.filter(userName=username).exists()
 
@@ -37,6 +32,7 @@ def email_exists(email) -> bool:
 
 def uid_exists(uid) -> bool:
     return User.objects.filter(id=uid).exists()
+
 
 async def uid_aexists(uid) -> bool:
     return await User.objects.filter(id=uid).aexists()
