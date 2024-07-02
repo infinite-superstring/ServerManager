@@ -1,7 +1,7 @@
 from util.Response import ResponseJson
 
 
-def success(data='None', msg='success', http_code=200, result_code=0):
+def success(data='None', msg='success', http_code=200, result_code=1):
     return ResponseJson(status=http_code, data={
         'status': result_code,
         'msg': msg,
@@ -9,7 +9,7 @@ def success(data='None', msg='success', http_code=200, result_code=0):
     })
 
 
-def error(msg='error', http_code=200, result_code=1):
+def error(msg='error', http_code=200, result_code=0):
     return ResponseJson(
         status=http_code,
         data={
