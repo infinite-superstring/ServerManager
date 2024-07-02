@@ -4,6 +4,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils import timezone
 
+from apps.user_manager.models import User
+
 
 # Create your models here.
 
@@ -228,3 +230,21 @@ class Node_AlarmSetting(models.Model):
     class NetworkAlarmRule(Base_AlarmRule):
         send_threshold = models.BigIntegerField("发送最大阈值(bytes/s)")
         receive_threshold = models.BigIntegerField("接收最大阈值(bytes/s)")
+
+
+# 终端录制
+class Node_TerminalRecord(models.Model):
+    # 终端使用人
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # 用户IP地址
+    user_ip_address = models.GenericIPAddressField(null=False, default='127.0.0.1')
+    # 节点
+    node = models.ForeignKey(Node, on_delete=models.CASCADE)
+    # 会话ID
+    session_id = models.CharField(max_length=100, null=True)
+    # 会话开始时间
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'node_terminal_record'
+        db_table_comment = '终端会话录制'

@@ -4,7 +4,7 @@ from django.http import HttpRequest
 from apps.permission_manager.util.permissionGroupUtils import group_id_exists, get_group_by_id
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, username_exists, \
-    real_name_exists, email_exists, user_id_exist
+    real_name_exists, email_exists, uid_exists
 from apps.permission_manager.models import Permission_groups
 from apps.audit.util.auditTools import write_access_log, write_audit
 from util.pageUtils import get_max_page, get_page_content
@@ -163,7 +163,7 @@ def getUserPermission(req: HttpRequest):
     if not userId:
         return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     query = get_user_by_id(userId)
-    if not user_id_exist(userId):
+    if not uid_exists(userId):
         return ResponseJson({"status": 0, "msg": "用户不存在"}, 404)
     write_access_log(req.session.get("userID"), getClientIp(req), f"获取用户权限(uid: {userId})")
     return ResponseJson({"status": 1, "data": {
