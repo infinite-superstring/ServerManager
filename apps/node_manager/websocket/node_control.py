@@ -8,12 +8,13 @@ from uuid import UUID, uuid1
 from channels.exceptions import StopConsumer
 from django.core.cache import cache
 
-from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
+from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData, Node_TerminalRecord
 from apps.node_manager.utils.nodeUtil import read_performance_record
 from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
+from apps.user_manager.models import User
 from consumers.AsyncConsumer import AsyncBaseConsumer
-from util.jsonEncoder import ComplexEncoder
+from user_manager.util.userUtils import uid_aexists
 from util.logger import Log
 
 
@@ -21,6 +22,7 @@ class node_control(AsyncBaseConsumer):
     __connect_terminal_flag: bool = False
     __node_uuid: UUID = None
     __userID: int = None
+    __user: User = None
     __clientIP: str = None
     __client_UUID: str = None
     __config: Config = None
@@ -33,6 +35,12 @@ class node_control(AsyncBaseConsumer):
         if (not (self.scope["session"].get("userID") or self.scope["session"].get("user")) and
                 self.scope["session"].get("auth_method") != 'Node Auth'):
             Log.warning("非法访问：用户未登录")
+            await self.close(0)
+        self.__userID = self.scope["session"].get("userID")
+        if await uid_aexists(self.__userID):
+            self.__user = await User.objects.aget(id=self.__userID)
+        else:
+            Log.warning("非法访问：用户不存在")
             await self.close(0)
         if not self.scope['url_route']['kwargs']['node_uuid']:
             Log.debug("参数不完整")
@@ -115,9 +123,6 @@ class node_control(AsyncBaseConsumer):
         """节点离线"""
         await self.send_action('node:offline')
 
-
-
-
     @Log.catch
     async def terminal_output(self, event):
         """显示终端输出"""
@@ -125,6 +130,12 @@ class node_control(AsyncBaseConsumer):
 
     @Log.catch
     async def terminal_ready(self, event):
+        await Node_TerminalRecord.objects.acreate(
+            user=self.__user,
+            user_ip_address=self.__clientIP,
+            node=self.__node,
+            session_id=event['session_id'],
+        )
         await self.send_action('terminal:ready')
 
     @Log.catch

@@ -27,6 +27,7 @@ import apps.node_manager.api.node_tag as node_tag
 import apps.node_manager.api.node_group as node_group
 import apps.node_manager.api.node_info as node_info
 import apps.node_manager.api.node_event as node_event
+import apps.node_manager.api.terminal_record as terminal_record
 import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
 import apps.user_manager.api.userInfo as userInfo
@@ -85,7 +86,11 @@ urlpatterns = [
     path('api/admin/auditAndLogger/fileChangeLog', auditAndLogger.getFileChangeLog),  # 获取文件日志（POST）
     path('api/admin/auditAndLogger/systemLog', auditAndLogger.getSystemLog),  # 获取系统日志（POST）
     path('api/admin/auditAndLogger/userSessionLog', auditAndLogger.get_user_session_log),  # 获取用户会话记录(POST)
-    path('api/admin/auditAndLogger/nodeSessionLog', auditAndLogger.get_node_session_log),  # 获取节点会话记录(POST)'
+    path('api/admin/auditAndLogger/nodeSessionLog', auditAndLogger.get_node_session_log),  # 获取节点会话记录(POST)
+    path('api/admin/auditAndLogger/terminalRecord/loadNodeList', terminal_record.load_node_list),  # 加载节点列表
+    path('api/admin/auditAndLogger/terminalRecord/loadUserList', terminal_record.load_terminal_user_list),  # 加载终端用户列表
+    path('api/admin/auditAndLogger/terminalRecord/loadSessionList', terminal_record.load_terminal_session_list),  # 加载终端会话列表
+    path('api/admin/auditAndLogger/terminalRecord/loadSessionRecord', terminal_record.load_terminal_session_record),  # 加载终端会话记录
     # 系统设置
     path('api/admin/settings/getSettings', setting.getSetting),  # 获取设置信息
     path('api/admin/settings/editSettings', setting.editSetting),  # 编辑设置信息
