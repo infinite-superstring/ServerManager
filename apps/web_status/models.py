@@ -23,9 +23,9 @@ class Web_Site_Abnormal_Log(models.Model):
     """
     web = models.ForeignKey('web_status.Web_Site', on_delete=models.CASCADE)
     status = models.IntegerField("状态码", default=500)
-    error_type = models.CharField("错误类型", max_length=256)
-    error_info = models.CharField("错误信息", max_length=256)
-    start_time = models.DateTimeField("开始时间", null=True)
+    error_type = models.CharField("错误类型", max_length=256,null=True, blank=True)
+    error_info = models.CharField("错误信息", max_length=256, null=True)
+    start_time = models.DateTimeField("开始时间", null=True, auto_now_add=True)
     end_time = models.DateTimeField("结束时间", null=True)
 
     class Meta:

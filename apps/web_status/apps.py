@@ -43,7 +43,7 @@ class WebStatusConfig(AppConfig):
         host = web.host
         result = None
         delay = 0
-        code: int = 0
+        code: int = 200
         try:
             config = apps.get_app_config('setting').get_config
             headers = {
