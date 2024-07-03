@@ -1,7 +1,7 @@
 from django.http import HttpRequest, HttpResponse
 
+from apps.auth.utils.otpUtils import check_otp
 from apps.user_manager.util.userUtils import get_user_by_id
-from auth.utils.otpUtils import check_otp
 from util.result import api_error, success, error
 
 

@@ -285,6 +285,8 @@ class node_client(AsyncBaseConsumer):
     async def __create_terminal_session(self, payload=None):
         index = UUID(payload['index'])
         sid = payload['uuid']
+        terminal_login_status = payload['login_status']
+        print('payload????????????????????',terminal_login_status)
         Log.debug(self.__init_tty_queue)
         Log.debug(index)
         if not os.path.exists(self.__node_terminal_record_dir):
@@ -301,16 +303,17 @@ class node_client(AsyncBaseConsumer):
                 "w+",
                 encoding='utf-8'
             )
-            await self.__terminal_ready(sid)
+            await self.__terminal_ready(sid,terminal_login_status)
 
     @Log.catch
-    async def __terminal_ready(self, sid):
+    async def __terminal_ready(self, sid,terminal_login_status):
         """终端就绪"""
         channel = get_key_by_value(self.__tty_uuid, sid, True)
         if channel:
             await self.channel_layer.send(channel, {
                 'type': "terminal_ready",
-                'session_id': sid
+                'session_id': sid,
+                'terminal_login_status': terminal_login_status
             })
 
     @Log.catch
