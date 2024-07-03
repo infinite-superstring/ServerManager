@@ -16,9 +16,6 @@ config = apps.get_app_config('setting').get_config
 def user_otp_is_binding(user: User):
     return OTP.objects.filter(user=user, scanned=True).exists()
 
-def user_otp_bind(user: User):
-    """用户绑定OTP"""
-
 
 def generate_verification_code(length=8):
     digits = "0123456789"

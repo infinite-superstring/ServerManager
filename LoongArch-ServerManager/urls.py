@@ -20,6 +20,7 @@ from django.urls import path, re_path, include
 import apps.auth.api.user_auth as user_auth
 import apps.auth.api.node_auth as node_auth
 import apps.auth.api.otp as otp
+import apps.auth.api.OTP_Bind as otp_bind
 import apps.user_manager.api.user_management as user_manager
 import apps.permission_manager.api.permission as permission_manager
 import apps.node_manager.api.node_manager as node_manager
@@ -43,9 +44,10 @@ urlpatterns = [
     path('api/auth/logout', user_auth.AuthOutLog),  # 用户登出（ALL）
     path('api/auth/getUserLoginStatus', user_auth.getLoginStatus),  # 获取用户登录状态 (ALL)
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
-    path('api/auth/OTP/sendEmailCode', otp.send_email_code),  # 发送邮箱验证码
-    path('api/auth/OTP/checkEmailCode', otp.check_emali_code),  # 检查邮箱验证码
-    path('api/auth/OTP/checkOTP_Code', otp.check_bind_otp),
+    path('api/auth/OTP/bind/sendEmailCode', otp_bind.send_email_code),  # 发送邮箱验证码
+    path('api/auth/OTP/bind/verifyEmailCode', otp_bind.check_emali_code),  # 检查邮箱验证码
+    path('api/auth/OTP/bind/verifyOTP_Code', otp_bind.bind_otp_check),  # 检查
+    path('api/auth/OTP/verify/checkOTP', otp.check_otp_input),
     # 用户管理
     path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（POST）
     path('api/admin/userManager/addUser', user_manager.addUser),  # 新增用户（POST）

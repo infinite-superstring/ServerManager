@@ -120,11 +120,11 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     async def connect_terminal(self, event):
         index = uuid.uuid1()
-        host = event['host']
-        port = event['port']
-        username = event['username']
-        password = event['password']
-        sender = event['sender']
+        host = event.get('host')
+        port = event.get('port')
+        username = event.get('username')
+        password = event.get('password')
+        sender = event.get('sender')
         self.__init_tty_queue[index] = sender
         await self.send_action('terminal:create_session', {
             'index': index,
