@@ -13,8 +13,8 @@ from apps.node_manager.utils.nodeUtil import read_performance_record
 from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
 from apps.user_manager.models import User
-from apps.user_manager.util.userUtils import uid_aexists
 from consumers.AsyncConsumer import AsyncBaseConsumer
+from user_manager.util.userUtils import uid_aexists
 from util.logger import Log
 
 
@@ -136,7 +136,7 @@ class node_control(AsyncBaseConsumer):
             node=self.__node,
             session_id=event['session_id'],
         )
-        await self.send_action('terminal:ready',event['terminal_login_status'])
+        await self.send_action('terminal:ready')
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:input")
@@ -150,7 +150,6 @@ class node_control(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:login")
     async def terminal_login(self, event):
-        print('请求终端登录')
         """终端登录"""
         await self.__send_group_to_client('connect_terminal', {
             'host': event['host'],
