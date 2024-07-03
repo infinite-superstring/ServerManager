@@ -1,12 +1,14 @@
 import json
 
-def RequestLoadJson(request):
+
+def RequestLoadJson(request) -> dict | list:
     """
     接收Json数据
     :param request: 请求体
     :return:
     """
     return json.loads(request.body.decode("utf-8"))
+
 
 def getClientIp(request):
     """
