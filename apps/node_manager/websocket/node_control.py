@@ -14,7 +14,7 @@ from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
 from apps.user_manager.models import User
 from consumers.AsyncConsumer import AsyncBaseConsumer
-from user_manager.util.userUtils import uid_aexists
+from apps.user_manager.util.userUtils import uid_aexists
 from util.logger import Log
 
 
