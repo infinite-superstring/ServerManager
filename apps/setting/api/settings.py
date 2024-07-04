@@ -27,9 +27,10 @@ def editSetting(req):
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
 
 def getPageConfig(req):
+    config = apps.get_app_config("setting").get_config()
     return ResponseJson({
         "status": 1,
         "data": {
-            "forceOTP_Bind": True
+            "forceOTP_Bind": config.security.forceOTP_Bind,
         }
     })
