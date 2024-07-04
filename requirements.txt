@@ -1,4 +1,4 @@
-
+-i https://pypi.tuna.tsinghua.edu.cn/simple
 loguru~=0.7.2
 django~=4.2.7
 daphne
