@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'apps.patrol',  # 巡检
     "apps.task",  # 任务管理
     "apps.web_status",  # 网站监控
+    "apps.group_task",  # 集群任务
     'django.contrib.contenttypes',
 ]
 
