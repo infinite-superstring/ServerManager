@@ -286,7 +286,6 @@ class node_client(AsyncBaseConsumer):
         index = UUID(payload['index'])
         sid = payload['uuid']
         terminal_login_status = payload['login_status']
-        print('payload????????????????????',terminal_login_status)
         Log.debug(self.__init_tty_queue)
         Log.debug(index)
         if not os.path.exists(self.__node_terminal_record_dir):

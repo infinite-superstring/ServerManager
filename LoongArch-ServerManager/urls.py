@@ -14,8 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-import django_eventstream
-from django.urls import path, re_path, include
+from django.urls import path
 
 import apps.auth.api.user_auth as user_auth
 import apps.auth.api.node_auth as node_auth
@@ -25,11 +24,12 @@ import apps.user_manager.api.user_manager as user_manager
 import apps.user_manager.api.initUser as initUser
 import apps.user_manager.api.userInfo as userInfo
 import apps.permission_manager.api.permission as permission_manager
-import apps.node_manager.api.node_manager as node_manager
-import apps.node_manager.api.node_tag as node_tag
-import apps.node_manager.api.node_group as node_group
-import apps.node_manager.api.node_info as node_info
-import apps.node_manager.api.node_event as node_event
+import apps.node_manager.api.node.node_manager as node_manager
+import apps.node_manager.api.node.node_tag as node_tag
+import apps.node_manager.api.node.node_group as node_group
+import apps.node_manager.api.node.node_info as node_info
+import apps.node_manager.api.node.node_event as node_event
+import apps.node_manager.api.cluster.execute as cluster_execute
 import apps.node_manager.api.terminal_record as terminal_record
 import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
@@ -82,6 +82,8 @@ urlpatterns = [
     path('api/node_manager/node_info/save_alarm_setting', node_info.save_alarm_setting),  # 保存节点告警设置(POST)
     path('api/node_manager/node_event/get_node_events', node_event.get_node_events),  # 获取节点事件列表(POST)
     path('api/node_manager/node_event/get_event_info', node_event.get_event_info),  # 获取事件信息
+    # 节点管理器 - 集群
+    path('api/node_manager/cluster/execute/createTask', cluster_execute.createTask),  # 创建执行任务
     # path('event/node_manager/updateNodeList', include(django_eventstream.urls), {"channels": ["updateNodeList"]}),
     # 审计
     path('api/admin/auditAndLogger/audit', auditAndLogger.getAudit),  # 获取审计日志（POST）
