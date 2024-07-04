@@ -75,8 +75,10 @@ def check_emali_code(request: HttpRequest) -> HttpResponse:
         'status': 1,
         'data': {
             'status': 1,
-            'qrcode': pyotp.totp.TOTP(token).provisioning_uri(name=user.userName + "@" + user.realName,
-                                                              issuer_name='LoongArch-ServerManager')
+            'qrcode': pyotp.totp.TOTP(token).provisioning_uri(
+                name=user.userName + "@" + user.realName,
+                issuer_name=config().base.website_name
+            )
         }
     })
 

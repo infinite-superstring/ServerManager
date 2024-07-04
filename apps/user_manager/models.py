@@ -17,6 +17,8 @@ class User(models.Model):
     avatar = models.CharField("头像hash", max_length=64, null=True)
     permission = models.ForeignKey("permission_manager.Permission_groups", on_delete=models.DO_NOTHING, null=True)
     disable = models.BooleanField("是否禁用", default=False, null=True)
+    isNewUser = models.BooleanField("是新用户", null=False, default=True)
+
     class Meta:
         db_table = "users"
         db_table_comment = "用户"

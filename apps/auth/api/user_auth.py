@@ -7,9 +7,11 @@ from django.http import HttpRequest
 from util.Response import ResponseJson
 from util.Request import RequestLoadJson, getClientIp
 from util.logger import Log
+from apps.auth.utils.otpUtils import hasOTPBound
 from apps.audit.util.auditTools import write_audit, write_user_session_log
 from apps.setting.entity.Config import config
 from apps.user_manager.util.userUtils import get_user_by_username, verify_username_and_password
+from apps.permission_manager.util.permission import groupPermission
 
 config: config = apps.get_app_config('setting').get_config()
 
@@ -45,7 +47,16 @@ def AuthLogin(req: HttpRequest):
     user.save()
     write_audit(user.id, "用户登录", "用户认证", user.lastLoginIP)
     write_user_session_log(user_id=user.id, action=0, ip=user.lastLoginIP)
-    return ResponseJson({"status": 1, "msg": "登录成功"})
+    return ResponseJson({"status": 1, "msg": "登录成功", "data": {
+        'id': user.id,
+        "userName": user.userName,
+        "realName": user.realName,
+        "email": user.email,
+        "enableOTP": hasOTPBound(user),
+        "group": user.permission.name,
+        "permissions": groupPermission(user.permission.id).get_permissions_list(),
+        "isNewUser": user.isNewUser
+    }})
 
 
 def AuthOutLog(req: HttpRequest):

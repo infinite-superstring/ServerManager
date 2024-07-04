@@ -25,3 +25,11 @@ def editSetting(req):
 
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+
+def getPageConfig(req):
+    return ResponseJson({
+        "status": 1,
+        "data": {
+            "forceOTP_Bind": True
+        }
+    })

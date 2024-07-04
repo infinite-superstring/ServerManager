@@ -21,7 +21,9 @@ import apps.auth.api.user_auth as user_auth
 import apps.auth.api.node_auth as node_auth
 import apps.auth.api.otp as otp
 import apps.auth.api.OTP_Bind as otp_bind
-import apps.user_manager.api.user_management as user_manager
+import apps.user_manager.api.user_manager as user_manager
+import apps.user_manager.api.initUser as initUser
+import apps.user_manager.api.userInfo as userInfo
 import apps.permission_manager.api.permission as permission_manager
 import apps.node_manager.api.node_manager as node_manager
 import apps.node_manager.api.node_tag as node_tag
@@ -31,7 +33,6 @@ import apps.node_manager.api.node_event as node_event
 import apps.node_manager.api.terminal_record as terminal_record
 import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
-import apps.user_manager.api.userInfo as userInfo
 import apps.message.api.message as message
 import apps.dashboard.api.dashboard as dashboard
 import apps.patrol.api.patrol as patrol
@@ -81,7 +82,7 @@ urlpatterns = [
     path('api/node_manager/node_info/save_alarm_setting', node_info.save_alarm_setting),  # 保存节点告警设置(POST)
     path('api/node_manager/node_event/get_node_events', node_event.get_node_events),  # 获取节点事件列表(POST)
     path('api/node_manager/node_event/get_event_info', node_event.get_event_info),  # 获取事件信息
-    path('event/node_manager/updateNodeList', include(django_eventstream.urls), {"channels": ["updateNodeList"]}),
+    # path('event/node_manager/updateNodeList', include(django_eventstream.urls), {"channels": ["updateNodeList"]}),
     # 审计
     path('api/admin/auditAndLogger/audit', auditAndLogger.getAudit),  # 获取审计日志（POST）
     path('api/admin/auditAndLogger/accessLog', auditAndLogger.getAccessLog),  # 获取访问日志（POST）
@@ -96,6 +97,11 @@ urlpatterns = [
     # 系统设置
     path('api/admin/settings/getSettings', setting.getSetting),  # 获取设置信息
     path('api/admin/settings/editSettings', setting.editSetting),  # 编辑设置信息
+    path('api/settings/getServerConfig', setting.getPageConfig),  # 获取页面配置
+    # 初始化用户
+    path('api/initUser/sendEmailVerifyCode', initUser.sendEmailVerifyCode),  # 发送验证码
+    path('api/initUser/saveUserInfo', initUser.initUserInfo),  # 保存用户信息
+    path('api/initUser/checkOTP_Code', initUser.checkOTP_Code),  # 验证OTP令牌
     # 个人信息编辑
     path("api/userInfo/getInfo", userInfo.getUserInfo),  # 获取个人信息（ALL）
     path("api/userInfo/editInfo", userInfo.setUserInfo),  # 修改个人信息（POST）
