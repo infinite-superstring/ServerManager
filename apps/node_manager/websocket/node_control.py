@@ -136,7 +136,7 @@ class node_control(AsyncBaseConsumer):
             node=self.__node,
             session_id=event['session_id'],
         )
-        await self.send_action('terminal:ready')
+        await self.send_action('terminal:ready',event['terminal_login_status'])
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:input")
