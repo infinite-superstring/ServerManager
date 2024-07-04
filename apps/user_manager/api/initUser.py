@@ -74,13 +74,18 @@ def initUserInfo(request: HttpRequest) -> HttpResponse:
     email = req_json.get('email')
     password = req_json.get('password')
     verify_code = req_json.get('verify_code')
-    if not email or not password or not verify_code:
+    user_name = req_json.get('user_name')
+    if not email or not password or not verify_code or not user_name:
         return api_error("参数不完整")
     user_cache = cache.get(f"init_user_email_verify_{user.id}", None)
     if not user_cache or user_cache.get("code") != verify_code:
         return error("验证码错误")
+    if user_name and 3 < len(user_name) > 20:
+        return error("用户名格式错误(3-20字符)")
     if user_cache.get('email') != email:
         return error("要绑定的邮箱与接收验证码的邮箱不一致")
+    print(user_name, email)
+    user.userName = user_name
     user.email = email
     pv, pv_msg = verifyPasswordRules(password, config().security.password_level)
     if not pv:
@@ -92,19 +97,27 @@ def initUserInfo(request: HttpRequest) -> HttpResponse:
         OTP.objects.create(user=user, token=token)
     else:
         OTP.objects.filter(user=user).update(token=token)
-    return success({
-        'qrcode': pyotp.totp.TOTP(token).provisioning_uri(
-            name=user.userName + "@" + user.realName,
-            issuer_name=config().base.website_name
-        )
-    })
+    if config().security.force_otp_bind:
+        return success({
+            'qrcode': pyotp.totp.TOTP(token).provisioning_uri(
+                name=user.userName + "@" + user.realName,
+                issuer_name=config().base.website_name
+            )
+        })
+    user.isNewUser = False
+    user.save()
+    return success()
 
 def checkOTP_Code(request: HttpRequest) -> HttpResponse:
     if not request.method == 'GET':
         return api_error("请求方法不正确", 405)
+    if not config().security.force_otp_bind:
+        return api_error("非法访问")
     code = request.GET.get('code', None)
     uid = request.session['userID']
     user = get_user_by_id(uid)
+    if not user.isNewUser:
+        return api_error("您不是新用户，请通过正常渠道修改用户信息")
     otp = OTP.objects.filter(user=user).first()
     if not otp or (otp and not otp.token):
         return error("绑定错误，请尝试重新绑定")
@@ -112,6 +125,4 @@ def checkOTP_Code(request: HttpRequest) -> HttpResponse:
         otp.scanned = True
         otp.save()
         return success()
-    user.isNewUser = False
-    user.save()
     return error('绑定失败，请检查验证码')

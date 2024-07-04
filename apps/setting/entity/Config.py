@@ -35,6 +35,8 @@ class base:
 class security:
     # 密码安全等级
     password_level: int = None
+    # 强制绑定OTP令牌
+    force_otp_bind: bool = None
     # 消息验证码重发时间(秒)
     auth_code_resend_interval: int = None
     # 消息验证码超时时间(分)
