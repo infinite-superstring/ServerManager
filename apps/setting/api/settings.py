@@ -31,6 +31,6 @@ def getPageConfig(req):
     return ResponseJson({
         "status": 1,
         "data": {
-            "forceOTP_Bind": config.security.forceOTP_Bind,
+            "forceOTP_Bind": config.security.force_otp_bind,
         }
     })
