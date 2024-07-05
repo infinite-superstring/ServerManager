@@ -31,19 +31,33 @@ from util.logger import Log
 save_dir_base = apps.get_app_config('node_manager').terminal_record_save_dir
 
 class node_client(AsyncBaseConsumer):
+    # 已认证
     __auth: bool = False
+    # 启用告警
     __alarm: bool = False
+    # 告警规则设置
     __alarm_setting: AlarmSetting
+    # 告警状态
     __alarm_status: dict
+    # 是否正在获取进程列表
     __get_process_list: bool = False
+    # 检查获取进程列表活动线程
     __check_get_process_list_activity_thread: Thread
+    # 面板配置文件
     __config: Config
+    # 节点UUID
     __node_uuid: str
+    # 节点
     __node: Node
+    # 节点基本信息
     __node_base_info: Node_BaseInfo
+    # 节点终端录制保存位置
     __node_terminal_record_dir: str
+    # 初始化终端队列
     __init_tty_queue: dict[str:str] = {}
+    # 终端会话列表
     __tty_uuid: dict[str:str] = {}
+    # 终端录制文件操作符
     __terminal_record_fd: dict[str: any] = {}
 
 
@@ -77,8 +91,9 @@ class node_client(AsyncBaseConsumer):
             f"NodeClient_{self.__node.uuid}",
             self.channel_name
         )
+        # 发送初始化配置文件
         await self.send_json({
-            'action': 'init_node_config',
+            'action': 'node:init_config',
             'data': {
                 'heartbeat_time': self.__config.node.heartbeat_time,
                 'upload_data_interval': self.__config.node_usage.upload_data_interval,
@@ -94,8 +109,8 @@ class node_client(AsyncBaseConsumer):
         Log.success(f"节点：{node_name}已连接")
 
     async def disconnect(self, close_code):
+        """节点断开连接时"""
         if self.__auth:
-            # 在断开连接时执行的操作
             node_name = self.scope["session"].get("node_name")
             self.__node_base_info.online = False
             await self.__node_base_info.asave()
@@ -114,28 +129,27 @@ class node_client(AsyncBaseConsumer):
         raise StopConsumer
 
     async def receive(self, *args, **kwargs):
+        """处理节点收到信息时"""
         await self.__update_cache_timeout()
         await super().receive(*args, **kwargs)
 
     @Log.catch
     async def connect_terminal(self, event):
+        """连接到终端"""
         index = uuid.uuid1()
-        host = event.get('host')
-        port = event.get('port')
-        username = event.get('username')
-        password = event.get('password')
         sender = event.get('sender')
         self.__init_tty_queue[index] = sender
         await self.send_action('terminal:create_session', {
             'index': index,
-            'host': host,
-            'port': port,
-            'username': username,
-            'password': password
+            'host': event.get('host'),
+            'port': event.get('port'),
+            'username': event.get('username'),
+            'password': event.get('password')
         })
 
     @Log.catch
     async def close_terminal(self, event):
+        """断开终端连接"""
         sender = event['sender']
         if sender in self.__tty_uuid:
             await self.send_action('terminal:close_session', {
@@ -146,7 +160,9 @@ class node_client(AsyncBaseConsumer):
         else:
             Log.error(f"{sender} does not own a terminal session")
 
+    @Log.catch
     async def terminal_resize(self, event):
+        """调整终端大小"""
         sender = event['sender']
         cols = event['cols']
         rows = event['rows']
@@ -161,6 +177,7 @@ class node_client(AsyncBaseConsumer):
 
     @Log.catch
     async def input_command(self, event):
+        """输入终端命令"""
         sender = event['sender']
         command = event['command']
         if sender in self.__tty_uuid:
@@ -275,6 +292,7 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("node:upload_msg")
     async def __upload_node_msg(self, payload):
+        """上传节点消息"""
         type = payload.get('type')
         desc = payload.get('desc')
         level = payload.get('level', "Info")
@@ -283,41 +301,57 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:return_session")
     async def __create_terminal_session(self, payload=None):
+        """返回终端会话UUID"""
         index = UUID(payload['index'])
         sid = payload['uuid']
-        terminal_login_status = payload['login_status']
         Log.debug(self.__init_tty_queue)
         Log.debug(index)
+        # 如果节点录制文件夹不存在则创建
         if not os.path.exists(self.__node_terminal_record_dir):
             os.mkdir(self.__node_terminal_record_dir)
+        #  如果返回的是一个未知的index则销毁会话实例
         if index not in self.__init_tty_queue.keys():
-            await self.send_action('terminal:close_session', {
+            return await self.send_action('terminal:close_session', {
                 'uuid': sid
             })
-        else:
-            self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
-            self.__init_tty_queue.pop(index)
-            self.__terminal_record_fd[sid] = open(
-                os.path.join(self.__node_terminal_record_dir, sid+".txt"),
-                "w+",
-                encoding='utf-8'
-            )
-            await self.__terminal_ready(sid,terminal_login_status)
+        self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
+        self.__init_tty_queue.pop(index)
+        self.__terminal_record_fd[sid] = open(
+            os.path.join(self.__node_terminal_record_dir, sid+".txt"),
+            "w+",
+            encoding='utf-8'
+        )
+        # 发送节点就绪消息到控制端
+        await self.__terminal_ready(sid)
 
     @Log.catch
-    async def __terminal_ready(self, sid,terminal_login_status):
+    @AsyncBaseConsumer.action_handler("terminal:login_failed")
+    async def __handle_terminal_login_failed(self, payload=None):
+        """终端登录错误时"""
+        index = payload.get("index")
+        Log.debug(self.__init_tty_queue)
+        sender = self.__init_tty_queue.get(UUID(index))
+        await self.channel_layer.send(sender, {
+            'type': "terminal_login_failed",
+            'session_id': index
+        })
+        Log.warning("终端登录错误，已关闭会话")
+
+
+    @Log.catch
+    async def __terminal_ready(self, sid):
         """终端就绪"""
         channel = get_key_by_value(self.__tty_uuid, sid, True)
         if channel:
             await self.channel_layer.send(channel, {
                 'type': "terminal_ready",
-                'session_id': sid,
-                'terminal_login_status': terminal_login_status
+                'session_id': sid
             })
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("safe:Terminal_not_enabled")
     async def __terminal_not_enabled(self, payload=None):
+        """节点禁用终端返回"""
         index = UUID(payload['index'])
         await self.channel_layer.send(self.__init_tty_queue[index], {
             'type': "terminal_output",
@@ -345,6 +379,7 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("ping")
     async def __handle_ping(self):
+        """处理节点Ping请求"""
         await self.send_action('pong')
 
     @Log.catch
@@ -374,7 +409,7 @@ class node_client(AsyncBaseConsumer):
 
     @Log.catch
     async def __update_cache_timeout(self):
-        # 更新缓存超时时间
+        """更新缓存超时时间"""
         cache.set(
             f"node_client_online_{self.__node.uuid}",
             self.channel_name,
@@ -384,6 +419,7 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("process_list:show")
     async def __process_list(self, data):
+        """返回进程列表"""
         cache.set(f"node_{self.__node_uuid}_process_list", data, 5)
         await self.channel_layer.group_send(f"NodeControl_{self.__node_uuid}", {
             'type': 'show_process_list',
@@ -392,6 +428,7 @@ class node_client(AsyncBaseConsumer):
 
     @Log.catch
     async def __load_alarm_setting(self):
+        """加载节点告警设置"""
         setting = await Node_AlarmSetting.objects.filter(node=self.__node).afirst()
         if setting and setting.enable:
             Log.debug(f"节点{self.__node.name}已启用告警")
