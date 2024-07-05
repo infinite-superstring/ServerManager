@@ -82,7 +82,7 @@ class node_client(AsyncBaseConsumer):
         self.__task = await group_task.by_node_uuid_get_task(uuids=self.__node_uuid)
 
         await self.send_json({
-            'action': 'init_node_config',
+            'action': 'node:init_config',
             'data': {
                 'heartbeat_time': self.__config.node.heartbeat_time,
                 'upload_data_interval': self.__config.node_usage.upload_data_interval,
