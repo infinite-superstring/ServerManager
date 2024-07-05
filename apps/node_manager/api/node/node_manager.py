@@ -76,7 +76,7 @@ def del_node(req):
     if not node_id or code is None:
         return ResponseJson({"status": -1, "msg": "参数不完整"})
     if not verify_otp_for_request(req, code):
-        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查验证码"})
+        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查您的手机令牌"})
     if node_uuid_exists(node_id):
         get_node_by_uuid(node_id).delete()
         return ResponseJson({"status": 1, "msg": "节点已删除"})
@@ -94,8 +94,11 @@ def reset_node_token(req):
         Log.error(e)
         return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
     node_id = req_json.get('uuid')
-    if node_id is None:
+    code = req_json.get('code')
+    if node_id is None or code is None:
         return ResponseJson({"status": -1, "msg": "参数不完整"})
+    if not verify_otp_for_request(req, code):
+        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查您的手机令牌"})
     if not node_uuid_exists(node_id):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
     token = secrets.token_hex(32)

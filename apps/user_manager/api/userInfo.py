@@ -9,6 +9,7 @@ from apps.user_manager.models import User as Users
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, \
     verify_username_and_password, username_exists
 from apps.auth.utils.authCodeUtils import user_otp_is_binding
+from auth.utils.otpUtils import verify_otp
 from util.passwordUtils import verifyPasswordRules
 from util.Request import RequestLoadJson, getClientIp
 from util.Response import ResponseJson
@@ -25,32 +26,34 @@ def setPassword(req):
     :param req:
     :return:
     """
-    if req.method == 'POST':
-        try:
-            req_json = RequestLoadJson(req)
-        except Exception as e:
-            Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"})
-        else:
-            userId = req.session.get("userID")
-            data = req_json.get("data")
-            oldPassword = data.get("oldPassword")
-            newPassword = data.get("newPassword")
-            if not (userId or data or oldPassword or newPassword):
-                return ResponseJson({"status": -1, "msg": "参数不完整"})
-            User = get_user_by_id(userId)
-            pv, pv_msg = verifyPasswordRules(newPassword, config().security.password_level)
-            if not pv:
-                return ResponseJson({"status": 0, "msg": f"新密码格式不合规（{pv_msg}）"})
-            if not verify_username_and_password(User, oldPassword):
-                return ResponseJson({"status": 0, "msg": "原密码不正确"})
-            write_user_new_password_to_database(userId, newPassword)
-            write_audit(userId, "Set Password(设置密码)",
-                        "User Info(用户信息)",
-                        "")
-            return ResponseJson({"status": 1, "msg": "密码修改成功"})
-    else:
+    if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"})
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": "JSON解析失败"})
+    userId = req.session.get("userID")
+    data = req_json.get("data")
+    oldPassword = data.get("oldPassword")
+    newPassword = data.get("newPassword")
+    code = data.get("code")
+    if not (userId or data or oldPassword or newPassword):
+        return ResponseJson({"status": -1, "msg": "参数不完整"})
+    User = get_user_by_id(userId)
+    if not verify_otp(User, code):
+        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查您的手机令牌"})
+    pv, pv_msg = verifyPasswordRules(newPassword, config().security.password_level)
+    if not pv:
+        return ResponseJson({"status": 0, "msg": f"新密码格式不合规（{pv_msg}）"})
+    if not verify_username_and_password(User, oldPassword):
+        return ResponseJson({"status": 0, "msg": "原密码不正确"})
+    write_user_new_password_to_database(userId, newPassword)
+    write_audit(userId, "Set Password(设置密码)",
+                "User Info(用户信息)",
+                "")
+    return ResponseJson({"status": 1, "msg": "密码修改成功"})
+
 
 
 def getUserInfo(req):

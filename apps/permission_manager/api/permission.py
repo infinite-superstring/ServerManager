@@ -85,7 +85,7 @@ def delPermissionGroup(req):
     if not PermissionGroupId or not code:
         return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     if not verify_otp_for_request(req, code):
-        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查验证码"})
+        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查您的手机令牌"})
     query = Permission_groups.objects.filter(id=PermissionGroupId).first()
     if not query:
         return ResponseJson({"status": 0, "msg": "组不存在"})

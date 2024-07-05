@@ -129,10 +129,10 @@ def delUser(req: HttpRequest):
         return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
     userId = req_json.get("id")
     code = req_json.get("code")
-    if not userId or not code:
+    if not userId or code is None:
         return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     if not verify_otp_for_request(req, code):
-        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查验证码"})
+        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查您的手机令牌"})
     if userId == req.session.get("userID"):
         return ResponseJson({"status": 0, "msg": "不能删除当前登录用户"})
     if userId == 1:
