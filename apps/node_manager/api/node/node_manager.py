@@ -9,7 +9,7 @@ from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists,
     init_node_alarm_setting
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
-from auth.utils.otpUtils import verify_otp_for_request
+from apps.auth.utils.otpUtils import verify_otp_for_request
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log

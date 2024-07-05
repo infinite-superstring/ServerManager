@@ -10,12 +10,16 @@ class NodeManagerConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.node_manager'
     terminal_record_save_dir: str
+    group_task_result_save_dir: str
 
     def __init__(self, app_name, app_module):
         super().__init__(app_name, app_module)
         self.terminal_record_save_dir = os.path.join(os.getcwd(), 'terminal_record')
         if not os.path.exists(self.terminal_record_save_dir):
             os.mkdir(self.terminal_record_save_dir)
+        self.group_task_result_save_dir = os.path.join(os.getcwd(), 'group_task_run_result')
+        if not os.path.exists(self.group_task_result_save_dir):
+            os.mkdir(self.group_task_result_save_dir)
         Log.info("Node Manager: Initializing start")
 
     def ready(self):
@@ -39,4 +43,3 @@ class NodeManagerConfig(AppConfig):
         task = tasks()
         task.start()
         Log.success("Node Manager: Initialization complete")
-

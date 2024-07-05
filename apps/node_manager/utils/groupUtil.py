@@ -106,14 +106,14 @@ class GroupUtil:
 
         group_nodes = self.get_node_list()
         channel_layer = get_channel_layer()
-        for group in group_nodes:
-            if group in exclude:
-                Log.debug(f"Node {group.name}({group.uuid}) is already in the excluded list, skip the send event")
+        for node in group_nodes:
+            if node in exclude:
+                Log.debug(f"Node {node.name}({node.uuid}) is already in the excluded list, skip the send event")
                 continue
-            if not group.online:
-                Log.debug(f"Node {group.name}({group.uuid}) is offline and will skip send event")
-                continue
+            # if not node.online:
+            #     Log.debug(f"Node {node.name}({node.uuid}) is offline and will skip send event")
+            #     continue
             async_to_sync(channel_layer.group_send)(
-                f"NodeClient_{group.uuid}",
+                f"NodeClient_{node.uuid}",
                 {**{'type': event}, **data}
             )

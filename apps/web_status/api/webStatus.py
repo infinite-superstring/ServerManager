@@ -6,7 +6,7 @@ from django.http import HttpRequest
 
 from apps.web_status.models import Web_Site, Web_Site_Log, Web_Site_Abnormal_Log
 from apps.web_status.utils.webUtil import is_valid_host, hostIsExist
-from util import result
+from util import result, pageUtils
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
@@ -121,3 +121,40 @@ def update(req: HttpRequest):
     site.description = data.get('description', site.description)
     site.save()
     return result.success(msg='更新成功')
+
+
+def getSiteNames(req: HttpRequest):
+    """
+    获取监控站点名称
+    """
+    if req.method != 'GET':
+        return result.api_error("请求方式错误", http_code=405)
+    names = Web_Site.objects.filter().values_list('title', 'host')
+    return result.success(names)
+
+
+def getLog(req: HttpRequest):
+    """
+    获取 监控日志
+    """
+    if req.method != 'GET':
+        return result.api_error("请求方式错误", http_code=405)
+    host = req.GET.get('host', '')
+    page = req.GET.get('page', 1)
+    pageSize = req.GET.get('pageSize', 20)
+    logs = Web_Site_Abnormal_Log.objects.filter(web__host=host).order_by('-start_time')
+    page_list: list[dict] = pageUtils.get_page_content(logs, int(page), int(pageSize))
+    max_page = pageUtils.get_max_page(logs.count(), int(pageSize))
+    result_list = []
+    for log in page_list:
+        result_list.append({
+            'status_code': log.get('status'),
+            'error_type': log.get('error_type'),
+            'error_info': log.get('error_info'),
+            'start_time': log.get('start_time'),
+            'end_time': log.get('end_time').strftime("%Y-%m-%d %H:%M:%S") if log.get('end_time') else None,
+        })
+    return result.success(data={
+        'list': result_list,
+        'maxPage': max_page
+    })

@@ -179,10 +179,31 @@ def _send_email(mes_obj: MessageBody, users: QuerySet[User]):
         website_name = config().base.website_name
         title = mes_obj.title
         email['Subject'] = f"【{website_name}】{title}"
-        email['From'] = Header(f"{config().message.email_from_name}<{config().message.email_from_address}>")
+        from_name = config().message.email_from_name
+        address = config().message.email_from_address
+        head = None
+        if from_name and address:
+            head = f"{from_name}<{address}>"
+        else:
+            head = address
+        email['From'] = Header(head, )
         email['To'] = u.email
         # 发送邮件
-        stp.send_message(email)
+        try:
+            stp.send_message(email)
+        except smtplib.SMTPDataError as e:
+            Log.error(e)
+            raise smtplib.SMTPDataError
+        except smtplib.SMTPServerDisconnected as e:
+            Log.error(e)
+            raise smtplib.SMTPServerDisconnected
+        except smtplib.SMTPResponseException as e:
+            Log.error(e)
+            raise smtplib.SMTPResponseException
+        except Exception as e:
+            Log.error("邮件发送失败,并且抛出了一个未知异常:" + type(e).__name__)
+            Log.error(e)
+            raise Exception
     stp.quit()
 
 
@@ -206,11 +227,21 @@ def send(mes_obj: MessageBody):
             if mes_obj.email_sms_only:
                 return None
             return users
+
+        except smtplib.SMTPDataError as e:
+            raise smtplib.SMTPDataError
         except SMTPAuthenticationError as e:
             Log.error(e)
             raise SMTPAuthenticationError
+        except smtplib.SMTPResponseException as e:
+            Log.error(e)
+            raise smtplib.SMTPResponseException
+        except smtplib.SMTPServerDisconnected as e:
+            raise smtplib.SMTPServerDisconnected
         except SMTPException as e:
             Log.error(e)
+            if str(e).find("timed out") != -1:
+                raise TimeoutError
             raise SMTPException
         except TimeoutError as e:
             e = "可能由端口错误发送邮件超时" + str(e)

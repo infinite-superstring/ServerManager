@@ -4,7 +4,7 @@ from django.http import HttpRequest
 
 from apps.auth.models import OTP
 from apps.user_manager.models import User
-from user_manager.util.userUtils import get_user_by_id
+from apps.user_manager.util.userUtils import get_user_by_id
 
 config = apps.get_app_config('setting').get_config
 

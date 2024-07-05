@@ -10,6 +10,7 @@ from threading import Thread
 
 from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
+from apps.group_task.api import group_task
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from django.apps import apps
 from django.core.cache import cache
@@ -30,36 +31,23 @@ from util.logger import Log
 
 save_dir_base = apps.get_app_config('node_manager').terminal_record_save_dir
 
-class node_client(AsyncBaseConsumer):
-    # 已认证
-    __auth: bool = False
-    # 启用告警
-    __alarm: bool = False
-    # 告警规则设置
-    __alarm_setting: AlarmSetting
-    # 告警状态
-    __alarm_status: dict
-    # 是否正在获取进程列表
-    __get_process_list: bool = False
-    # 检查获取进程列表活动线程
-    __check_get_process_list_activity_thread: Thread
-    # 面板配置文件
-    __config: Config
-    # 节点UUID
-    __node_uuid: str
-    # 节点
-    __node: Node
-    # 节点基本信息
-    __node_base_info: Node_BaseInfo
-    # 节点终端录制保存位置
-    __node_terminal_record_dir: str
-    # 初始化终端队列
-    __init_tty_queue: dict[str:str] = {}
-    # 终端会话列表
-    __tty_uuid: dict[str:str] = {}
-    # 终端录制文件操作符
-    __terminal_record_fd: dict[str: any] = {}
 
+class node_client(AsyncBaseConsumer):
+    __auth: bool = False
+    __alarm: bool = False
+    __alarm_setting: AlarmSetting
+    __alarm_status: dict
+    __get_process_list: bool = False
+    __check_get_process_list_activity_thread: Thread
+    __config: Config
+    __node_uuid: str
+    __node: Node
+    __node_base_info: Node_BaseInfo
+    __node_terminal_record_dir: str
+    __init_tty_queue: dict[str:str] = {}
+    __tty_uuid: dict[str:str] = {}
+    __terminal_record_fd: dict[str: any] = {}
+    __task: dict = []
 
     async def connect(self):
         # 在建立连接时执行的操作
@@ -91,12 +79,14 @@ class node_client(AsyncBaseConsumer):
             f"NodeClient_{self.__node.uuid}",
             self.channel_name
         )
-        # 发送初始化配置文件
+        self.__task = await group_task.by_node_uuid_get_task(uuids=self.__node_uuid)
+
         await self.send_json({
-            'action': 'node:init_config',
+            'action': 'init_node_config',
             'data': {
                 'heartbeat_time': self.__config.node.heartbeat_time,
                 'upload_data_interval': self.__config.node_usage.upload_data_interval,
+                'task': self.__task
             }
         })
         await self.__node_online()
@@ -219,14 +209,27 @@ class node_client(AsyncBaseConsumer):
         Log.info("重新加载告警设置......")
         try:
             if self.__alarm_status['cpu']['event'] is not None: await stopEvent(self.__alarm_status['cpu']['event'])
-            if self.__alarm_status['memory']['event'] is not None: await stopEvent(self.__alarm_status['memory']['event'])
-            if self.__alarm_status['network']['send']['event'] is not None: await stopEvent(self.__alarm_status['network']['send']['event'])
-            if self.__alarm_status['network']['recv']['event'] is not None: await stopEvent(self.__alarm_status['network']['recv']['event'])
+            if self.__alarm_status['memory']['event'] is not None: await stopEvent(
+                self.__alarm_status['memory']['event'])
+            if self.__alarm_status['network']['send']['event'] is not None: await stopEvent(
+                self.__alarm_status['network']['send']['event'])
+            if self.__alarm_status['network']['recv']['event'] is not None: await stopEvent(
+                self.__alarm_status['network']['recv']['event'])
             for i in self.__alarm_status['disk']:
                 if i['event'] is not None: await stopEvent(i['event'])
         except Exception as e:
             Log.error(e)
         await self.__load_alarm_setting()
+
+    @Log.catch
+    async def group_task_change(self, data):
+        """
+        节点任务状态改变
+        """
+        await self.send_action({
+            "type": "task:group_task_change",
+            "data": data
+        })
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("node:refresh_info")
@@ -747,6 +750,21 @@ class node_client(AsyncBaseConsumer):
                     else:
                         Log.warning("未绑定节点组，无法发送消息")
                 self.__alarm_status['disk'][disk]['event_end_time'] = None
+
+    @Log.catch
+    @AsyncBaseConsumer.action_handler("task:exec_result")
+    async def __task_result(self, data: dict):
+        """
+        任务执行结果
+        """
+        result_code = data.get('result_code', 0)
+        result_text = data.get('result_text', "")
+        task_uuid = data.get('task_uuid', "")
+        await group_task.handle_group_task(
+            task_uuid,
+            self.__node.uuid,
+            result_text,
+            result_code)
 
     @Log.catch
     def __check_get_process_list_activity(self):
