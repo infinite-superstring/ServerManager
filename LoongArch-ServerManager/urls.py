@@ -68,7 +68,7 @@ urlpatterns = [
     path('api/node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
     path('api/node_manager/delNode', node_manager.del_node),  # 删除节点(POST)(OTP)
     path('api/node_manager/editNode', node_manager.edit_node),  # 编辑节点(POST)
-    path('api/node_manager/resetToken', node_manager.reset_node_token),  # 重置节点Token(POST)
+    path('api/node_manager/resetToken', node_manager.reset_node_token),  # 重置节点Token(POST)(OTP)
     path('api/node_manager/getNodeList', node_manager.get_node_list),  # 获取节点列表(POST)
     path('api/node_manager/getBaseNodeList', node_manager.get_base_node_list),  # 获取基础节点列表(POST)
     path('api/node_manager/getNodeInfo', node_manager.get_node_info),  # 获取节点信息(POST)
@@ -109,7 +109,7 @@ urlpatterns = [
     path("api/userInfo/editInfo", userInfo.setUserInfo),  # 修改个人信息（POST）
     path('api/userInfo/uploadAvatar', userInfo.uploadAvatar),  # 头像上传（POST）
     path('api/userInfo/getAvatar', userInfo.getAvatar),  # 获取头像（GET）
-    path("api/userInfo/setPassword", userInfo.setPassword),  # 设置密码（POST）
+    path("api/userInfo/setPassword", userInfo.setPassword),  # 设置密码（POST）(OTP)
     # 消息
     path('api/message/getList', message.get_message_list),  # 获取消息列表（GET）
     path('api/message/getById', message.get_by_id),  # 按ID获取消息(GET)
