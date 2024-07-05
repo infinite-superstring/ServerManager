@@ -1,17 +1,24 @@
 from django.db import models
+import uuid
 
 
 # Create your models here.
 
 class GroupTask(models.Model):
-    name = models.CharField("任务名称", max_length=64)
+    uuid = models.UUIDField("uuid", primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField("任务名称", max_length=64, unique=True)
     node_group = models.ForeignKey(to="node_manager.Node_Group", on_delete=models.CASCADE, related_name='group_tasks')
     exec_type = models.CharField("执行类型", max_length=32)
-    interval = models.IntegerField("执行间隔")
-    cycle = models.ForeignKey(to="GroupTask_Cycle", on_delete=models.CASCADE, related_name='group_task_cycles')
-    that_time = models.DateTimeField("指定时间")
-    exec_count = models.IntegerField("执行次数")
+    """
+    指定时间 -> 'date-time'
+    周期 -> 'cycle'
+    间隔 -> 'interval'
+    """
+    interval = models.IntegerField("执行间隔", null=True)
+    that_time = models.DateTimeField("指定时间", null=True)
+    exec_count = models.IntegerField("执行次数", null=True)
     command = models.TextField("执行命令", max_length=8192)
+    enable = models.BooleanField("启用", default=True)
 
     class Meta:
         db_table = "group_task"
@@ -21,13 +28,13 @@ class GroupTask(models.Model):
 class GroupTask_Cycle(models.Model):
     group_task = models.ForeignKey(to="GroupTask", on_delete=models.CASCADE, related_name='group_task_cycles')
     time = models.TimeField("执行时间")
-    sunday = models.BooleanField("周日")
-    monday = models.BooleanField("周一")
-    tuesday = models.BooleanField("周二")
-    wednesday = models.BooleanField("周三")
-    thursday = models.BooleanField("周四")
-    friday = models.BooleanField("周五")
-    saturday = models.BooleanField("周六")
+    sunday = models.BooleanField("周日", default=False, null=False)
+    monday = models.BooleanField("周一", default=False, null=False)
+    tuesday = models.BooleanField("周二", default=False, null=False)
+    wednesday = models.BooleanField("周三", default=False, null=False)
+    thursday = models.BooleanField("周四", default=False, null=False)
+    friday = models.BooleanField("周五", default=False, null=False)
+    saturday = models.BooleanField("周六", default=False, null=False)
 
     class Meta:
         db_table = "group_task_cycle"

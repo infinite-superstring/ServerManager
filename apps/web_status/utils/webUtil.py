@@ -45,22 +45,20 @@ def createErrLog(web_id, status, error_info=None, start_time=None, end_time=None
     如果传入结束时间，则查询最近开始时间距离现在最近的一条记录并更新其结束时间
     """
     if error_info is None:
-        error_info = byStatusCodeGetErrInfo(status)
+        error_info = httpCode.httpCodeMap.get(status, '未知错误')
 
-    # 查询条件，按照start_time降序排列，取第一条记录
     if end_time:
         recent_log = Web_Site_Abnormal_Log.objects.filter(
             web_id=web_id,
-            end_time__isnull=True  # 确保查询未结束的记录
+            end_time__isnull=True
         ).order_by('-start_time').first()
 
         # 如果找到了符合条件的记录
         if recent_log:
             recent_log.end_time = end_time
             recent_log.save(update_fields=['end_time'])
-            return  # 结束函数，已更新现有记录
+            return
 
-    # 如果没有传入end_time或者没有找到可更新的记录，则按原逻辑创建新记录
     web = Web_Site_Abnormal_Log()
     web.web_id = web_id
     web.status = status
@@ -73,19 +71,12 @@ def createErrLog(web_id, status, error_info=None, start_time=None, end_time=None
     web.save()
 
 
-def byStatusCodeGetErrInfo(status):
-    """
-    根据状态码获取错误信息
-    """
-    return httpCode.httpCodeMap.get(status, '未知错误')
-
-
 def byStatusCodeGetErrType(status):
     """
     根据状态码获取错误类型
     """
     if str(status).startswith('1'):
-        return '正确'
+        return '协议变更'
     if str(status).startswith('2'):
         return '完成'
     if str(status).startswith('3'):

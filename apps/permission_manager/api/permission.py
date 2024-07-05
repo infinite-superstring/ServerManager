@@ -1,7 +1,7 @@
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_id
 from apps.audit.util.auditTools import write_access_log, write_audit
-from auth.utils.otpUtils import verify_otp_for_request
+from apps.auth.utils.otpUtils import verify_otp_for_request
 from util.pageUtils import get_max_page, get_page_content
 from util.Request import RequestLoadJson, getClientIp
 from util.Response import ResponseJson

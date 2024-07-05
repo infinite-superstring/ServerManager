@@ -9,7 +9,7 @@ from apps.user_manager.models import User as Users
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, \
     verify_username_and_password, username_exists
 from apps.auth.utils.authCodeUtils import user_otp_is_binding
-from auth.utils.otpUtils import verify_otp
+from apps.auth.utils.otpUtils import verify_otp
 from util.passwordUtils import verifyPasswordRules
 from util.Request import RequestLoadJson, getClientIp
 from util.Response import ResponseJson

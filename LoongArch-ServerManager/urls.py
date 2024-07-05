@@ -38,6 +38,7 @@ import apps.dashboard.api.dashboard as dashboard
 import apps.patrol.api.patrol as patrol
 import apps.task.api.task as task
 import apps.web_status.api.webStatus as webStatus
+import apps.group_task.api.group_task as group_task
 
 urlpatterns = [
     # 认证
@@ -94,8 +95,10 @@ urlpatterns = [
     path('api/admin/auditAndLogger/nodeSessionLog', auditAndLogger.get_node_session_log),  # 获取节点会话记录(POST)
     path('api/admin/auditAndLogger/terminalRecord/loadNodeList', terminal_record.load_node_list),  # 加载节点列表
     path('api/admin/auditAndLogger/terminalRecord/loadUserList', terminal_record.load_terminal_user_list),  # 加载终端用户列表
-    path('api/admin/auditAndLogger/terminalRecord/loadSessionList', terminal_record.load_terminal_session_list),  # 加载终端会话列表
-    path('api/admin/auditAndLogger/terminalRecord/loadSessionRecord', terminal_record.load_terminal_session_record),  # 加载终端会话记录
+    path('api/admin/auditAndLogger/terminalRecord/loadSessionList', terminal_record.load_terminal_session_list),
+    # 加载终端会话列表
+    path('api/admin/auditAndLogger/terminalRecord/loadSessionRecord', terminal_record.load_terminal_session_record),
+    # 加载终端会话记录
     # 系统设置
     path('api/admin/settings/getSettings', setting.getSetting),  # 获取设置信息
     path('api/admin/settings/editSettings', setting.editSetting),  # 编辑设置信息
@@ -137,4 +140,11 @@ urlpatterns = [
     path('api/webStatus/addWeb', webStatus.addWeb),  # 添加Web状态(POST)
     path('api/webStatus/delWeb/<str:id>', webStatus.delWeb),  # 删除监控的web(DELETE)
     path('api/webStatus/update', webStatus.update),  # 更新Web状态(PUT)
+    path('api/webStatus/getSiteNames', webStatus.getSiteNames),  # 获取站点名称列表(GET)')
+    path('api/webStatus/getLog', webStatus.getLog),  # 获取站点名称列表(GET)')
+    # 集群任务
+    path('api/group_task/add', group_task.create_group_task),  # 添加任务(POST)
+    path('api/group_task/getList', group_task.get_list),  # 获取集群任务列表(GET)
+    path('api/group_task/enableDisable', group_task.change_enable),  # 启用或禁用用户(PUT)
+    path('api/group_task/deleteByUuid', group_task.delete_by_uuid),  # 删除任务(DELETE)
 ]
