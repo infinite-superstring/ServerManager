@@ -89,6 +89,8 @@ def delPermissionGroup(req):
     query = Permission_groups.objects.filter(id=PermissionGroupId).first()
     if not query:
         return ResponseJson({"status": 0, "msg": "组不存在"})
+    if query.id == 1:
+        return ResponseJson({"status": 0, "msg": "不允许删除GID为1的组"})
     if User.objects.filter(permission=query):
         return ResponseJson({"status": 2, "msg": "当前组正在使用中，无法删除"})
     write_audit(req.session.get("userID"), "Del permission group(删除权限组)", "Permission Manager(权限管理)", query.name)
@@ -152,7 +154,12 @@ def setPermissionGroup(req):
             f"{Group.name}-->{newName}"
         )
         Group.name = newName
-    if disable != Group.disable:
+    if disable is not None and disable != Group.disable:
+        if Group.id == 1:
+            return ResponseJson({
+                "status": 0,
+                "msg": "无法禁用GID为1的组"
+            })
         write_audit(
             userID,
             "Update status permission group(更新权限组状态)",
