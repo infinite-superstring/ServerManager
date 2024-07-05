@@ -1,7 +1,7 @@
 from django.http import HttpRequest, HttpResponse
 
 from apps.user_manager.util.userUtils import get_user_by_id
-from apps.auth.utils.otpUtils import check_otp
+from apps.auth.utils.otpUtils import verify_otp
 from util.result import api_error, success, error
 
 
@@ -14,4 +14,4 @@ def check_otp_input(request: HttpRequest) -> HttpResponse:
     otp_code = request.GET.get("code", None)
     if not otp_code:
         return api_error("参数不完整")
-    return success() if check_otp(user, otp_code) else error("验证失败，请检查您的验证码是否正确")
+    return success() if verify_otp(user, otp_code) else error("验证失败，请检查您的验证码是否正确")

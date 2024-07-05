@@ -1,10 +1,10 @@
 from django.http import HttpRequest, HttpResponse
 
 from apps.node_manager.models import Cluster_Execute
-from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
+from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id, GroupUtil
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Request import RequestLoadJson
-from util.pageUtils import get_page_content
+from util.pageUtils import get_page_content, get_max_page
 from util.result import api_error, error, success
 from util.logger import Log
 
@@ -28,14 +28,21 @@ def createTask(request: HttpRequest) -> HttpResponse:
     Log.debug(f"group: {group}, base_path: {base_path}, shell: {shell}")
     if not group or not shell:
         return api_error("参数不完整")
+    group = get_node_group_by_id(group)
     if not node_group_id_exists(group):
         return error("节点组不存在")
-    Cluster_Execute.objects.create(
-        group=get_node_group_by_id(group),
+    task = Cluster_Execute.objects.create(
+        group=group,
         user=user,
         base_path=base_path,
         shell=shell
     )
+    g_util = GroupUtil(group)
+    g_util.send_event_to_all_nodes("run_shell", {
+        'task_uuid': task.uuid,
+        "shell": shell,
+    })
+    return success()
 
 
 def getResultList(request: HttpRequest) -> HttpResponse:
@@ -58,6 +65,11 @@ def getResultList(request: HttpRequest) -> HttpResponse:
                 'shell': item.get("shell"),
                 'timestamp': item.get("timestamp"),
             })
+    return success({
+        "maxPage": get_max_page(result.all().count(), pageSize),
+        "currentPage": page,
+        "PageContent": PageContent
+    })
 
 def getResult(request: HttpRequest) -> HttpResponse:
     """

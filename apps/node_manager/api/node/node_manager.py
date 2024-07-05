@@ -9,6 +9,7 @@ from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists,
     init_node_alarm_setting
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
+from auth.utils.otpUtils import verify_otp_for_request
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
@@ -71,8 +72,11 @@ def del_node(req):
         Log.error(e)
         return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
     node_id = req_json.get('uuid')
-    if not node_id:
+    code = req_json.get('code')
+    if not node_id or code is None:
         return ResponseJson({"status": -1, "msg": "参数不完整"})
+    if not verify_otp_for_request(req, code):
+        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查验证码"})
     if node_uuid_exists(node_id):
         get_node_by_uuid(node_id).delete()
         return ResponseJson({"status": 1, "msg": "节点已删除"})
@@ -158,7 +162,7 @@ def get_node_list(req):
     return ResponseJson({
         "status": 1,
         "data": {
-            "maxPage": get_max_page(result.all().count(), 20),
+            "maxPage": get_max_page(result.all().count(), pageSize),
             "currentPage": page,
             "PageContent": PageContent
         }

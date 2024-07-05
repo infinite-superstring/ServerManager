@@ -7,6 +7,7 @@ from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_pass
     real_name_exists, email_exists, uid_exists
 from apps.permission_manager.models import Permission_groups
 from apps.audit.util.auditTools import write_access_log, write_audit
+from auth.utils.otpUtils import verify_otp_for_request
 from util.pageUtils import get_max_page, get_page_content
 from util.Response import ResponseJson
 from util.Request import RequestLoadJson, getClientIp
@@ -127,8 +128,11 @@ def delUser(req: HttpRequest):
         Log.error(e)
         return ResponseJson({"status": -1, "msg": f"JSON解析失败:{e}"}, 400)
     userId = req_json.get("id")
-    if not userId:
+    code = req_json.get("code")
+    if not userId or not code:
         return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
+    if not verify_otp_for_request(req, code):
+        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查验证码"})
     if userId == req.session.get("userID"):
         return ResponseJson({"status": 0, "msg": "不能删除当前登录用户"})
     if userId == 1:

@@ -3,6 +3,7 @@ from apps.node_manager.utils.groupUtil import create_message_recipient_rules, no
     get_node_group_by_id, get_group_nodes
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid, node_set_group
 from apps.user_manager.util.userUtils import uid_exists, get_user_by_id
+from auth.utils.otpUtils import verify_otp_for_request
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
@@ -94,8 +95,11 @@ def del_group(req: HttpRequest):
         Log.error(e)
         return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
     group_id: int = req_json.get('group_id')
-    if not group_id:
+    code = req_json.get('code')
+    if not group_id or not code:
         return ResponseJson({'status': -1, 'msg': "参数不完整"}, 400)
+    if not verify_otp_for_request(req, code):
+        return ResponseJson({"status": 0, "msg": "操作验证失败，请检查验证码"})
     if not node_group_id_exists(group_id):
         return ResponseJson({'status': 0, 'msg': '节点组不存在'})
     group = get_node_group_by_id(group_id)

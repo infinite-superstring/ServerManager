@@ -52,7 +52,7 @@ urlpatterns = [
     # 用户管理
     path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（POST）
     path('api/admin/userManager/addUser', user_manager.addUser),  # 新增用户（POST）
-    path('api/admin/userManager/delUser', user_manager.delUser),  # 删除用户（POST）
+    path('api/admin/userManager/delUser', user_manager.delUser),  # 删除用户（POST）(OTP)
     path('api/admin/userManager/getUserPermission', user_manager.getUserPermission),  # 获取用户权限（POST）
     path('api/admin/userManager/getUserInfo', user_manager.getUserInfo),  # 获取用户信息（POST）
     path('api/admin/userManager/setUserInfo', user_manager.setUserInfo),  # 设置用户信息（POST）
@@ -60,13 +60,13 @@ urlpatterns = [
     path('api/admin/permissionManager/getPermissionGroups', permission_manager.getPermissionGroupsList),  # 获取权限组列表（ALL）
     path('api/admin/permissionManager/getPermissionList', permission_manager.getPermissionList),  # 获取权限列表（ALL）
     path('api/admin/permissionManager/addPermissionGroup', permission_manager.addPermissionGroup),  # 新增权限组列表 （POST）
-    path('api/admin/permissionManager/delPermissionGroup', permission_manager.delPermissionGroup),  # 删除权限组 （POST）
+    path('api/admin/permissionManager/delPermissionGroup', permission_manager.delPermissionGroup),  # 删除权限组 （POST）(OTP)
     path('api/admin/permissionManager/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),
     # 获取权限组信息 （POST）
     path('api/admin/permissionManager/setPermissionGroup', permission_manager.setPermissionGroup),  # 设置权限组 （POST）
     # 节点管理器
     path('api/node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
-    path('api/node_manager/delNode', node_manager.del_node),  # 删除节点(POST)
+    path('api/node_manager/delNode', node_manager.del_node),  # 删除节点(POST)(OTP)
     path('api/node_manager/editNode', node_manager.edit_node),  # 编辑节点(POST)
     path('api/node_manager/resetToken', node_manager.reset_node_token),  # 重置节点Token(POST)
     path('api/node_manager/getNodeList', node_manager.get_node_list),  # 获取节点列表(POST)
@@ -75,7 +75,7 @@ urlpatterns = [
     path('api/node_manager/node_tag/search_tag', node_tag.search_tag),  # 搜索TAG(POST)
     path('api/node_manager/node_group/getGroupList', node_group.get_group_list),  # 获取组列表(POST)
     path('api/node_manager/node_group/createGroup', node_group.create_group),  # 创建组(POST)
-    path('api/node_manager/node_group/delGroup', node_group.del_group),  # 删除节点组(POST)
+    path('api/node_manager/node_group/delGroup', node_group.del_group),  # 删除节点组(POST)(OTP)
     path('api/node_manager/node_group/getGroupById', node_group.get_group_by_id),  # 获取节点组详情
     path('api/node_manager/node_info/get_disk_partition_list', node_info.get_disk_partition_list),  # 获取节点磁盘列表(POST)
     path('api/node_manager/node_info/get_alarm_setting', node_info.get_alarm_setting),  # 获取节点告警设置(POST)
