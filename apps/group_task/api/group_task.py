@@ -130,7 +130,10 @@ def change_enable(req: HttpRequest):
         return result.error('任务不存在')
     g.enable = not g.enable
     g.save()
-    group_task_util.handle_change_task(t='reload', task=g)
+    if g.enable:
+        group_task_util.handle_change_task(t='reload', task=g)
+    else:
+        group_task_util.handle_change_task(t='remove', group=g.node_group, task_uuid=g.uuid)
     return result.success(msg=f'任务{g.name}已{"启用" if g.enable else "禁用"}')
 
 
@@ -161,7 +164,7 @@ async def by_node_uuid_get_task(uuids: str):
         周期 -> 'cycle'
         间隔 -> 'interval'
     """
-    return await group_task_util.by_uuid_get_task(uuids=uuids)
+    return await group_task_util.get_the_task_of_node(node_uuid=uuids)
 
 
 async def handle_group_task(task_uuid, node_uuid, result_text, result_code):

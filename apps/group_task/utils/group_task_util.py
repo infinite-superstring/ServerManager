@@ -2,6 +2,7 @@ from datetime import datetime
 
 from asgiref.sync import async_to_sync
 from django.db.models import QuerySet
+from django.forms import model_to_dict
 
 from apps.group_task.models import GroupTask_Cycle, GroupTask
 from apps.node_manager.models import Node, Node_Group
@@ -80,17 +81,19 @@ async def by_type_get_exec_time(task: GroupTask):
     return None
 
 
-async def by_uuid_get_task(uuids: str = None, group: Node_Group = None):
+async def get_the_task_of_node(node_uuid: str = None, group: Node_Group = None, task_uuid: str = None):
     """
     根据 uuid 获取任务
     """
-
     group_tasks = []
-    if not group:
-        group = await Node_Group.objects.aget(node__uuid=uuids)
-    if not group:
-        return group_tasks
-    group_task = GroupTask.objects.filter(node_group=group)
+    group_task: QuerySet[GroupTask] = QuerySet[GroupTask]()
+    if node_uuid:
+        group = await Node_Group.objects.aget(node__uuid=node_uuid)
+        group_task = GroupTask.objects.filter(node_group=group)
+    if group:
+        group_task = GroupTask.objects.filter(node_group=group)
+    if task_uuid:
+        group_task = GroupTask.objects.filter(uuid=task_uuid)
     if not await group_task.aexists():
         return group_tasks
     async for task in group_task:
@@ -122,9 +125,10 @@ def handle_change_task(t, task_uuid=None, group=None, task: GroupTask = None):
         group: Node_Group = task.node_group
         data = {
             'action': t,
-            'data': task
+            'data': async_to_sync(get_the_task_of_node)(task_uuid=task.uuid)
         }
         group_task_change(group, data)
+        print(data)
         return
     elif t == 'remove':
         data = {
@@ -132,11 +136,13 @@ def handle_change_task(t, task_uuid=None, group=None, task: GroupTask = None):
             'data': task_uuid
         }
         group_task_change(group, data)
+        print(data)
     elif t == 'reload':
         data = {
             'action': t,
-            'data': task
+            'data': async_to_sync(get_the_task_of_node)(task_uuid=task.uuid)
         }
+        print(data)
         group_task_change(group, data)
 
 
