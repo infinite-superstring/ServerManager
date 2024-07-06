@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from asgiref.sync import async_to_sync
 from django.db.models import QuerySet
@@ -116,7 +117,7 @@ async def get_the_task_of_node(node_uuid: str = None, group: Node_Group = None, 
     return group_tasks
 
 
-def handle_change_task(t, task_uuid=None, group=None, task: GroupTask = None):
+def handle_change_task(t, task_uuid: UUID = None, group=None, task: GroupTask = None):
     """
     任务变更时向所有节点发送变更事件
     """
@@ -133,7 +134,7 @@ def handle_change_task(t, task_uuid=None, group=None, task: GroupTask = None):
     elif t == 'remove':
         data = {
             'action': t,
-            'data': task_uuid
+            'data': str(task_uuid)
         }
         group_task_change(group, data)
         print(data)
