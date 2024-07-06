@@ -10,7 +10,6 @@ from threading import Thread
 
 from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
-
 from apps.group_task.api import group_task
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from django.apps import apps
@@ -83,7 +82,7 @@ class node_client(AsyncBaseConsumer):
         self.__task = await group_task.by_node_uuid_get_task(uuids=self.__node_uuid)
 
         await self.send_json({
-            'action': 'init_node_config',
+            'action': 'node:init_config',
             'data': {
                 'heartbeat_time': self.__config.node.heartbeat_time,
                 'upload_data_interval': self.__config.node_usage.upload_data_interval,
@@ -100,8 +99,8 @@ class node_client(AsyncBaseConsumer):
         Log.success(f"节点：{node_name}已连接")
 
     async def disconnect(self, close_code):
+        """节点断开连接时"""
         if self.__auth:
-            # 在断开连接时执行的操作
             node_name = self.scope["session"].get("node_name")
             self.__node_base_info.online = False
             await self.__node_base_info.asave()
@@ -120,28 +119,27 @@ class node_client(AsyncBaseConsumer):
         raise StopConsumer
 
     async def receive(self, *args, **kwargs):
+        """处理节点收到信息时"""
         await self.__update_cache_timeout()
         await super().receive(*args, **kwargs)
 
     @Log.catch
     async def connect_terminal(self, event):
+        """连接到终端"""
         index = uuid.uuid1()
-        host = event.get('host')
-        port = event.get('port')
-        username = event.get('username')
-        password = event.get('password')
         sender = event.get('sender')
         self.__init_tty_queue[index] = sender
         await self.send_action('terminal:create_session', {
             'index': index,
-            'host': host,
-            'port': port,
-            'username': username,
-            'password': password
+            'host': event.get('host'),
+            'port': event.get('port'),
+            'username': event.get('username'),
+            'password': event.get('password')
         })
 
     @Log.catch
     async def close_terminal(self, event):
+        """断开终端连接"""
         sender = event['sender']
         if sender in self.__tty_uuid:
             await self.send_action('terminal:close_session', {
@@ -152,7 +150,9 @@ class node_client(AsyncBaseConsumer):
         else:
             Log.error(f"{sender} does not own a terminal session")
 
+    @Log.catch
     async def terminal_resize(self, event):
+        """调整终端大小"""
         sender = event['sender']
         cols = event['cols']
         rows = event['rows']
@@ -167,6 +167,7 @@ class node_client(AsyncBaseConsumer):
 
     @Log.catch
     async def input_command(self, event):
+        """输入终端命令"""
         sender = event['sender']
         command = event['command']
         if sender in self.__tty_uuid:
@@ -295,6 +296,7 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("node:upload_msg")
     async def __upload_node_msg(self, payload):
+        """上传节点消息"""
         type = payload.get('type')
         desc = payload.get('desc')
         level = payload.get('level', "Info")
@@ -303,41 +305,57 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:return_session")
     async def __create_terminal_session(self, payload=None):
+        """返回终端会话UUID"""
         index = UUID(payload['index'])
         sid = payload['uuid']
-        terminal_login_status = payload['login_status']
         Log.debug(self.__init_tty_queue)
         Log.debug(index)
+        # 如果节点录制文件夹不存在则创建
         if not os.path.exists(self.__node_terminal_record_dir):
             os.mkdir(self.__node_terminal_record_dir)
+        #  如果返回的是一个未知的index则销毁会话实例
         if index not in self.__init_tty_queue.keys():
-            await self.send_action('terminal:close_session', {
+            return await self.send_action('terminal:close_session', {
                 'uuid': sid
             })
-        else:
-            self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
-            self.__init_tty_queue.pop(index)
-            self.__terminal_record_fd[sid] = open(
-                os.path.join(self.__node_terminal_record_dir, sid + ".txt"),
-                "w+",
-                encoding='utf-8'
-            )
-            await self.__terminal_ready(sid, terminal_login_status)
+        self.__tty_uuid.update({self.__init_tty_queue[index]: sid})
+        self.__init_tty_queue.pop(index)
+        self.__terminal_record_fd[sid] = open(
+            os.path.join(self.__node_terminal_record_dir, sid+".txt"),
+            "w+",
+            encoding='utf-8'
+        )
+        # 发送节点就绪消息到控制端
+        await self.__terminal_ready(sid)
 
     @Log.catch
-    async def __terminal_ready(self, sid, terminal_login_status):
+    @AsyncBaseConsumer.action_handler("terminal:login_failed")
+    async def __handle_terminal_login_failed(self, payload=None):
+        """终端登录错误时"""
+        index = payload.get("index")
+        Log.debug(self.__init_tty_queue)
+        sender = self.__init_tty_queue.get(UUID(index))
+        await self.channel_layer.send(sender, {
+            'type': "terminal_login_failed",
+            'session_id': index
+        })
+        Log.warning("终端登录错误，已关闭会话")
+
+
+    @Log.catch
+    async def __terminal_ready(self, sid):
         """终端就绪"""
         channel = get_key_by_value(self.__tty_uuid, sid, True)
         if channel:
             await self.channel_layer.send(channel, {
                 'type': "terminal_ready",
-                'session_id': sid,
-                'terminal_login_status': terminal_login_status
+                'session_id': sid
             })
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("safe:Terminal_not_enabled")
     async def __terminal_not_enabled(self, payload=None):
+        """节点禁用终端返回"""
         index = UUID(payload['index'])
         await self.channel_layer.send(self.__init_tty_queue[index], {
             'type': "terminal_output",
@@ -365,6 +383,7 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("ping")
     async def __handle_ping(self):
+        """处理节点Ping请求"""
         await self.send_action('pong')
 
     @Log.catch
@@ -394,7 +413,7 @@ class node_client(AsyncBaseConsumer):
 
     @Log.catch
     async def __update_cache_timeout(self):
-        # 更新缓存超时时间
+        """更新缓存超时时间"""
         cache.set(
             f"node_client_online_{self.__node.uuid}",
             self.channel_name,
@@ -404,6 +423,7 @@ class node_client(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("process_list:show")
     async def __process_list(self, data):
+        """返回进程列表"""
         cache.set(f"node_{self.__node_uuid}_process_list", data, 5)
         await self.channel_layer.group_send(f"NodeControl_{self.__node_uuid}", {
             'type': 'show_process_list',
@@ -412,6 +432,7 @@ class node_client(AsyncBaseConsumer):
 
     @Log.catch
     async def __load_alarm_setting(self):
+        """加载节点告警设置"""
         setting = await Node_AlarmSetting.objects.filter(node=self.__node).afirst()
         if setting and setting.enable:
             Log.debug(f"节点{self.__node.name}已启用告警")
@@ -475,9 +496,9 @@ class node_client(AsyncBaseConsumer):
         if (
                 self.__alarm_setting.memory.is_enable() and
                 self.__alarm_setting.memory.threshold <= calculate_percentage(
-            memory_data.get('used'),
-            self.__node_base_info.memory_total
-        )
+                    memory_data.get('used'),
+                    self.__node_base_info.memory_total
+                )
         ):
             if not self.__alarm_status['memory']['event_start_time']:
                 self.__alarm_status['memory']['event_start_time'] = datetime.now().timestamp()
@@ -519,11 +540,10 @@ class node_client(AsyncBaseConsumer):
                 if disk['device'] != disk_rule.device:
                     continue
                 if disk_rule.threshold <= calculate_percentage(
-                        disk['used'],
-                        disk['total']
+                    disk['used'],
+                    disk['total']
                 ):
-                    if not self.__alarm_status['disk'].get(disk_rule.device): self.__alarm_status['disk'][
-                        disk_rule.device] = {
+                    if not self.__alarm_status['disk'].get(disk_rule.device): self.__alarm_status['disk'][disk_rule.device] = {
                         'alerted': False,
                         'event_start_time': None,
                         'event_end_time': None,
@@ -531,14 +551,11 @@ class node_client(AsyncBaseConsumer):
                     }
                     if not self.__alarm_status['disk'][disk_rule.device]['event_start_time']:
                         self.__alarm_status['disk'][disk_rule.device]['event_start_time'] = datetime.now().timestamp()
-                    await self.__disk_send_alarm_event(disk_rule.device,
-                                                       calculate_percentage(disk['used'], disk['total']))
+                    await self.__disk_send_alarm_event(disk_rule.device, calculate_percentage(disk['used'], disk['total']))
                 else:
-                    if self.__alarm_status['disk'].get(disk_rule.device) and \
-                            self.__alarm_status['disk'][disk_rule.device]['event_start_time']:
+                    if self.__alarm_status['disk'].get(disk_rule.device) and self.__alarm_status['disk'][disk_rule.device]['event_start_time']:
                         self.__alarm_status['disk'][disk_rule.device]['event_end_time'] = datetime.now().timestamp()
-                    await self.__disk_send_alarm_event(disk_rule.device,
-                                                       calculate_percentage(disk['used'], disk['total']), end=True)
+                    await self.__disk_send_alarm_event(disk_rule.device, calculate_percentage(disk['used'], disk['total']), end=True)
 
     @Log.catch
     async def __general_send_alarm_event(self, device, value: int = 0, end: bool = False):
@@ -578,8 +595,7 @@ class node_client(AsyncBaseConsumer):
 
             if node_group and not self.__alarm_status[device]['alerted']:
                 Log.debug(f"发送告警开始消息：{device}")
-                start_time = datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime(
-                    '%Y-%m-%d %H:%M:%S')
+                start_time = datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
                 await sync_to_async(send_email)(MessageBody(
                     title=f"节点：{self.__node.name}告警触发！",
                     content=f"节点：{self.__node.name}<br>事件：{device_name_mapping.get(device, device)}占用率已达到设定阈值触发告警<br>触发时值: {value}%<br>触发时间: {start_time}",
@@ -596,10 +612,8 @@ class node_client(AsyncBaseConsumer):
                 Log.debug(f"发送告警结束消息：{device}")
                 self.__alarm_status[device]['alerted'] = False
                 if node_group:
-                    start_time = datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime(
-                        '%Y-%m-%d %H:%M:%S')
-                    end_time = datetime.fromtimestamp(self.__alarm_status[device]['event_end_time']).strftime(
-                        '%Y-%m-%d %H:%M:%S')
+                    start_time = datetime.fromtimestamp(self.__alarm_status[device]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
+                    end_time = datetime.fromtimestamp(self.__alarm_status[device]['event_end_time']).strftime('%Y-%m-%d %H:%M:%S')
                     await sync_to_async(send_email)(MessageBody(
                         title=f"节点：{self.__node.name}告警结束！",
                         content=f"节点：{self.__node.name}<br>事件：{device_name_mapping.get(device, device)}占用率离开设定阈值触发告警区间<br>开始时间: {start_time}<br>结束时间: {end_time}",
@@ -626,12 +640,10 @@ class node_client(AsyncBaseConsumer):
             raise RuntimeError(f"Invalid data direction {data_direction}")
         # 处理开始告警消息
         if (
-                (self.__alarm_status['network'][data_direction][
-                     'event_start_time'] + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
+                (self.__alarm_status['network'][data_direction]['event_start_time'] + self.__alarm_setting.delay_seconds < datetime.now().timestamp()) and
                 # 验证结束时间
                 (self.__alarm_status['network'][data_direction]['event_end_time'] is None or
-                 self.__alarm_status['network'][data_direction][
-                     'event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp())
+                 self.__alarm_status['network'][data_direction]['event_end_time'] + self.__alarm_setting.interval < datetime.now().timestamp())
         ):
             if not self.__alarm_status['network'][data_direction]['event']:
                 self.__alarm_status['network'][data_direction]['event'] = await createEvent(
@@ -648,8 +660,7 @@ class node_client(AsyncBaseConsumer):
                 )
             if node_group and not self.__alarm_status['network'][data_direction]['alerted']:
                 Log.debug(f"发送告警开始消息: {data_direction}")
-                start_time = datetime.fromtimestamp(
-                    self.__alarm_status['network'][data_direction]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
+                start_time = datetime.fromtimestamp(self.__alarm_status['network'][data_direction]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
                 await sync_to_async(send_email)(MessageBody(
                     title=f"节点：{self.__node.name}告警触发！",
                     content=f"节点：{self.__node.name}<br>事件：{data_direction_mapping.get(data_direction)}已达到设定阈值触发告警<br>触发时值: {format_bytes(value)}<br>触发时间: {start_time}",
@@ -667,12 +678,8 @@ class node_client(AsyncBaseConsumer):
                     # 发送告警结束信息
                     if node_group:
                         Log.debug(f"发送告警结束消息: {data_direction}")
-                        start_time = datetime.fromtimestamp(
-                            self.__alarm_status['network'][data_direction]['event_start_time']).strftime(
-                            '%Y-%m-%d %H:%M:%S')
-                        end_time = datetime.fromtimestamp(
-                            self.__alarm_status['network'][data_direction]['event_end_time']).strftime(
-                            '%Y-%m-%d %H:%M:%S')
+                        start_time = datetime.fromtimestamp(self.__alarm_status['network'][data_direction]['event_start_time']).strftime('%Y-%m-%d %H:%M:%S')
+                        end_time = datetime.fromtimestamp(self.__alarm_status['network'][data_direction]['event_end_time']).strftime('%Y-%m-%d %H:%M:%S')
                         await sync_to_async(send_email)(MessageBody(
                             title=f"节点：{self.__node.name}告警结束！",
                             content=f"节点：{self.__node.name}<br>事件：{data_direction_mapping.get(data_direction)}离开设定阈值触发告警区间<br>开始时间: {start_time}<br>结束时间: {end_time}",

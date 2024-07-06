@@ -8,13 +8,14 @@ from uuid import UUID, uuid1
 from channels.exceptions import StopConsumer
 from django.core.cache import cache
 
-from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData, Node_TerminalRecord
+from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData, Node_TerminalRecord, Node_Event
 from apps.node_manager.utils.nodeUtil import read_performance_record
 from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
 from apps.user_manager.models import User
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from apps.user_manager.util.userUtils import uid_aexists
+from apps.node_manager.utils.nodeEventUtil import createEvent, stopEvent, createPhase
 from util.logger import Log
 
 
@@ -28,6 +29,7 @@ class node_control(AsyncBaseConsumer):
     __config: Config = None
     __node: Node = None
     __node_base_info: Node_BaseInfo = None
+    __terminal_connect_event: Node_Event
 
     async def connect(self):
         # 在建立连接时执行的操作
@@ -130,18 +132,30 @@ class node_control(AsyncBaseConsumer):
 
     @Log.catch
     async def terminal_ready(self, event):
+        """终端就绪"""
+        await createPhase(self.__terminal_connect_event, "终端就绪")
         await Node_TerminalRecord.objects.acreate(
             user=self.__user,
             user_ip_address=self.__clientIP,
             node=self.__node,
             session_id=event['session_id'],
         )
-        await self.send_action('terminal:ready',event['terminal_login_status'])
+        await self.send_action('terminal:ready')
+
+    @Log.catch
+    async def terminal_login_failed(self, event):
+        """终端登录错误"""
+        await createPhase(self.__terminal_connect_event, "终端SSH登录失败")
+        await stopEvent(self.__terminal_connect_event)
+        self.__connect_terminal_flag = False
+        await self.send_action('terminal:login_failed')
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:input")
     async def terminal_input(self, command):
         """终端输入"""
+        if not self.__connect_terminal_flag:
+            raise RuntimeError("Terminal not connected")
         await self.__send_group_to_client('input_command', {
             "command": command,
             'sender': self.channel_name,
@@ -149,24 +163,36 @@ class node_control(AsyncBaseConsumer):
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:login")
-    async def terminal_login(self, event):
+    async def terminal_login(self, payload):
         """终端登录"""
+        if self.__connect_terminal_flag:
+            raise RuntimeError("Terminal is already connected")
+        self.__terminal_connect_event = await createEvent(
+            node=self.__node,
+            type='终端连接',
+            desc=f'用户: {self.__user.userName}({self.__user.id})',
+        )
+        self.__connect_terminal_flag = True
+        if self.__node_base_info.system != "Windows":
+            await createPhase(self.__terminal_connect_event, f"发起SSH登录，用户名: {payload.get('username')}")
         await self.__send_group_to_client('connect_terminal', {
-            'host': event['host'],
-            'port': event['port'],
-            'username': event['username'],
-            'password': event['password'],
+            'host': payload.get('host', "127.0.0.1"),
+            'port': payload.get('port', 22),
+            'username': payload.get('username'),
+            'password': payload.get('password'),
             'sender': self.channel_name
         })
 
     @Log.catch
     @AsyncBaseConsumer.action_handler('terminal:resize')
-    async def terminal_resize(self, event):
-        await self.channel_layer.group_send(f"NodeClient_{self.__node.uuid}", {
-            'type': 'terminal_resize',
+    async def terminal_resize(self, payload):
+        """调整终端大小"""
+        if not self.__connect_terminal_flag:
+            raise RuntimeError("Terminal not connected")
+        await self.__send_group_to_client('terminal_resize', {
             'sender': self.channel_name,
-            'cols': event['cols'],
-            'rows': event['rows'],
+            'cols': payload['cols'],
+            'rows': payload['rows'],
         })
 
     @Log.catch
@@ -175,20 +201,13 @@ class node_control(AsyncBaseConsumer):
         await self.send_action('process_list:show', event['process_list'])
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("terminal:connect")
-    async def __connect_terminal(self):
-        if self.__connect_terminal is True:
-            raise RuntimeError("Terminal is already connected")
-        self.__connect_terminal_flag = True
-        await self.__send_group_to_client('connect_terminal', {
-            'sender': self.channel_name,
-        })
-
-    @Log.catch
     @AsyncBaseConsumer.action_handler("terminal:close")
     async def __close_terminal(self):
-        if not self.__connect_terminal:
+        """用户发起终端关闭请求"""
+        if not self.__connect_terminal_flag:
             raise RuntimeError("Terminal not connected")
+        await createPhase(self.__terminal_connect_event, "终端连接关闭(用户发起)")
+        await stopEvent(self.__terminal_connect_event)
         self.__connect_terminal_flag = False
         await self.__send_group_to_client('close_terminal', {
             'sender': self.channel_name,
@@ -215,6 +234,7 @@ class node_control(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("process_list:kill")
     async def __kill_process(self, data):
+        """杀死进程"""
         await self.__send_group_to_client('kill_process', {
             'pid': data.get('pid'),
             'tree_mode': data.get('tree_mode')
@@ -223,6 +243,12 @@ class node_control(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("performance_record:get")
     async def __get_performance_record(self, data):
+        """
+        获取性能记录
+        start_time: 开始时间
+        end_time: 结束时间
+        device: 设备，默认获取所有
+        """
         start_time = data.get('start_time')
         end_time = data.get('end_time')
         device = data.get('device', "_all")
@@ -232,6 +258,9 @@ class node_control(AsyncBaseConsumer):
     @Log.catch
     @AsyncBaseConsumer.action_handler("performance_record:load")
     async def __load_performance_record(self, start_time=None, end_time=None, device="_all"):
+        """
+        加载性能记录
+        """
         start_time = (timezone.now() - timezone.timedelta(days=1)).strftime(
             '%Y-%m-%d %H:%M:%S') if not start_time else start_time
         end_time = timezone.now().strftime('%Y-%m-%d %H:%M:%S') if not end_time else end_time
