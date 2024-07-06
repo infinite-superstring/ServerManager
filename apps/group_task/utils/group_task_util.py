@@ -98,8 +98,6 @@ async def get_the_task_of_node(node_uuid: str = None, group: Node_Group = None, 
     if not await group_task.aexists():
         return group_tasks
     async for task in group_task:
-        if not task.enable:
-            continue
         exec_time = await by_type_get_exec_time(task)
         weeks = []
         if task.exec_type == 'cycle':
