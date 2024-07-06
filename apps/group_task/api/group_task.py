@@ -130,7 +130,10 @@ def change_enable(req: HttpRequest):
         return result.error('任务不存在')
     g.enable = not g.enable
     g.save()
-    group_task_util.handle_change_task(t='reload', task=g)
+    if g.enable:
+        group_task_util.handle_change_task(t='reload', task=g)
+    else:
+        group_task_util.handle_change_task(t='remove', group=g.node_group, task_uuid=g.uuid)
     return result.success(msg=f'任务{g.name}已{"启用" if g.enable else "禁用"}')
 
 
