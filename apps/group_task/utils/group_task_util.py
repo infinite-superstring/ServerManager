@@ -84,7 +84,7 @@ async def by_type_get_exec_time(task: GroupTask):
 
 async def get_the_task_of_node(node_uuid: str = None, group: Node_Group = None, task_uuid: str = None):
     """
-    根据 uuid 获取任务
+    获取 节点 需要的 集群任务数据
     """
     group_tasks = []
     group_task: QuerySet[GroupTask] = QuerySet[GroupTask]()
@@ -126,7 +126,7 @@ def handle_change_task(t, task_uuid: UUID = None, group=None, task: GroupTask = 
         group: Node_Group = task.node_group
         data = {
             'action': t,
-            'data': async_to_sync(get_the_task_of_node)(task_uuid=task.uuid)
+            'data': async_to_sync(get_the_task_of_node)(task_uuid=task.uuid)[0]
         }
         group_task_change(group, data)
         print(data)
@@ -141,10 +141,10 @@ def handle_change_task(t, task_uuid: UUID = None, group=None, task: GroupTask = 
     elif t == 'reload':
         data = {
             'action': t,
-            'data': async_to_sync(get_the_task_of_node)(task_uuid=task.uuid)
+            'data': async_to_sync(get_the_task_of_node)(task_uuid=task.uuid)[0]
         }
-        print(data)
         group_task_change(group, data)
+        print(data)
 
 
 def group_task_change(group: Node_Group, data):

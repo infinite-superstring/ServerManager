@@ -70,5 +70,6 @@ class WebStatusConfig(AppConfig):
             log = webUtil.createLog(web.id, code, delay)
             cache.set(f'web_status_log_{web.id}', log, 60)
             if not str(code).startswith('2'):
-                Log.debug(f'{host} 错误 {code}')
+                # Log.debug(f'{host} 错误 {code}')
+                pass
             return
