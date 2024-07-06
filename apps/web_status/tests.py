@@ -1,6 +1,9 @@
+from django.db.models import QuerySet
 from django.test import TestCase
 
+from apps.web_status.models import Web_Site
 from apps.web_status.utils.webUtil import is_valid_host
+from util import pageUtils
 
 
 # Create your tests here.
@@ -40,3 +43,11 @@ class Test(TestCase):
 
         for host in hosts:
             print(f"{host}: {is_valid_host(host)}")
+
+    def test2(self):
+        for i in range(5):
+            Web_Site.objects.create(title=f"title{i}", host=f"host{i}", description=f"description{i}")
+        print(Web_Site.objects.all().count())
+        content = pageUtils.get_page_content(Web_Site.objects.all(), 2, 5)
+        print(content.count())
+        print(type(content))

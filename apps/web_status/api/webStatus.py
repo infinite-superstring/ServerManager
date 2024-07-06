@@ -1,11 +1,10 @@
-from datetime import datetime
-
 from django.core.cache import cache
-from django.db.models import QuerySet
 from django.http import HttpRequest
 
+import util.result as R
 from apps.web_status.models import Web_Site, Web_Site_Log, Web_Site_Abnormal_Log
-from apps.web_status.utils.webUtil import is_valid_host, hostIsExist
+from apps.web_status.utils.webUtil import is_valid_host, hostIsExist, get_or_create_web_site_log, \
+    get_latest_or_default_abnormal_log
 from util import result, pageUtils
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
@@ -21,42 +20,54 @@ def getList(req: HttpRequest):
     page = int(req.GET.get("page", 1))
     pageSize = int(req.GET.get("pageSize", 10))
     name = req.GET.get("name", "")
-    web_list = Web_Site.objects.filter(title__contains=name, host__contains=name, description__contains=name)
+    web_list = (Web_Site.objects.filter(
+        title__contains=name,
+        host__contains=name,
+        description__contains=name).order_by('id'))
+    web_list = pageUtils.get_page_content(web_list, int(page), int(pageSize))
     result = []
+    max_page = 0
     for web in web_list:
-        runtime: Web_Site_Log = cache.get(f'web_status_log_{web.id}') if cache.get(
-            f'web_status_log_{web.id}') else Web_Site_Log()
-        error_time: Web_Site_Abnormal_Log = Web_Site_Abnormal_Log.objects.filter(web=web).order_by('-end_time')[0] if \
-            Web_Site_Abnormal_Log.objects.filter(web=web).order_by('-end_time') else Web_Site_Abnormal_Log()
+        runtime = get_or_create_web_site_log(web.get("id"))
+        error_time = get_latest_or_default_abnormal_log(web.get("id"))
+        # runtime: Web_Site_Log = cache.get(f'web_status_log_{web.get("id")}') if cache.get(
+        #     f'web_status_log_{web.get("id")}') else Web_Site_Log()
+        # error_time: Web_Site_Abnormal_Log = \
+        #     Web_Site_Abnormal_Log.objects.filter(web_id=web.get("id")).order_by('-end_time')[0] if \
+        #         Web_Site_Abnormal_Log.objects.filter(web_id=web.get("id")).order_by(
+        #             '-end_time') else Web_Site_Abnormal_Log()
         result.append({
-            "id": web.id,
-            "title": web.title,
-            "host": web.host,
+            "id": web.get("id"),
+            "title": web.get("title"),
+            "host": web.get("host"),
             "status": runtime.status,
             "delay": int(runtime.delay),
             "online": str(runtime.status).startswith("2"),
-            "description": web.description,
+            "description": web.get("description"),
             'last_error_info': error_time.end_time if error_time.end_time else error_time.start_time,
         })
 
-    return ResponseJson({"status": 1, "msg": "获取成功", "data": {"list": result, }})
+    return R.success(data={
+        'list': result,
+        'maxPage': max_page
+    })
 
 
-def getRuntime(req: HttpRequest):
-    if req.method != "GET":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-    logs = Web_Site_Log.objects.all()
-    web_group = logs.only('web').distinct()
-    web_host = [web.web.host for web in web_group]
-    result = {}
-    for host_key in web_host:
-        times: QuerySet[(datetime,)] = logs.filter(web__host=host_key).values_list('time')
-        datas: QuerySet[(int,)] = logs.filter(web__host=host_key).values_list('delay')
-        result[host_key] = {
-            'time': [str(time[0].strftime("%H:%M:%S")) for time in times],
-            'data': [str(data[0]) for data in datas]
-        }
-    return ResponseJson({"status": 1, "msg": "获取成功", "data": result})
+# def getRuntime(req: HttpRequest):
+#     if req.method != "GET":
+#         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
+#     logs = Web_Site_Log.objects.all()
+#     web_group = logs.only('web').distinct()
+#     web_host = [web.web.host for web in web_group]
+#     result = {}
+#     for host_key in web_host:
+#         times: QuerySet[(datetime,)] = logs.filter(web__host=host_key).values_list('time')
+#         datas: QuerySet[(int,)] = logs.filter(web__host=host_key).values_list('delay')
+#         result[host_key] = {
+#             'time': [str(time[0].strftime("%H:%M:%S")) for time in times],
+#             'data': [str(data[0]) for data in datas]
+#         }
+#     return ResponseJson({"status": 1, "msg": "获取成功", "data": result})
 
 
 def addWeb(req: HttpRequest):

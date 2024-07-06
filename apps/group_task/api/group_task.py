@@ -28,16 +28,24 @@ def create_group_task(req: HttpRequest):
     execCount: int = data.get('execCount', )
     execType: str = data.get('execType', '')
     command: str = data.get('command', '')
+    execPath: str = data.get('execPath', '')
+    enable: bool = data.get('enable', False)
     if GroupTask.objects.filter(name=taskName).exists():
         return result.error('任务名称已存在')
-    if not taskName or not group or not execType or not command:
+    if (not taskName or
+            not group or
+            not execType or
+            not command):
         return result.error('请将参数填写完整')
+    if execPath and not os.path.isabs(execPath):
+        return result.error('执行路径格式错误')
     g_task: GroupTask = GroupTask()
     g_task.name = taskName
     g_task.node_group_id = group
     g_task.exec_type = execType
     g_task.command = command
-    g_task.enable = False
+    g_task.enable = enable
+    g_task.exec_path = execPath if execPath else None
     if execCount:
         g_task.exec_count = execCount
     if execType == 'date-time':
@@ -57,8 +65,8 @@ def create_group_task(req: HttpRequest):
         if cycle.group_task.name != g_task.name:
             return result.api_error('周期设置错误')
         cycle.save()
-        group_task_util.handle_change_task()
-    return result.success(msg='添加成功,默认禁用')
+        group_task_util.handle_change_task(t='add', task=g_task)
+    return result.success(msg='添加成功')
 
 
 def get_list(req: HttpRequest):
@@ -93,7 +101,8 @@ def get_list(req: HttpRequest):
             'interval': g.get('interval'),
             'that_time': g.get('that_time'),
             'enable': g.get('enable'),
-            'cycle': cycle
+            'exec_path': g.get('exec_path'),
+            'cycle': cycle,
         })
     response = {
         'list': r_list,
@@ -121,7 +130,7 @@ def change_enable(req: HttpRequest):
         return result.error('任务不存在')
     g.enable = not g.enable
     g.save()
-    group_task_util.handle_change_task()
+    group_task_util.handle_change_task(t='reload', task=g)
     return result.success(msg=f'任务{g.name}已{"启用" if g.enable else "禁用"}')
 
 
@@ -134,9 +143,12 @@ def delete_by_uuid(req: HttpRequest):
     uuids: str = req.GET.get('uuid', '')
     if not uuids:
         return result.error('请选择任务')
-    if GroupTask.objects.filter(uuid=uuids).delete()[0] == 0:
+    group: GroupTask = GroupTask.objects.filter(uuid=uuids).first()
+    if not group:
         return result.error('任务不存在')
-    group_task_util.handle_change_task()
+    node_group = group.node_group
+    group.delete()
+    group_task_util.handle_change_task(t='remove', group=node_group)
     return result.success(msg='删除成功')
 
 
@@ -148,26 +160,6 @@ async def by_node_uuid_get_task(uuids: str):
         指定时间 -> 'date-time'
         周期 -> 'cycle'
         间隔 -> 'interval'
-
-    数据格式 :
-    [
-        {
-            name:名称,
-            exec_type:执行类型,
-            interval:间隔时间(秒),
-            that_time:指定时间(时间戳),
-            exec_count:执行次数(null 为 无限),
-            cycle:{
-                time: 时间,
-                week:[] ->      1: 'monday',
-                },              2: 'tuesday',
-            command:执行命令,     3: 'wednesday',
-                                4: 'thursday',
-                                5: 'friday',
-                                6: 'saturday',
-                                7: 'sunday',
-        }
-    ]
     """
     return await group_task_util.by_uuid_get_task(uuids=uuids)
 
@@ -175,8 +167,9 @@ async def by_node_uuid_get_task(uuids: str):
 async def handle_group_task(task_uuid, node_uuid, result_text, result_code):
     """
     用于处理 集群 任务 返回结果
+
     """
-    save_base_dir = apps.get_app_config('node_manager').group_task_result_save_dir
+    save_base_dir: str = apps.get_app_config('node_manager').group_task_result_save_dir
     result_uuid = str(uuid.uuid4())
     task_dir = os.path.join(
         save_base_dir,

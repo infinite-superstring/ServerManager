@@ -221,14 +221,15 @@ class node_client(AsyncBaseConsumer):
         await self.__load_alarm_setting()
 
     @Log.catch
-    async def group_task_change(self, data):
+    async def group_task_change(self, data: dict[str:str | dict]):
         """
         节点任务状态改变
         """
-        await self.send_action({
-            "type": "task:group_task_change",
-            "data": data
-        })
+        action = data.get('action', '')
+        if not action:
+            return
+        Log.info(f"节点任务状态改变:{action}")
+        await self.send_action(f'task:{action}', payload=data.get('data'))
 
     @Log.catch
     @AsyncBaseConsumer.action_handler("node:refresh_info")

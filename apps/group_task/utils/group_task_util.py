@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from asgiref.sync import async_to_sync
 from django.db.models import QuerySet
 
@@ -33,11 +35,23 @@ def createCycle(cycle: dict, g_task):
     return cycle_obj
 
 
-async def getCycle(id):
+def str_time_to_second(str_time: str) -> int:
+    # 将字符串转换为datetime对象
+    time_obj = datetime.strptime(str_time, "%H:%M")
+
+    # 从datetime对象中获取time对象
+    time_only = time_obj.time()
+
+    # 计算从零点到该时间的总秒数
+    total_seconds = time_only.hour * 3600 + time_only.minute * 60
+    return total_seconds
+
+
+async def getCycle(uuids) -> dict:
     """
     根据 集群任务ID获取 任务周期对象
     """
-    cycle_obj: GroupTask_Cycle = await GroupTask_Cycle.objects.filter(group_task_id=id).afirst()
+    cycle_obj: GroupTask_Cycle = await GroupTask_Cycle.objects.filter(group_task__uuid=uuids).afirst()
     if not cycle_obj:
         return {}
     week = []
@@ -48,6 +62,22 @@ async def getCycle(id):
         'time': cycle_obj.time.strftime('%H:%M'),
         'week': week
     }
+
+
+async def by_type_get_exec_time(task: GroupTask):
+    """
+    根据 任务类型 获取执行时间
+    """
+
+    if task.exec_type == 'cycle':
+        cycle = await getCycle(task.uuid)
+        str_exec_time = cycle.get('time')
+        return str_time_to_second(str_exec_time)
+    if task.exec_type == 'interval':
+        return task.interval
+    if task.exec_type == 'date-time':
+        return task.that_time.timestamp()
+    return None
 
 
 async def by_uuid_get_task(uuids: str = None, group: Node_Group = None):
@@ -66,26 +96,49 @@ async def by_uuid_get_task(uuids: str = None, group: Node_Group = None):
     async for task in group_task:
         if not task.enable:
             continue
+        exec_time = await by_type_get_exec_time(task)
+        weeks = []
+        if task.exec_type == 'cycle':
+            weeks = (await getCycle(task.uuid)).get('week')
         group_tasks.append({
             'name': task.name,
-            'exec_type': task.exec_type,
-            'interval': task.interval,
-            'that_time': task.that_time.strftime('%Y-%m-%d %H:%M:%S') if task.that_time else '',
+            'uuid': task.uuid,
+            'type': task.exec_type,
+            'exec_path': task.exec_path,
+            'time': exec_time,
             'exec_count': task.exec_count,
-            'command': task.command,
-            'cycle': await getCycle(task.uuid)
+            'shell': task.command,
+            'week': weeks
         })
     return group_tasks
 
 
-def handle_change_task():
+def handle_change_task(t, task_uuid=None, group=None, task: GroupTask = None):
     """
     任务变更时向所有节点发送变更事件
     """
-    group_tasks = GroupTask.objects.all()
-    group_list = [g.node_group for g in group_tasks]
-    for group in group_list:
-        group_util = GroupUtil(group)
-        tasks = async_to_sync(by_uuid_get_task)(group=group)
-        print(tasks)
-        group_util.send_event_to_all_nodes('group_task_change', {'tasks': tasks})
+    data: dict[str, str | dict]
+    if t == 'add':
+        group: Node_Group = task.node_group
+        data = {
+            'action': t,
+            'data': task
+        }
+        group_task_change(group, data)
+        return
+    elif t == 'remove':
+        data = {
+            'action': t,
+            'data': task_uuid
+        }
+        group_task_change(group, data)
+    elif t == 'reload':
+        data = {
+            'action': t,
+            'data': task
+        }
+        group_task_change(group, data)
+
+
+def group_task_change(group: Node_Group, data):
+    GroupUtil(group=group).send_event_to_all_nodes(event='group_task_change', data=data)

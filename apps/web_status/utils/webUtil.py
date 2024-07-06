@@ -2,6 +2,33 @@ import re
 from datetime import datetime
 from apps.web_status.models import Web_Site, Web_Site_Log, Web_Site_Abnormal_Log
 from util import httpCode
+from django.core.cache import cache
+
+
+def get_or_create_web_site_log(web_id):
+    """
+    从缓存中获取Web_Site_Log对象，如果不存在，则创建一个新的实例。
+    """
+    cache_key = f'web_status_log_{web_id}'
+    cached_log = cache.get(cache_key)
+    if cached_log is not None:
+        return cached_log
+
+    return Web_Site_Log()
+
+
+def get_latest_or_default_abnormal_log(web_id):
+    """
+    获取与web_id相关的最后一个Web_Site_Abnormal_Log记录，如果没有记录，则创建一个新的实例。
+    """
+    try:
+        # 尝试获取最新的异常记录
+        latest_abnormal_log = Web_Site_Abnormal_Log.objects.filter(web_id=web_id).latest('end_time')
+    except Web_Site_Abnormal_Log.DoesNotExist:
+        # 如果没有找到记录，则创建一个新的实例
+        latest_abnormal_log = Web_Site_Abnormal_Log()
+
+    return latest_abnormal_log
 
 
 def is_valid_host(host):

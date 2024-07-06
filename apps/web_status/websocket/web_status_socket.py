@@ -3,11 +3,14 @@ import json
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from asgiref.sync import async_to_sync, sync_to_async
+from asgiref.sync import sync_to_async
+from channels.layers import get_channel_layer
 from django.core.cache import cache
+from django.db.models import QuerySet
 
 from apps.web_status.models import Web_Site_Log, Web_Site
 from consumers.AsyncConsumer import AsyncBaseConsumer
+from util import pageUtils
 from util.jsonEncoder import ComplexEncoder
 from util.logger import Log
 
@@ -17,6 +20,9 @@ class WebStatusClient(AsyncBaseConsumer):
     __userID = None
     __web_list = []
     _polling_send = None
+    __page = 1
+    __pageSize = 6
+    __name = ''
 
     @Log.catch
     async def send_json(self, data):
@@ -33,14 +39,13 @@ class WebStatusClient(AsyncBaseConsumer):
             f"{self.__NAME}{self.__userID}",
             self.channel_name
         )
-        self.__web_list = Web_Site.objects.all()
-        runtime_data = await self._getRuntime()
+        self.__page = self.scope['url_route']['kwargs']['page']
+        self.__name = self.scope['url_route']['kwargs'].get('name', '')
+        self.__web_list = Web_Site.objects.filter(title__contains=self.__name, host__contains=self.__name,
+                                                  description__contains=self.__name).order_by('id')
         await self.send_json({
-            'type': 'initData',
-            'data': runtime_data
+            'type': 'hello',
         })
-        # 开始轮询发送消息
-        self._startPolling()
         await sync_to_async(cache.set)(f'web_status_web_list', self.__web_list)
 
     async def disconnect(self, close_code):
@@ -48,19 +53,36 @@ class WebStatusClient(AsyncBaseConsumer):
             f"{self.__NAME}{self.__userID}",
             self.channel_name
         )
-        self._polling_send.shutdown()
+        self._polling_send.shutdown() if self._polling_send else None
         Log.debug("已断开网络监控套接字")
         await self.close()
 
     async def receive(self, **kwargs):
-        await self.send_json({
-            "type": "receive",
-            "data": "over!"
-        })
+        channel = get_channel_layer()
+        t = json.loads(kwargs['text_data']).get('type', '')
+        d = json.loads(kwargs['text_data']).get('data', {})
+        await channel.group_send(
+            f'{self.__NAME}{self.__userID}', {
+                'type': t,
+                'data': d
+            })
 
-    async def _getRuntime(self):
+    async def initData(self, data):
+        runtime_data = await self.__getRuntime()
+        await self.send_json({
+            'type': 'initData',
+            'data': runtime_data
+        })
+        # 开始轮询发送消息
+        self._startPolling()
+
+    async def __getRuntime(self):
+        page_web = await self.pagination()
+        if page_web is None:
+            return
         log_data = (
             Web_Site_Log.objects
+            .filter(web_id__in=[web['id'] async for web in page_web])
             .values('web__host', 'time', 'delay', 'status')
             .order_by('web__host', 'time')  # 假设按host和time排序以保证数据连续性
         )
@@ -97,7 +119,6 @@ class WebStatusClient(AsyncBaseConsumer):
                 'online': bool(str(statuses[-1]).startswith('2')),
                 'status_code': statuses
             }
-
         return result
 
     def _startPolling(self):
@@ -108,10 +129,15 @@ class WebStatusClient(AsyncBaseConsumer):
         self._polling_send.start()
 
     async def _sendNewData(self):
-        w = cache.get(f'web_status_web_list')
-        if not w:
-            self.__web_list = Web_Site.objects.all()
-        async for web in self.__web_list:
+        self.__web_list = cache.get(f'web_status_web_list')
+        if not self.__web_list:
+            self.__web_list = Web_Site.objects.filter(title__contains=self.__name, host__contains=self.__name,
+                                                      description__contains=self.__name).order_by('id')
+        page_web = await self.pagination()
+        if page_web is None:
+            return
+        page_web: QuerySet[Web_Site] = Web_Site.objects.filter(id__in=[web['id'] async for web in page_web])
+        async for web in page_web:
             runtime: Web_Site_Log = cache.get(f'web_status_log_{web.id}')
             await self.send_json(
                 {
@@ -126,3 +152,8 @@ class WebStatusClient(AsyncBaseConsumer):
                     }
                 }
             )
+
+    async def pagination(self):
+        if not await self.__web_list.aexists():
+            return None
+        return await sync_to_async(pageUtils.get_page_content)(self.__web_list, int(self.__page), int(self.__pageSize))

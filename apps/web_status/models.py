@@ -13,7 +13,7 @@ class Web_Site(models.Model):
     description = models.CharField("描述", max_length=256)
 
     class Meta:
-        db_table = "web_status"
+        db_table = "web_site"
         verbose_name = 'Web状态'
 
 
