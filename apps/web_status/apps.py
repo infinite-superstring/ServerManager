@@ -53,10 +53,6 @@ class WebStatusConfig(AppConfig):
             timeout = config().web_status.timeout
             result = requests.get(url=host, headers=headers, timeout=timeout)
             delay = result.elapsed.microseconds / 1000
-            if str(result.status_code).startswith('4'):
-                webUtil.createErrLog(host, result.status_code)
-            else:
-                pass
         except TimeoutError as e:
             code = 408
         except requests.exceptions.ConnectionError as e:

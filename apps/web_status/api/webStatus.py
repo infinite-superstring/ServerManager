@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.db.models import QuerySet
 from django.http import HttpRequest
 
 import util.result as R
@@ -24,9 +25,10 @@ def getList(req: HttpRequest):
         title__contains=name,
         host__contains=name,
         description__contains=name).order_by('id'))
-    web_list = pageUtils.get_page_content(web_list, int(page), int(pageSize))
+    count = web_list.count()
+    web_list: QuerySet = pageUtils.get_page_content(web_list, int(page), int(pageSize))
     result = []
-    max_page = 0
+    max_page = pageUtils.get_max_page(count, int(pageSize))
     for web in web_list:
         runtime = get_or_create_web_site_log(web.get("id"))
         error_time = get_latest_or_default_abnormal_log(web.get("id"))

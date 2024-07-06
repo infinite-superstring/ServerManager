@@ -106,7 +106,7 @@ async def get_the_task_of_node(node_uuid: str = None, group: Node_Group = None, 
             weeks = (await getCycle(task.uuid)).get('week')
         group_tasks.append({
             'name': task.name,
-            'uuid': task.uuid,
+            'uuid': str(task.uuid),
             'type': task.exec_type,
             'exec_path': task.exec_path,
             'time': exec_time,

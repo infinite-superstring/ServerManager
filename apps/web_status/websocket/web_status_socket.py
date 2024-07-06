@@ -42,7 +42,7 @@ class WebStatusClient(AsyncBaseConsumer):
         self.__page = self.scope['url_route']['kwargs']['page']
         self.__name = self.scope['url_route']['kwargs'].get('name', '')
         self.__web_list = Web_Site.objects.filter(title__contains=self.__name, host__contains=self.__name,
-                                                  description__contains=self.__name).order_by('id')
+                                                  description__contains=self.__name)
         await self.send_json({
             'type': 'hello',
         })
@@ -79,7 +79,7 @@ class WebStatusClient(AsyncBaseConsumer):
     async def __getRuntime(self):
         page_web = await self.pagination()
         if page_web is None:
-            return
+            return {}
         log_data = (
             Web_Site_Log.objects
             .filter(web_id__in=[web['id'] async for web in page_web])
@@ -132,7 +132,7 @@ class WebStatusClient(AsyncBaseConsumer):
         self.__web_list = cache.get(f'web_status_web_list')
         if not self.__web_list:
             self.__web_list = Web_Site.objects.filter(title__contains=self.__name, host__contains=self.__name,
-                                                      description__contains=self.__name).order_by('id')
+                                                      description__contains=self.__name)
         page_web = await self.pagination()
         if page_web is None:
             return
