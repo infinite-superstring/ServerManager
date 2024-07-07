@@ -3,10 +3,12 @@ import uuid
 from datetime import datetime
 
 from asgiref.sync import async_to_sync
+from django.db.models import QuerySet
 from django.http import HttpRequest
 
 from apps.group_task.models import GroupTask
 from apps.group_task.utils import group_task_util
+from apps.group_task.utils.group_task_util import by_type_get_exec_time, getCycle
 from apps.node_manager.models import Node_Group, Node
 from util import result, pageUtils
 from util.Request import RequestLoadJson
@@ -25,7 +27,7 @@ def create_group_task(req: HttpRequest):
         return result.api_error('请求数据错误', http_code=400)
     taskName: str = data.get('taskName', '')
     group: int = data.get('group', 0)
-    execCount: int = data.get('execCount', )
+    execCount: int | None = data.get('execCount', None)
     execType: str = data.get('execType', '')
     command: str = data.get('command', '')
     execPath: str = data.get('execPath', '')
@@ -45,14 +47,19 @@ def create_group_task(req: HttpRequest):
     g_task.exec_type = execType
     g_task.command = command
     g_task.enable = enable
-    g_task.exec_path = execPath if execPath else None
+    if execCount:
+        if int(execCount) < 1:
+            return result.error('执行次数不能小于1')
     if execCount:
         g_task.exec_count = execCount
     if execType == 'date-time':
         execTime: str = data.get('execTime', '')
         if not execTime:
             return result.error('请选择执行时间')
-        g_task.that_time = execTime
+        date_time_exec_time = datetime.strptime(execTime, '%Y-%m-%dT%H:%M')
+        if date_time_exec_time.timestamp() < datetime.now().timestamp():
+            return result.error('执行时间不能小于当前时间')
+        g_task.that_time = date_time_exec_time
     if execType == 'interval':
         execInterval: str = data.get('execInterval', '')
         if not execInterval:
@@ -65,7 +72,7 @@ def create_group_task(req: HttpRequest):
         if cycle.group_task.name != g_task.name:
             return result.api_error('周期设置错误')
         cycle.save()
-        group_task_util.handle_change_task(t='add', task=g_task)
+    group_task_util.handle_change_task(t='add', task=g_task)
     return result.success(msg='添加成功')
 
 
@@ -131,9 +138,9 @@ def change_enable(req: HttpRequest):
     g.enable = not g.enable
     g.save()
     if g.enable:
-        group_task_util.handle_change_task(t='reload', group=g.node_group, task=g)
+        group_task_util.handle_change_task(t='add', group=g.node_group, task=g)
     else:
-        group_task_util.handle_change_task(t='remove', group=g.node_group, task_uuid=g.uuid)
+        group_task_util.handle_change_task(t='remove', group=g.node_group, task_uuid=g.uuid, task=g)
     return result.success(msg=f'任务{g.name}已{"启用" if g.enable else "禁用"}')
 
 
@@ -150,12 +157,13 @@ def delete_by_uuid(req: HttpRequest):
     if not group:
         return result.error('任务不存在')
     node_group = group.node_group
+    task_uuid = group.uuid
     group.delete()
-    group_task_util.handle_change_task(t='remove', group=node_group)
+    group_task_util.handle_change_task(t='remove', group=node_group, task_uuid=task_uuid)
     return result.success(msg='删除成功')
 
 
-async def by_node_uuid_get_task(uuids: str):
+async def by_node_uuid_get_task(node_uuid: str, group: Node_Group = None):
     """
     根据 节点 ID 获取 任务 列表
 
@@ -164,10 +172,22 @@ async def by_node_uuid_get_task(uuids: str):
         周期 -> 'cycle'
         间隔 -> 'interval'
     """
-    return await group_task_util.get_the_task_of_node(node_uuid=uuids)
+    group_tasks = []
+    group_task: QuerySet[GroupTask] = QuerySet[GroupTask]()
+    if node_uuid:
+        group = await Node_Group.objects.aget(node__uuid=node_uuid)
+        group_task = GroupTask.objects.filter(node_group=group)
+    if group:
+        group_task = GroupTask.objects.filter(node_group=group)
+    async for task in group_task:
+        # 检查任务是否不应该推送
+        if group_task_util.task_should_not_push(task):
+            continue
+        group_tasks.append(await group_task_util.get_the_task_of_node(task=task))
+    return group_tasks
 
 
-async def handle_group_task(task_uuid, node_uuid, result_text, result_code):
+async def handle_group_task(data: dict):
     """
     用于处理 集群 任务 返回结果
 
@@ -176,8 +196,8 @@ async def handle_group_task(task_uuid, node_uuid, result_text, result_code):
     result_uuid = str(uuid.uuid4())
     task_dir = os.path.join(
         save_base_dir,
-        task_uuid,
-        node_uuid,
+        data.get('task_uuid'),
+        data.get('node_uuid'),
         result_uuid
     )
     with open(task_dir) as f:

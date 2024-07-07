@@ -72,7 +72,7 @@ def createErrLog(web_id, status, error_info=None, start_time=None, end_time=None
     如果传入结束时间，则查询最近开始时间距离现在最近的一条记录并更新其结束时间
     """
     if error_info is None:
-        error_info = httpCode.httpCodeMap.get(status, '未知错误')
+        error_info = httpCode.httpCodeMap.get(int(status), '未知错误')
 
     if end_time:
         recent_log = Web_Site_Abnormal_Log.objects.filter(
@@ -83,15 +83,21 @@ def createErrLog(web_id, status, error_info=None, start_time=None, end_time=None
         # 如果找到了符合条件的记录
         if recent_log:
             recent_log.end_time = end_time
-            recent_log.save(update_fields=['end_time'])
+            recent_log.save()
             return
 
+    if status == 200:
+        return
     web = Web_Site_Abnormal_Log()
     web.web_id = web_id
     web.status = status
     web.error_type = byStatusCodeGetErrType(status)
     web.error_info = error_info
     if start_time:
+        log: Web_Site_Abnormal_Log = (Web_Site_Abnormal_Log.objects.filter(web_id=web_id)
+                                      .order_by('-start_time').first())
+        if log and not log.end_time:
+            return
         web.start_time = start_time
     if end_time:
         web.end_time = end_time

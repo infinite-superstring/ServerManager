@@ -82,49 +82,42 @@ async def by_type_get_exec_time(task: GroupTask):
     return None
 
 
-async def get_the_task_of_node(node_uuid: str = None, group: Node_Group = None, task_uuid: str = None):
+async def get_the_task_of_node(task: GroupTask = None):
     """
     获取 节点 需要的 集群任务数据
     """
-    group_tasks = []
-    group_task: QuerySet[GroupTask] = QuerySet[GroupTask]()
-    if node_uuid:
-        group = await Node_Group.objects.aget(node__uuid=node_uuid)
-        group_task = GroupTask.objects.filter(node_group=group)
-    if group:
-        group_task = GroupTask.objects.filter(node_group=group)
-    if task_uuid:
-        group_task = GroupTask.objects.filter(uuid=task_uuid)
-    if not await group_task.aexists():
-        return group_tasks
-    async for task in group_task:
-        exec_time = await by_type_get_exec_time(task)
-        weeks = []
-        if task.exec_type == 'cycle':
-            weeks = (await getCycle(task.uuid)).get('week')
-        group_tasks.append({
-            'name': task.name,
-            'uuid': str(task.uuid),
-            'type': task.exec_type,
-            'exec_path': task.exec_path,
-            'time': exec_time,
-            'exec_count': task.exec_count,
-            'shell': task.command,
-            'week': weeks
-        })
-    return group_tasks
+    exec_time = await by_type_get_exec_time(task)
+    weeks = []
+    if task.exec_type == 'cycle':
+        weeks = (await getCycle(task.uuid)).get('week', [])
+    return {
+        'name': task.name,
+        'uuid': str(task.uuid),
+        'type': task.exec_type,
+        'exec_path': task.exec_path,
+        'time': exec_time,
+        'exec_count': task.exec_count,
+        'shell': task.command,
+        'week': weeks
+    }
 
 
 def handle_change_task(t, task_uuid: UUID = None, group=None, task: GroupTask = None):
     """
     任务变更时向所有节点发送变更事件
+    add -> 需要 任务实例 任务所在组
+    remove -> 需要 任务uuid 所在组
+    reload -> 需要 任务uuid 所在组
     """
     data: dict[str, str | dict]
+    # 检查任务是否不需要推送
+    if task and t != 'remove' and task_should_not_push(task):
+        return
     if t == 'add':
         group: Node_Group = task.node_group
         data = {
             'action': t,
-            'data': async_to_sync(get_the_task_of_node)(task_uuid=task.uuid)[0]
+            'data': async_to_sync(get_the_task_of_node)(task=task)
         }
         group_task_change(group, data)
         print(data)
@@ -139,7 +132,7 @@ def handle_change_task(t, task_uuid: UUID = None, group=None, task: GroupTask = 
     elif t == 'reload':
         data = {
             'action': t,
-            'data': async_to_sync(get_the_task_of_node)(task_uuid=task.uuid)[0]
+            'data': async_to_sync(get_the_task_of_node)(task=task)
         }
         group_task_change(group, data)
         print(data)
@@ -147,3 +140,18 @@ def handle_change_task(t, task_uuid: UUID = None, group=None, task: GroupTask = 
 
 def group_task_change(group: Node_Group, data):
     GroupUtil(group=group).send_event_to_all_nodes(event='group_task_change', data=data)
+
+
+def task_should_not_push(task: GroupTask) -> bool:
+    """
+    判断任务是否不需要推送
+    """
+    if not task.enable:
+        return True  # 如果任务被禁用，直接返回True，表示不应该推送
+    if task.exec_type == 'date-time':
+        return task.that_time.timestamp() < datetime.now().timestamp()  # 如果是定时任务，检查是否已经过去
+    if task.exec_count is not None:
+        return task.exec_count <= 0
+
+    # 如果不是定时任务，或者定时任务还没到时间，这里可以添加其他条件，或者直接返回False
+    return False

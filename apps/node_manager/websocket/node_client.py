@@ -79,7 +79,7 @@ class node_client(AsyncBaseConsumer):
             f"NodeClient_{self.__node.uuid}",
             self.channel_name
         )
-        self.__task = await group_task.by_node_uuid_get_task(uuids=self.__node_uuid)
+        self.__task = await group_task.by_node_uuid_get_task(node_uuid=self.__node_uuid)
 
         await self.send_json({
             'action': 'node:init_config',
@@ -758,14 +758,8 @@ class node_client(AsyncBaseConsumer):
         """
         任务执行结果
         """
-        result_code = data.get('result_code', 0)
-        result_text = data.get('result_text', "")
-        task_uuid = data.get('task_uuid', "")
-        await group_task.handle_group_task(
-            task_uuid,
-            self.__node.uuid,
-            result_text,
-            result_code)
+        data['node_uuid'] = self.__node_uuid
+        await group_task.handle_group_task(data)
 
     @Log.catch
     def __check_get_process_list_activity(self):
