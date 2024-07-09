@@ -31,6 +31,8 @@ if __name__ == '__main__':
 |_____|_| |_|_| |_|_| |_|_|\__\___| |_____/ \__,_| .__/ \___|_|  |___/\__|_|  |_|_| |_|\__, |
                                                  | |                                    __/ |
                                                  |_|                                   |___/ 
-https://github.com/infinite-superstring/ServerManager-Panel
+前端：https://github.com/infinite-superstring/ServerManager-UI
+后端：https://github.com/infinite-superstring/ServerManager-Panel
+节点：https://github.com/infinite-superstring/ServerManager-Node
     """)
     main()

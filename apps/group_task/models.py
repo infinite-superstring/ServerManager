@@ -5,7 +5,7 @@ import uuid
 # Create your models here.
 
 class GroupTask(models.Model):
-    uuid = models.UUIDField("uuid", primary_key=True, default=uuid.uuid4, editable=False)
+    uuid = models.UUIDField("uuid", primary_key=True, unique=True, default=uuid.uuid4, editable=False)
     name = models.CharField("任务名称", max_length=64, unique=True)
     node_group = models.ForeignKey(to="node_manager.Node_Group", on_delete=models.CASCADE, related_name='group_tasks')
     exec_type = models.CharField("执行类型", max_length=32)

@@ -96,7 +96,7 @@ def del_group(req: HttpRequest):
         return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
     group_id: int = req_json.get('group_id')
     code = req_json.get('code')
-    if not group_id or not code:
+    if not group_id or code is None:
         return ResponseJson({'status': -1, 'msg': "参数不完整"}, 400)
     if not verify_otp_for_request(req, code):
         return ResponseJson({"status": 0, "msg": "操作验证失败，请检查您的手机令牌"})
