@@ -20,10 +20,10 @@ def addARecord(req: HttpRequest):
         user_id = req.session.get("userID")
         content = data.get("content")
         status = data.get("status")
-        image = data.get("image")
-        if content is None or status is None or image is None:
+        title = data.get("title")
+        if content is None or status is None or title is None:
             return ResponseJson({"status": -1, "msg": "参数错误"}, 400)
-        Patrol.objects.create(user_id=user_id, content=content, status=status, image=image)
+        Patrol.objects.create(user_id=user_id, content=content, status=status, title=title)
     return ResponseJson({"status": 1, "msg": "添加成功"})
 
 
@@ -48,7 +48,7 @@ def getList(req: HttpRequest):
                     "user": get_user_by_id(item.get("user_id")).userName if item.get("user_id") else None,
                     "content": item.get("content"),
                     "status": item.get("status"),
-                    "image": item.get("image"),
+                    "title": item.get("title"),
                     "time": item.get("time"),
                 })
         return ResponseJson({
@@ -73,10 +73,10 @@ def updateRecord(req: HttpRequest):
         id = data.get("id")
         content = data.get("content")
         status = data.get("status")
-        image = data.get("image")
-        if id is None or content is None or status is None or image is None:
+        title = data.get("title")
+        if id is None or content is None or status is None or title is None:
             return ResponseJson({"status": -1, "msg": "参数错误"}, 400)
-        Patrol.objects.filter(id=id).update(content=content, status=status, image=image)
+        Patrol.objects.filter(id=id).update(content=content, status=status, title=title)
     return ResponseJson({"status": 1, "msg": "更新成功"})
 
 

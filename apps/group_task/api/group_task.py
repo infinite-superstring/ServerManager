@@ -1,10 +1,10 @@
 import os.path
-from datetime import datetime
 
+from django.apps import apps
+from datetime import datetime
 from asgiref.sync import async_to_sync
 from django.db.models import QuerySet
 from django.http import HttpRequest
-
 from apps.group_task.models import GroupTask, Group_Task_Audit
 from apps.group_task.utils import group_task_util
 from apps.node_manager.models import Node_Group, Node
@@ -106,6 +106,7 @@ def get_list(req: HttpRequest):
             'that_time': g.get('that_time'),
             'enable': g.get('enable'),
             'exec_path': g.get('exec_path'),
+            'command': g.get('command'),
             'cycle': cycle,
         })
     response = {
@@ -162,19 +163,41 @@ def by_node_uuid_get_result(req: HttpRequest):
     group_task_audit = Group_Task_Audit.objects.filter(
         node__uuid=node_uuid,
         group_task__uuid=task_uuid,
-    ).order_by('-statr_time')
+
+    ).order_by('-statr_time')[:int(show_count)]
     # end_time__isnull = False
-    i = 0
     return result.success(data=[
         {
             'id': t.uuid,
             'title': t.statr_time,
             'value': {
                 'uuid': t.uuid,
-                'i': (i + 1)
+                'node_uuid': node_uuid,
+                'task_uuid': task_uuid
             }
         }
         for t in group_task_audit])
+
+
+def get_result_detail(req: HttpRequest):
+    if req.method != 'GET':
+        return result.api_error('请求方式错误', http_code=405)
+    uuid = req.GET.get('uuid', '')
+    node_uuid = req.GET.get('node_uuid', '')
+    task_uuid = req.GET.get('task_uuid', '')
+    save_dir = apps.get_app_config('node_manager').group_task_result_save_dir
+    file_path = os.path.join(save_dir, task_uuid, node_uuid, uuid)
+    file_size = os.path.getsize(file_path)
+    # 大小超过3兆时
+    if file_size > 3 * 1024 * 1024:
+        return result.error(msg='文件过大，请下载查看')
+    commandLine = []
+    with open(file_path, 'r+', encoding='utf-8') as file_stream:
+        line = file_stream.readline()
+        while line:
+            commandLine.append(line)
+            line = file_stream.readline()
+    return result.success(commandLine)
 
 
 def change_enable(req: HttpRequest):

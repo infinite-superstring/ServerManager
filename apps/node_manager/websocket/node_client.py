@@ -773,7 +773,7 @@ class node_client(AsyncBaseConsumer):
         """
         任务开始执行信号
         """
-        Log.debug('任务开始执行信号')
+        Log.debug(f'{data.get("uuid")}:任务开始执行信号')
         self.__task_result_util = GroupTaskResultUtil(self.__node_uuid)
         await self.__task_result_util.handle_task_start(data)
 
@@ -782,7 +782,7 @@ class node_client(AsyncBaseConsumer):
         """
         任务执行时输出
         """
-        Log.debug('任务输出')
+        Log.debug(f'{data.get("uuid")}:任务输出')
         await self.__task_result_util.handle_task_output(data)
 
     @AsyncBaseConsumer.action_handler("task:process_stop")
@@ -790,7 +790,7 @@ class node_client(AsyncBaseConsumer):
         """
         任务执行结束信号
         """
-        Log.debug('任务结束信号')
+        Log.debug(f'{data.get("uuid")}:任务结束信号')
         await self.__task_result_util.handle_task_stop(data)
 
     @Log.catch

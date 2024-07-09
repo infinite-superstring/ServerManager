@@ -56,6 +56,8 @@ class GroupTaskResultUtil:
         process_id = data.get('mark')
         start_time = cache.get(f'group_task_executing_{task_uuid}_{self.__node_uuid}')
         m: TaskRuntime = self.__map.get(process_id)
+        if not m:
+            raise ValueError('任务不存在')
         if not start_time:
             m.group_task_audit.status = 'error'
             m.group_task_audit.end_time = datetime.now()
@@ -75,7 +77,7 @@ class GroupTaskResultUtil:
         code = data.get('code')
         timestamp = data.get('timestamp')
         m: TaskRuntime = self.__map.get(process_id)
-        m.file_stream.write(f"[END {code}]")
+        m.file_stream.write(f"[进程返回值:{code}]")
         m.file_stream.close()
         m.group_task_audit.status = code
         m.group_task_audit.end_time = datetime.fromtimestamp(timestamp)
