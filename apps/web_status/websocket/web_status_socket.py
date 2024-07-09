@@ -57,16 +57,18 @@ class WebStatusClient(AsyncBaseConsumer):
         Log.debug("已断开网络监控套接字")
         await self.close()
 
-    async def receive(self, **kwargs):
-        channel = get_channel_layer()
-        t = json.loads(kwargs['text_data']).get('type', '')
-        d = json.loads(kwargs['text_data']).get('data', {})
-        await channel.group_send(
-            f'{self.__NAME}{self.__userID}', {
-                'type': t,
-                'data': d
-            })
+    # async def receive(self, **kwargs):
+    #     # channel = get_channel_layer()
+    #     # t = json.loads(kwargs['text_data']).get('action', '')
+    #     # d = json.loads(kwargs['text_data']).get('data', {})
+    #     # await channel.group_send(
+    #     #     f'{self.__NAME}{self.__userID}', {
+    #     #         'type': t,
+    #     #         'data': d
+    #     #     })
+    #
 
+    @AsyncBaseConsumer.action_handler("initData")
     async def initData(self, data):
         runtime_data = await self.__getRuntime()
         await self.send_json({

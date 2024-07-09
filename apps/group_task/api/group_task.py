@@ -1,18 +1,15 @@
 import os.path
-import uuid
 from datetime import datetime
 
 from asgiref.sync import async_to_sync
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from apps.group_task.models import GroupTask
+from apps.group_task.models import GroupTask, Group_Task_Audit
 from apps.group_task.utils import group_task_util
-from apps.group_task.utils.group_task_util import by_type_get_exec_time, getCycle
 from apps.node_manager.models import Node_Group, Node
 from util import result, pageUtils
 from util.Request import RequestLoadJson
-from django.apps import apps
 
 
 def create_group_task(req: HttpRequest):
@@ -119,6 +116,67 @@ def get_list(req: HttpRequest):
     return result.success(data=response)
 
 
+def get_task_name(req: HttpRequest):
+    """
+    获取所有任务名称
+    """
+    if req.method != 'GET':
+        result.api_error('请求方式错误', http_code=405)
+    all_tasks = GroupTask.objects.all()
+    return result.success(data=[
+        {
+            'id': t.uuid,
+            'title': t.name,
+            'sign': 'task',
+            'children': []
+        }
+        for t in all_tasks])
+
+
+def by_task_uuid_get_node(req: HttpRequest):
+    """
+    根据任务UUID获取节点
+    """
+    if req.method != 'GET':
+        return result.api_error('请求方式错误', http_code=405)
+    task_uuid = req.GET.get('uuid', '')
+    node_group: Node_Group = GroupTask.objects.get(uuid=task_uuid).node_group
+    nodes = Node.objects.filter(group=node_group)
+    return result.success(data=[
+        {
+            'id': n.uuid,
+            'task_uuid': task_uuid,
+            'title': n.name,
+            'sign': 'node',
+            'children': []
+        }
+        for n in nodes])
+
+
+def by_node_uuid_get_result(req: HttpRequest):
+    if req.method != 'GET':
+        return result.api_error('请求方式错误', http_code=405)
+    node_uuid = req.GET.get('uuid', '')
+    task_uuid = req.GET.get('task_uuid', '')
+    show_count = req.GET.get('show_count', 30)
+    group_task_audit = Group_Task_Audit.objects.filter(
+        node__uuid=node_uuid,
+        group_task__uuid=task_uuid,
+    ).order_by('-statr_time')
+    # end_time__isnull = False
+    i = 0
+    return result.success(data=[
+        {
+            'id': t.uuid,
+            'title': t.statr_time,
+            'value': {
+                'uuid': t.uuid,
+                'i': (i + 1)
+            }
+        }
+        for t in group_task_audit])
+
+
 def change_enable(req: HttpRequest):
     """
     更改任务状态
@@ -175,7 +233,10 @@ async def by_node_uuid_get_task(node_uuid: str, group: Node_Group = None):
     group_tasks = []
     group_task: QuerySet[GroupTask] = QuerySet[GroupTask]()
     if node_uuid:
-        group = await Node_Group.objects.aget(node__uuid=node_uuid)
+        groups: QuerySet[Node_Group] = Node_Group.objects.filter(node__uuid=node_uuid)
+        if not await groups.aexists():
+            return group_tasks
+        group = await groups.afirst()
         group_task = GroupTask.objects.filter(node_group=group)
     if group:
         group_task = GroupTask.objects.filter(node_group=group)
@@ -186,19 +247,38 @@ async def by_node_uuid_get_task(node_uuid: str, group: Node_Group = None):
         group_tasks.append(await group_task_util.get_the_task_of_node(task=task))
     return group_tasks
 
-
-async def handle_group_task(data: dict):
-    """
-    用于处理 集群 任务 返回结果
-
-    """
-    save_base_dir: str = apps.get_app_config('node_manager').group_task_result_save_dir
-    result_uuid = str(uuid.uuid4())
-    task_dir = os.path.join(
-        save_base_dir,
-        data.get('task_uuid'),
-        data.get('node_uuid'),
-        result_uuid
-    )
-    with open(task_dir) as f:
-        pass
+#
+# async def handle_group_task(data: dict):
+#     """
+#     用于处理 集群 任务 返回结果
+#
+#     """
+#     save_base_dir: str = apps.get_app_config('node_manager').group_task_result_save_dir
+#     task_uuid = data.get('uuid')
+#     node_uuid = data.get('node_uuid')
+#
+#     task_start_time = cache.get(f'group_task_executing_{task_uuid}_{node_uuid}') if \
+#         cache.get(f'group_task_executing_{task_uuid}_{node_uuid}') else \
+#         datetime.now()
+#     result_uuid = group_task_util.by_key_get_uuid(
+#         task_uuid + node_uuid + task_start_time
+#     )
+#     task_dir = os.path.join(
+#         save_base_dir,
+#         task_uuid,
+#         node_uuid
+#     )
+#     if data['mode'] == 'process_statr':
+#         if not os.path.exists(task_dir):
+#             os.makedirs(task_dir)
+#         Group_Task_Audit.objects.create(
+#             group_task=GroupTask.objects.get(uuid=task_uuid),
+#             node=Node.objects.get(uuid=node_uuid),
+#             statr_time=task_start_time,
+#             end_time=None,
+#             uuid=result_uuid,
+#         )
+#         pass
+#         cache.set(f'group_task_executing_{task_uuid}_{node_uuid}', task_start_time, 60)
+#         task_result = open(os.path.join(task_dir, str(result_uuid)), 'w+')
+#

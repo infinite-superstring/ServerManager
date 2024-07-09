@@ -1,3 +1,5 @@
+import hashlib
+import uuid
 from datetime import datetime
 from uuid import UUID
 
@@ -84,7 +86,7 @@ async def by_type_get_exec_time(task: GroupTask):
 
 async def get_the_task_of_node(task: GroupTask = None):
     """
-    获取 节点 需要的 集群任务数据
+    封装 节点 需要的 集群任务数据
     """
     exec_time = await by_type_get_exec_time(task)
     weeks = []
@@ -98,7 +100,8 @@ async def get_the_task_of_node(task: GroupTask = None):
         'time': exec_time,
         'exec_count': task.exec_count,
         'shell': task.command,
-        'week': weeks
+        'week': weeks,
+        # 'relative_utc': ''
     }
 
 
@@ -155,3 +158,18 @@ def task_should_not_push(task: GroupTask) -> bool:
 
     # 如果不是定时任务，或者定时任务还没到时间，这里可以添加其他条件，或者直接返回False
     return False
+
+
+def by_key_get_uuid(key: str) -> UUID:
+    """
+    根据 特定 key 获取 uuid 非随机
+    """
+    # 将键转换为字节
+    key_bytes = key.encode('utf-8')
+    # 计算 MD5 哈希
+    hash_object = hashlib.md5()
+    hash_object.update(key_bytes)
+    hash_bytes = hash_object.digest()
+    # 从哈希字节生成 UUID
+    generated_uuid = uuid.UUID(bytes=hash_bytes)
+    return generated_uuid

@@ -40,3 +40,16 @@ class GroupTask_Cycle(models.Model):
     class Meta:
         db_table = "group_task_cycle"
         db_table_comment = "任务周期"
+
+
+class Group_Task_Audit(models.Model):
+    uuid = models.UUIDField("uuid", primary_key=True, default=uuid.uuid4, editable=False)
+    group_task = models.ForeignKey(to="GroupTask", on_delete=models.CASCADE, related_name='group_task_audits')
+    node = models.ForeignKey(to='node_manager.Node', on_delete=models.CASCADE, related_name='group_task_audits')
+    status = models.CharField("状态", max_length=32)
+    statr_time = models.DateTimeField("开始时间", auto_now_add=True)
+    end_time = models.DateTimeField("结束时间", null=True)
+
+    class Meta:
+        db_table = "group_task_audit"
+        db_table_comment = "任务审计"
