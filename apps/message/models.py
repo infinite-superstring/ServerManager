@@ -51,6 +51,9 @@ class Message(models.Model):
     title = models.CharField('消息标题', max_length=100)
     content = models.TextField('消息内容')
     create_time = models.DateTimeField('新建时间', auto_now_add=True)
+    class Meta:
+        db_table = 'message'
+        db_table_comment = '消息'
 
 
 class UserMessage(models.Model):
