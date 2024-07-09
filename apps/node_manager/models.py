@@ -12,7 +12,7 @@ from apps.user_manager.models import User
 
 class Node(models.Model):
     """节点列表"""
-    uuid = models.UUIDField("节点UUID", primary_key=True, default=uuid.uuid4, editable=False)
+    uuid = models.UUIDField("节点UUID", primary_key=True, unique=True, default=uuid.uuid4, editable=False)
     name = models.CharField("节点名称", max_length=100, unique=True, null=False)
     token_hash = models.CharField("节点Token Hash值", max_length=256, unique=True, null=False)
     token_salt = models.CharField("节点Token盐值", max_length=256, unique=True, null=False)
