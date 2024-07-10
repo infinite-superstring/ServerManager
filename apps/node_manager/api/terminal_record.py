@@ -46,8 +46,10 @@ def load_terminal_user_list(req: HttpRequest) -> HttpResponse:
     users = User.objects.filter(id__in=unique_users_with_records)
     temp = [{
         'name': user.userName,
-        'node_uuid': node_uuid,
-        'id': user.id,
+        'id': {
+            'node_uuid': node.uuid,
+            'user_id': user.id
+        },
         'node_type': 'user_select',
         'children': []
     } for user in users]
@@ -55,6 +57,7 @@ def load_terminal_user_list(req: HttpRequest) -> HttpResponse:
         "status": 1,
         'data': temp
     })
+
 
 def load_terminal_session_list(req: HttpRequest) -> HttpResponse:
     if req.method != "GET":
@@ -81,7 +84,11 @@ def load_terminal_session_list(req: HttpRequest) -> HttpResponse:
     temp = [{
         'name': item.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
         'node_uuid': node_uuid,
-        'id': item.session_id,
+        'id': {
+            "node_uuid": node_uuid,
+            "user_id": user_id,
+            "session_uuid": item.session_id
+        },
         'node_type': 'select_session'
     } for item in Node_TerminalRecord.objects.filter(node=node, user=user)]
     return ResponseJson({
@@ -89,11 +96,12 @@ def load_terminal_session_list(req: HttpRequest) -> HttpResponse:
         'data': temp
     })
 
-def load_terminal_session_record(req: HttpRequest) -> HttpResponse | FileResponse :
+
+def load_terminal_session_record(req: HttpRequest) -> HttpResponse | FileResponse:
     if req.method != "GET":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
-    node_uuid:str = req.GET.get('node_uuid', None)
-    session_id:str = req.GET.get('session_id', None)
+    node_uuid: str = req.GET.get('node_uuid', None)
+    session_id: str = req.GET.get('session_uuid', None)
     if not node_uuid or not session_id:
         return ResponseJson({
             "status": -1,
@@ -105,7 +113,7 @@ def load_terminal_session_record(req: HttpRequest) -> HttpResponse | FileRespons
             'msg': "节点不存在"
         }, 404)
     node_record = os.path.join(apps.get_app_config('node_manager').terminal_record_save_dir, node_uuid)
-    session_file = os.path.join(node_record, session_id+".txt")
+    session_file = os.path.join(node_record, session_id + ".txt")
     if not os.path.exists(session_file):
         return ResponseJson({
             "status": 0,
