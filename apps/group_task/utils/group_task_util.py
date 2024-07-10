@@ -4,11 +4,9 @@ from datetime import datetime
 from uuid import UUID
 
 from asgiref.sync import async_to_sync
-from django.db.models import QuerySet
-from django.forms import model_to_dict
 
 from apps.group_task.models import GroupTask_Cycle, GroupTask
-from apps.node_manager.models import Node, Node_Group
+from apps.node_manager.models import Node_Group
 from apps.node_manager.utils.groupUtil import GroupUtil
 
 day_mapping = {
@@ -154,7 +152,7 @@ def task_should_not_push(task: GroupTask) -> bool:
     if task.exec_type == 'date-time':
         return task.that_time.timestamp() < datetime.now().timestamp()  # 如果是定时任务，检查是否已经过去
     if task.exec_count is not None:
-        return task.exec_count <= 0
+        return int(task.exec_count) <= 0
 
     # 如果不是定时任务，或者定时任务还没到时间，这里可以添加其他条件，或者直接返回False
     return False
@@ -173,3 +171,8 @@ def by_key_get_uuid(key: str) -> UUID:
     # 从哈希字节生成 UUID
     generated_uuid = uuid.UUID(bytes=hash_bytes)
     return generated_uuid
+
+
+def write_file(file_path, content):
+    with open(file_path, 'a+', encoding='utf-8') as file:
+        file.write(content)

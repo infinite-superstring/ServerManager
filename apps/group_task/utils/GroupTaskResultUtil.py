@@ -8,6 +8,7 @@ from apps.group_task.entity.TaskRuntime import TaskRuntime
 from apps.group_task.models import GroupTask, Group_Task_Audit
 from apps.group_task.utils import group_task_util
 from apps.node_manager.models import Node
+from util.logger import Log
 
 
 class GroupTaskResultUtil:
@@ -39,14 +40,23 @@ class GroupTaskResultUtil:
         result_uuid = group_task_util.by_key_get_uuid(
             task_uuid + self.__node_uuid + process_id
         )
+        task: GroupTask = await GroupTask.objects.aget(uuid=task_uuid)
+        if task.exec_count:
+            if int(task.exec_count) <= 0:
+                task.enable = False
+                await task.asave()
+                Log.warning(f'任务:{task.name}执行次数为{task.exec_count},已执行完成,并关闭任务!')
+                return
         audit = await Group_Task_Audit. \
             objects. \
-            acreate(group_task=await GroupTask.objects.aget(uuid=task_uuid),
+            acreate(group_task=task,
                     node=await Node.objects.aget(uuid=self.__node_uuid), statr_time=start_time,
                     end_time=None, uuid=result_uuid, )
         cache.set(f'group_task_executing_{task_uuid}_{self.__node_uuid}', start_time, 60)
-        file_stream = open(os.path.join(task_dir, str(result_uuid)), 'w+', encoding='utf-8')
-        self.__map[process_id] = TaskRuntime(audit, result_uuid, task_dir, start_time, file_stream)
+        file_path = os.path.join(task_dir, str(result_uuid))
+        file_stream = None
+        # file_stream = open(file_path, 'a+', encoding='utf-8')
+        self.__map[process_id] = TaskRuntime(audit, result_uuid, task_dir, start_time, file_stream, file_path)
 
     async def handle_task_output(self, data: dict):
         """
@@ -57,7 +67,7 @@ class GroupTaskResultUtil:
         start_time = cache.get(f'group_task_executing_{task_uuid}_{self.__node_uuid}')
         m: TaskRuntime = self.__map.get(process_id)
         if not m:
-            raise ValueError('任务不存在')
+            raise ValueError('任务不存在' + process_id)
         if not start_time:
             m.group_task_audit.status = 'error'
             m.group_task_audit.end_time = datetime.now()
@@ -65,8 +75,14 @@ class GroupTaskResultUtil:
         cache.set(f'group_task_executing_{task_uuid}_{self.__node_uuid}', start_time, 60)
         line = data.get('line')
         if line:
+            group_task_util.write_file(m.file_path, f'{line}\n')
+            # with open(m.file_path, 'a+', encoding='utf-8') as stream:
+            #     stream.write(f'{line}\n')
+            #     print(stream.readline())
+            #     stream.close()
+            # m.file_stream.write(f'{line}\n')
+            # print(m.file_stream.readline())
             print(line)
-            m.file_stream.write(f'{line}\n')
 
     async def handle_task_stop(self, data: dict):
         """
@@ -77,8 +93,9 @@ class GroupTaskResultUtil:
         code = data.get('code')
         timestamp = data.get('timestamp')
         m: TaskRuntime = self.__map.get(process_id)
-        m.file_stream.write(f"[进程返回值:{code}]")
-        m.file_stream.close()
+        group_task_util.write_file(m.file_path, f"[进程返回值:{code}]")
+        # m.file_stream.write(f"[进程返回值:{code}]")
+        # m.file_stream.close()
         m.group_task_audit.status = code
         m.group_task_audit.end_time = datetime.fromtimestamp(timestamp)
         await m.group_task_audit.asave()

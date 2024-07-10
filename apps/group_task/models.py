@@ -19,6 +19,7 @@ class GroupTask(models.Model):
     exec_count = models.IntegerField("执行次数", null=True)
     command = models.TextField("执行命令", max_length=8192)
     enable = models.BooleanField("启用", default=True)
+    # end = models.BooleanField("结束", default=False)
     exec_path = models.CharField("执行路径", max_length=256, null=True)
 
     class Meta:

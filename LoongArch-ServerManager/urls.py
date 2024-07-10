@@ -151,4 +151,5 @@ urlpatterns = [
     path('api/group_task/getList', group_task.get_list),  # 获取集群任务列表(GET)
     path('api/group_task/enableDisable', group_task.change_enable),  # 启用或禁用用户(PUT)
     path('api/group_task/deleteByUuid', group_task.delete_by_uuid),  # 删除任务(DELETE)
+    path('api/group_task/get_task_detailed', group_task.get_task_detailed),  # 获取任务详细信息(GET))
 ]

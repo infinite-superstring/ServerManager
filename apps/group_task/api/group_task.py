@@ -10,6 +10,7 @@ from apps.group_task.utils import group_task_util
 from apps.node_manager.models import Node_Group, Node
 from util import result, pageUtils
 from util.Request import RequestLoadJson
+from util.logger import Log
 
 
 def create_group_task(req: HttpRequest):
@@ -47,8 +48,7 @@ def create_group_task(req: HttpRequest):
     if execCount:
         if int(execCount) < 1:
             return result.error('执行次数不能小于1')
-    if execCount:
-        g_task.exec_count = execCount
+        g_task.exec_count = int(execCount)
     if execType == 'date-time':
         execTime: str = data.get('execTime', '')
         if not execTime:
@@ -163,9 +163,9 @@ def by_node_uuid_get_result(req: HttpRequest):
     group_task_audit = Group_Task_Audit.objects.filter(
         node__uuid=node_uuid,
         group_task__uuid=task_uuid,
+        end_time__isnull=False
 
     ).order_by('-statr_time')[:int(show_count)]
-    # end_time__isnull = False
     return result.success(data=[
         {
             'id': t.uuid,
@@ -179,7 +179,7 @@ def by_node_uuid_get_result(req: HttpRequest):
         for t in group_task_audit])
 
 
-def get_result_detail(req: HttpRequest):
+def get_result_detail(req: HttpRequest, char_set='utf-8'):
     if req.method != 'GET':
         return result.api_error('请求方式错误', http_code=405)
     uuid = req.GET.get('uuid', '')
@@ -192,11 +192,15 @@ def get_result_detail(req: HttpRequest):
     if file_size > 3 * 1024 * 1024:
         return result.error(msg='文件过大，请下载查看')
     commandLine = []
-    with open(file_path, 'r+', encoding='utf-8') as file_stream:
-        line = file_stream.readline()
-        while line:
-            commandLine.append(line)
+    try:
+        with open(file_path, 'r+', encoding=char_set) as file_stream:
             line = file_stream.readline()
+            while line:
+                commandLine.append(line)
+                line = file_stream.readline()
+    except UnicodeError as e:
+        Log.error("编码错误,尝试更换编码")
+        return get_result_detail(req, 'gbk')
     return result.success(commandLine)
 
 
@@ -219,6 +223,8 @@ def change_enable(req: HttpRequest):
     g.enable = not g.enable
     g.save()
     if g.enable:
+        if g.exec_count and int(g.exec_count) <= 0:
+            return result.error('任务次数已执行完成')
         group_task_util.handle_change_task(t='add', group=g.node_group, task=g)
     else:
         group_task_util.handle_change_task(t='remove', group=g.node_group, task_uuid=g.uuid, task=g)
@@ -270,38 +276,15 @@ async def by_node_uuid_get_task(node_uuid: str, group: Node_Group = None):
         group_tasks.append(await group_task_util.get_the_task_of_node(task=task))
     return group_tasks
 
-#
-# async def handle_group_task(data: dict):
-#     """
-#     用于处理 集群 任务 返回结果
-#
-#     """
-#     save_base_dir: str = apps.get_app_config('node_manager').group_task_result_save_dir
-#     task_uuid = data.get('uuid')
-#     node_uuid = data.get('node_uuid')
-#
-#     task_start_time = cache.get(f'group_task_executing_{task_uuid}_{node_uuid}') if \
-#         cache.get(f'group_task_executing_{task_uuid}_{node_uuid}') else \
-#         datetime.now()
-#     result_uuid = group_task_util.by_key_get_uuid(
-#         task_uuid + node_uuid + task_start_time
-#     )
-#     task_dir = os.path.join(
-#         save_base_dir,
-#         task_uuid,
-#         node_uuid
-#     )
-#     if data['mode'] == 'process_statr':
-#         if not os.path.exists(task_dir):
-#             os.makedirs(task_dir)
-#         Group_Task_Audit.objects.create(
-#             group_task=GroupTask.objects.get(uuid=task_uuid),
-#             node=Node.objects.get(uuid=node_uuid),
-#             statr_time=task_start_time,
-#             end_time=None,
-#             uuid=result_uuid,
-#         )
-#         pass
-#         cache.set(f'group_task_executing_{task_uuid}_{node_uuid}', task_start_time, 60)
-#         task_result = open(os.path.join(task_dir, str(result_uuid)), 'w+')
-#
+
+def get_task_detailed(req: HttpRequest):
+    """
+    获取任务详情
+    """
+    if req.method != 'GET':
+        return result.api_error('请求方式错误', http_code=405)
+    uuid = req.GET.get('uuid', '')
+    task: GroupTask = GroupTask.objects.filter(uuid=uuid).first()
+    if not task:
+        return result.error('任务不存在')
+    return result.success(data=async_to_sync(group_task_util.get_the_task_of_node)(task=task))
