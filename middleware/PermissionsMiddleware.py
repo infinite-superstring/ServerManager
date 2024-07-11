@@ -38,10 +38,10 @@ class PermissionsMiddleware(MiddlewareMixin):
                 "/api/node_manager/editNode",
                 "/api/node_manager/resetToken"
             ): "editNode",
-            "/api/node_manager/getNodeList": ['editNode', 'deleteNode', 'addNode', 'viewAllNode'],
-            "/api/node_manager/getBaseNodeList": ['editNodeGroup', 'editNode', 'addNode', 'viewAllNode'],
-            "/api/node_manager/getNodeInfo": ['editNodeGroup', 'editNode', 'addNode', 'viewAllNode'],
-            "/api/node_manager/node_tag/search_tag": ['addNode', 'editNode'],
+            "/api/node_manager/node_tag/search_tag": 'editNode',
+            "/api/node_manager/getNodeList": ['editNode', 'viewAllNode'],
+            "/api/node_manager/getBaseNodeList": ['editNodeGroup', 'editNode', 'viewAllNode'],
+            "/api/node_manager/getNodeInfo": ['editNodeGroup', 'editNode', 'viewAllNode'],
             # 集群/节点组
             "/api/node_manager/node_group/.*": "editNodeGroup",
             # 集群 - 执行

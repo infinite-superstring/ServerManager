@@ -39,11 +39,11 @@ class Command(BaseCommand):
                 'description': '允许用户查看网站监控',
                 'translate': '查看网站监控'
             },
-            {
-                'permission': 'clusterExecuteCommand',
-                'description': '允许用户执行集群命令',
-                'translate': '集群命令'
-            },
+            # {
+            #     'permission': 'clusterExecuteCommand',
+            #     'description': '允许用户执行集群命令',
+            #     'translate': '集群命令'
+            # },
             {
                 'permission': 'clusterTask',
                 'description': '允许用户添加/修改/删除集群任务',
@@ -184,11 +184,11 @@ class Command(BaseCommand):
                 'value': 5
             },
             {
-                'Settings': "security.security.password_level",
-                'value': 0
+                'Settings': "security.password_level",
+                'value': 1
             },
             {
-                'Settings': "security.security.force_otp_bind",
+                'Settings': "security.force_otp_bind",
                 'value': False
             },
             {
