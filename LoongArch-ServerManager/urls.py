@@ -46,6 +46,7 @@ urlpatterns = [
     path('api/auth/logout', user_auth.AuthOutLog),  # 用户登出（ALL）
     path('api/auth/getUserLoginStatus', user_auth.getLoginStatus),  # 获取用户登录状态 (ALL)
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
+    path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
     path('api/auth/OTP/bind/sendEmailCode', otp_bind.send_email_code),  # 发送邮箱验证码
     path('api/auth/OTP/bind/verifyEmailCode', otp_bind.check_emali_code),  # 检查邮箱验证码
     path('api/auth/OTP/bind/verifyOTP_Code', otp_bind.bind_otp_check),  # 检查
@@ -147,9 +148,10 @@ urlpatterns = [
     path('api/webStatus/getSiteNames', webStatus.getSiteNames),  # 获取站点名称列表(GET)')
     path('api/webStatus/getLog', webStatus.getLog),  # 获取站点名称列表(GET)')
     # 集群任务
-    path('api/group_task/add', group_task.create_group_task),  # 添加任务(POST)
+    path('api/group_task/operation', group_task.create_group_task),  # 添加|修改任务(POST|PUT)
     path('api/group_task/getList', group_task.get_list),  # 获取集群任务列表(GET)
     path('api/group_task/enableDisable', group_task.change_enable),  # 启用或禁用用户(PUT)
     path('api/group_task/deleteByUuid', group_task.delete_by_uuid),  # 删除任务(DELETE)
     path('api/group_task/get_task_detailed', group_task.get_task_detailed),  # 获取任务详细信息(GET))
+    path('api/group_task/get_task_by_uuid', group_task.get_task_by_uuid),  # 获取任务详细信息(GET))
 ]

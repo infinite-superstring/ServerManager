@@ -91,9 +91,12 @@ class GroupTaskResultUtil:
         task_uuid = data.get('uuid')
         process_id = data.get('mark')
         code = data.get('code')
+        error = data.get('error')
         timestamp = data.get('timestamp')
         m: TaskRuntime = self.__map.get(process_id)
         group_task_util.write_file(m.file_path, f"[进程返回值:{code}]")
+        if error:
+            group_task_util.write_file(m.file_path, f'\n执行命令时发生错误:{error}')
         # m.file_stream.write(f"[进程返回值:{code}]")
         # m.file_stream.close()
         m.group_task_audit.status = code

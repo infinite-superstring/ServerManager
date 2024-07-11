@@ -145,6 +145,7 @@ def get_email_content(msg: MessageBody, on_web_page=False):
     with open('apps/message/emailTemplates/emailTemplates.html', 'r', encoding='utf-8') as f:
         html = f.read()
         # 解析HTML
+        html = html.replace('{{site_name}}', config().base.website_name)
         html = html.replace('{{title}}', msg.title)
         html = html.replace('{{content}}', content)
         html = html.replace('{{date}}', str(datetime.now()))

@@ -17,7 +17,7 @@ def create_group_task(req: HttpRequest):
     """
     创建集群任务
     """
-    if req.method != 'POST':
+    if req.method != 'POST' and req.method != 'PUT':
         return result.api_error('请求方式错误', http_code=405)
     try:
         data = RequestLoadJson(req)
@@ -30,7 +30,7 @@ def create_group_task(req: HttpRequest):
     command: str = data.get('command', '')
     execPath: str = data.get('execPath', '')
     enable: bool = data.get('enable', False)
-    if GroupTask.objects.filter(name=taskName).exists():
+    if req.method != 'PUT' and GroupTask.objects.filter(name=taskName).exists():
         return result.error('任务名称已存在')
     if (not taskName or
             not group or
@@ -39,7 +39,13 @@ def create_group_task(req: HttpRequest):
         return result.error('请将参数填写完整')
     if execPath and not os.path.isabs(execPath):
         return result.error('执行路径格式错误')
-    g_task: GroupTask = GroupTask()
+    if req.method == 'PUT':
+        try:
+            g_task: GroupTask = GroupTask.objects.get(uuid=data.get('uuid', ''))
+        except GroupTask.DoesNotExist:
+            return result.error('任务不存在')
+    else:
+        g_task: GroupTask = GroupTask()
     g_task.name = taskName
     g_task.node_group_id = group
     g_task.exec_type = execType
@@ -70,7 +76,7 @@ def create_group_task(req: HttpRequest):
             return result.api_error('周期设置错误')
         cycle.save()
     group_task_util.handle_change_task(t='add', task=g_task)
-    return result.success(msg='添加成功')
+    return result.success(msg='操作完成')
 
 
 def get_list(req: HttpRequest):
@@ -287,4 +293,32 @@ def get_task_detailed(req: HttpRequest):
     task: GroupTask = GroupTask.objects.filter(uuid=uuid).first()
     if not task:
         return result.error('任务不存在')
-    return result.success(data=async_to_sync(group_task_util.get_the_task_of_node)(task=task))
+    data = async_to_sync(group_task_util.get_the_task_of_node)(task=task)
+    return result.success(data=data)
+
+
+def get_task_by_uuid(req: HttpRequest):
+    """
+    根据 uuid 获取任务
+    """
+    if req.method != 'GET':
+        return result.api_error('请求方式错误', http_code=405)
+    task: GroupTask = GroupTask.objects.filter(uuid=req.GET.get('uuid', '')).first()
+    if not task:
+        return result.error('任务不存在')
+    exec_cycle = {}
+    if task.exec_type == 'cycle':
+        exec_cycle = async_to_sync(group_task_util.getCycle)(task.uuid)
+    r_data = {
+        'taskName': task.name,
+        'group': task.node_group.id,
+        'execCount': task.exec_count,
+        'execType': task.exec_type,
+        'execTime': task.that_time,
+        'execInterval': task.interval,
+        'command': task.command,
+        'execPath': task.exec_path,
+        'enable': task.enable,
+        'execCycle': exec_cycle
+    }
+    return result.success(r_data)
