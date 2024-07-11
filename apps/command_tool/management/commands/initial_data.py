@@ -184,16 +184,16 @@ class Command(BaseCommand):
                 'value': 5
             },
             {
+                'Settings': "security.login_expiry",
+                'value': 1
+            },
+            {
                 'Settings': "security.password_level",
                 'value': 1
             },
             {
                 'Settings': "security.force_otp_bind",
                 'value': False
-            },
-            {
-                'Settings': "security.login_expiry",
-                'value': 5
             },
             {
                 'Settings': "node_usage.data_storage_time",

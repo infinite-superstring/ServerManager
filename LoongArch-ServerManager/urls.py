@@ -95,13 +95,12 @@ urlpatterns = [
     path('api/admin/auditAndLogger/nodeSessionLog', auditAndLogger.get_node_session_log),  # 获取节点会话记录(POST)
     path('api/admin/auditAndLogger/terminalRecord/loadNodeList', terminal_record.load_node_list),  # 加载节点列表
     path('api/admin/auditAndLogger/terminalRecord/loadUserList', terminal_record.load_terminal_user_list),  # 加载终端用户列表
-    path('api/admin/auditAndLogger/terminalRecord/loadSessionList', terminal_record.load_terminal_session_list),
+    path('api/admin/auditAndLogger/terminalRecord/loadSessionList', terminal_record.load_terminal_session_list),  # 加载会话列表
+    path('api/admin/auditAndLogger/terminalRecord/downloadSessionRecord', terminal_record.load_terminal_session_record),  # 下载会话记录
     path('api/admin/auditAndLogger/groupTask/getNameList', group_task.get_task_name),  # 获取集群任务名称列表(GET)
     path('api/admin/auditAndLogger/groupTask/get_node', group_task.by_task_uuid_get_node),  # 根据UUID获取节点列表(GET)
     path('api/admin/auditAndLogger/groupTask/get_result', group_task.by_node_uuid_get_result),  # 获取结果唯一ID(GET)
     path('api/admin/auditAndLogger/groupTask/get_result_detail', group_task.get_result_detail),  # 根据结果唯一ID获取结果(GET)
-    # 加载终端会话列表
-    path('api/admin/auditAndLogger/terminalRecord/downloadSessionRecord', terminal_record.load_terminal_session_record),
     # 加载终端会话记录
     # 系统设置
     path('api/admin/settings/getSettings', setting.getSetting),  # 获取设置信息

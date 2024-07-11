@@ -15,7 +15,7 @@ class MessageClient(AsyncWebsocketConsumer):
         await self.send(json.dumps(data, cls=ComplexEncoder))
 
     async def connect(self):
-        self.__userID = self.scope['session']['userID']
+        self.__userID = self.scope['session'].get('userID')
         if not self.__userID:
             await self.close(0)
             return

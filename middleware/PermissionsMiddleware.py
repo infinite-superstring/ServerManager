@@ -1,6 +1,7 @@
 import re
 import fnmatch
 
+from django.shortcuts import redirect
 from django.utils.deprecation import MiddlewareMixin
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Response import ResponseJson
@@ -39,11 +40,16 @@ class PermissionsMiddleware(MiddlewareMixin):
                 "/api/node_manager/resetToken"
             ): "editNode",
             "/api/node_manager/node_tag/search_tag": 'editNode',
-            "/api/node_manager/getNodeList": ['editNode', 'viewAllNode'],
+            "/api/node_manager/getNodeList": ['editNode', 'viewAllNode', "editNodeGroup"],
             "/api/node_manager/getBaseNodeList": ['editNodeGroup', 'editNode', 'viewAllNode'],
             "/api/node_manager/getNodeInfo": ['editNodeGroup', 'editNode', 'viewAllNode'],
             # 集群/节点组
-            "/api/node_manager/node_group/.*": "editNodeGroup",
+            "/api/node_manager/node_group/getGroupList": ["editNodeGroup", 'clusterTask', "clusterExecuteCommand"],
+            (
+                "/api/node_manager/node_info/createGroup",
+                "/api/node_manager/node_group/delGroup"
+                "/api/node_manager/node_group/getGroupById"
+            ): "editNodeGroup",
             # 集群 - 执行
             "/api/node_manager/cluster/execute/.*": "clusterExecuteCommand",
             # 集群 - 任务
@@ -60,6 +66,7 @@ class PermissionsMiddleware(MiddlewareMixin):
             "/api/webStatus/getSiteNames": ['viewWebStatus', "viewAudit"],
             "/api/webStatus/getLog": ['viewWebStatus', "viewAudit"],
             # 审计与日志
+            "/api/admin/auditAndLogger/groupTask/.*": "clusterTask",
             "/api/admin/auditAndLogger/.*": "viewAudit",
             # 系统设置
             "/api/admin/settings/.*": "changeSettings",
@@ -81,6 +88,10 @@ class PermissionsMiddleware(MiddlewareMixin):
             return
 
         user = get_user_by_id(userId)
+
+        if not user:
+            request.session.clear()
+            return redirect("/login")
 
         # 无权限时
         if not user.permission_id and path_info in accessPermission.keys():
