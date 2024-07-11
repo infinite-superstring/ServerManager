@@ -27,12 +27,15 @@ def get_all_permission_group_name():
 class groupPermission:
     __group: Permission_groups
 
-    def __init__(self, gid: int):
+    def __init__(self, group: int | Permission_groups):
         """
-        :param gid: 权限组id
+        :param group: 权限组id
         """
         try:
-            self.__group = Permission_groups.objects.get(id=gid)
+            if isinstance(group, Permission_groups):
+                self.__group = group
+            else:
+                self.__group = Permission_groups.objects.get(id=group)
         except Permission_groups.DoesNotExist:
             raise RuntimeError("The permission group does not exist")
 
@@ -96,6 +99,10 @@ class groupPermission:
         :return: bool
         """
         return permission_name in self.get_permissions_list()
+
+    def is_superuser(self) -> bool:
+        print(self.check_group_permission('all'))
+        return self.check_group_permission('all')
 
     def is_disable(self) -> bool:
         return self.__group.disable

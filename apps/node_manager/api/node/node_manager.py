@@ -10,12 +10,38 @@ from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists,
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from apps.auth.utils.otpUtils import verify_otp_for_request
+from apps.permission_manager.util.permission import groupPermission
+from apps.user_manager.util.userUtils import get_user_by_id
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
 from util.passwordUtils import encrypt_password
 
+
+def __advanced_search(search: str):
+    """
+    高级搜索节点列表
+    """
+    normal_search_info, tags, groups, status = extract_search_info(search)
+    query = Q(name__icontains=normal_search_info) if search else Q()
+    # 如果tags非空，则添加tags的过滤条件
+    if tags:
+        query &= Q(tags__tag_name__in=tags)
+    # 如果groups非空，则添加groups的过滤条件
+    if groups:
+        query &= Q(group__name__in=groups)
+    # 搜索节点状态
+    match status:
+        case "online":
+            query |= Q(node_baseinfo__online=True)
+        case "offline":
+            query |= Q(node_baseinfo__online=False)
+        case "uninitialized":
+            query |= Q(node_baseinfo__online=None)
+        case "warning":
+            query |= Q(node_event__level__in=["Warning", "Error"], node_event__end_time=None)
+    return Node.objects.filter(query)
 
 def add_node(req):
     """添加节点"""
@@ -30,6 +56,8 @@ def add_node(req):
     node_description = req_json.get('node_description')
     node_tags = req_json.get('node_tags')
     node_group = req_json.get('node_group')
+    uid = req.session['userID']
+    user = get_user_by_id(uid)
     if not node_name:
         return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     if node_name_exists(node_name):
@@ -43,6 +71,7 @@ def add_node(req):
         description=node_description,
         token_hash=hashed_token,
         token_salt=salt,
+        creator=user
     )
     if node_group:
         node.group = get_node_group_by_id(node_group)
@@ -78,7 +107,13 @@ def del_node(req):
     if not verify_otp_for_request(req, code):
         return ResponseJson({"status": 0, "msg": "操作验证失败，请检查您的手机令牌"})
     if node_uuid_exists(node_id):
-        get_node_by_uuid(node_id).delete()
+        uid = req.session['userID']
+        user = get_user_by_id(uid)
+        group_utils = groupPermission(user.permission)
+        node = get_node_by_uuid(node_id)
+        if not group_utils.is_superuser() and node.creator != user:
+            return ResponseJson({'status': 0, 'msg': "无权限: 无法删除他人的节点"})
+        node.delete()
         return ResponseJson({"status": 1, "msg": "节点已删除"})
     else:
         return ResponseJson({"status": 0, "msg": "节点不存在"})
@@ -95,14 +130,19 @@ def reset_node_token(req):
         return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
     node_id = req_json.get('uuid')
     code = req_json.get('code')
+    uid = req.session['userID']
+    user = get_user_by_id(uid)
+    group_utils = groupPermission(user.permission)
     if node_id is None or code is None:
         return ResponseJson({"status": -1, "msg": "参数不完整"})
     if not verify_otp_for_request(req, code):
         return ResponseJson({"status": 0, "msg": "操作验证失败，请检查您的手机令牌"})
     if not node_uuid_exists(node_id):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
-    token = secrets.token_hex(32)
     node = get_node_by_uuid(node_id)
+    if not group_utils.is_superuser() and node.creator != user:
+       return ResponseJson({'status': 0, 'msg': "无权限:无法删除他人的节点"})
+    token = secrets.token_hex(32)
     hashed_token, salt = encrypt_password(token)
     node.token_hash = hashed_token
     node.token_salt = salt
@@ -128,25 +168,12 @@ def get_node_list(req):
     page = req_json.get("page", 1)
     pageSize = req_json.get("pageSize", 20)
     search = req_json.get("search", "")
-    normal_search_info, tags, groups, status = extract_search_info(search)
-    query = Q(name__icontains=normal_search_info) if search else Q()
-    # 如果tags非空，则添加tags的过滤条件
-    if tags:
-        query &= Q(tags__tag_name__in=tags)
-    # 如果groups非空，则添加groups的过滤条件
-    if groups:
-        query &= Q(group__name__in=groups)
-    # 搜索节点状态
-    match status:
-        case "online":
-            query |= Q(node_baseinfo__online=True)
-        case "offline":
-            query |= Q(node_baseinfo__online=False)
-        case "uninitialized":
-            query |= Q(node_baseinfo__online=None)
-        case "warning":
-            query |= Q(node_event__level__in=["Warning", "Error"], node_event__end_time=None)
-    result = Node.objects.filter(query)
+    uid = req.session['userID']
+    user = get_user_by_id(uid)
+    group_utils = groupPermission(user.permission)
+    result = __advanced_search(search)
+    if not group_utils.is_superuser():
+        result = result.filter(creator=user)
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
         for item in pageQuery:
@@ -193,25 +220,12 @@ def get_base_node_list(req):
     page = req_json.get("page", 1)
     pageSize = req_json.get("pageSize", 20)
     search = req_json.get("search", "")
-    normal_search_info, tags, groups, status = extract_search_info(search)
-    query = Q(name__icontains=normal_search_info) if search else Q()
-    # 如果tags非空，则添加tags的过滤条件
-    if tags:
-        query &= Q(tags__tag_name__in=tags)
-    # 如果groups非空，则添加groups的过滤条件
-    if groups:
-        query &= Q(group__name__in=groups)
-    # 搜索节点状态
-    match status:
-        case "online":
-            query |= Q(node_baseinfo__online=True)
-        case "offline":
-            query |= Q(node_baseinfo__online=False)
-        case "uninitialized":
-            query |= Q(node_baseinfo__online=None)
-        case "warning":
-            query |= Q(node_event__level__in=["Warning", "Error"], node_event__end_time=None)
-    result = Node.objects.filter(query)
+    uid = req.session['userID']
+    user = get_user_by_id(uid)
+    group_utils = groupPermission(user.permission)
+    result = __advanced_search(search)
+    if not group_utils.is_superuser():
+        result.filter(creator=user)
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
         for item in pageQuery:
@@ -245,7 +259,12 @@ def get_node_info(req):
         return ResponseJson({"status": -1, "msg": "参数不完整"})
     if not node_uuid_exists(node_id):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
+    uid = req.session['userID']
+    user = get_user_by_id(uid)
+    group_utils = groupPermission(user.permission)
     node = get_node_by_uuid(node_id)
+    if not group_utils.is_superuser() and node.creator != user:
+       return ResponseJson({'status': 0, 'msg': "无权限: 无法获取他人的节点信息"}, 403)
     return ResponseJson({
         "status": 1,
         "data": {
@@ -276,7 +295,12 @@ def edit_node(req):
         return ResponseJson({"status": -1, "msg": "参数不完整"})
     if not node_uuid_exists(node_id):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
+    uid = req.session['userID']
+    user = get_user_by_id(uid)
+    group_utils = groupPermission(user.permission)
     node = get_node_by_uuid(node_id)
+    if not group_utils.is_superuser() and node.creator != user:
+       return ResponseJson({'status': 0, 'msg': "无权限: 无法修改他人的节点"})
     if node_name is not None and node_name != node.name:
         node.name = node_name
     if node_description is not None and node_description != node.description:

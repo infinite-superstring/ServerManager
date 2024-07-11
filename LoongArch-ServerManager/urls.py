@@ -102,7 +102,7 @@ urlpatterns = [
     path('api/admin/auditAndLogger/groupTask/get_result', group_task.by_node_uuid_get_result),  # 获取结果唯一ID(GET)
     path('api/admin/auditAndLogger/groupTask/get_result_detail', group_task.get_result_detail),  # 根据结果唯一ID获取结果(GET)
     # 加载终端会话列表
-    path('api/admin/auditAndLogger/terminalRecord/loadSessionRecord', terminal_record.load_terminal_session_record),
+    path('api/admin/auditAndLogger/terminalRecord/downloadSessionRecord', terminal_record.load_terminal_session_record),
     # 加载终端会话记录
     # 系统设置
     path('api/admin/settings/getSettings', setting.getSetting),  # 获取设置信息

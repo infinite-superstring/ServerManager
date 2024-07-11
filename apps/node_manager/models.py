@@ -21,6 +21,7 @@ class Node(models.Model):
     tags = models.ManyToManyField('Node_Tag', related_name='tags')
     # 节点分组
     group = models.ForeignKey('Node_Group', on_delete=models.DO_NOTHING, null=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'node_list'
