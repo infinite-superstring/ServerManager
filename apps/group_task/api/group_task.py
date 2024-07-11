@@ -1,16 +1,22 @@
 import os.path
-
-from django.apps import apps
 from datetime import datetime
+from typing import Callable
+
 from asgiref.sync import async_to_sync
+from django.apps import apps
 from django.db.models import QuerySet
 from django.http import HttpRequest
+
 from apps.group_task.models import GroupTask, Group_Task_Audit
 from apps.group_task.utils import group_task_util
 from apps.node_manager.models import Node_Group, Node
+from apps.setting.entity.Config import config
 from util import result, pageUtils
 from util.Request import RequestLoadJson
 from util.logger import Log
+
+# 获取配置
+config: Callable[[], config] = apps.get_app_config('setting').get_config
 
 
 def create_group_task(req: HttpRequest):
@@ -37,6 +43,9 @@ def create_group_task(req: HttpRequest):
             not execType or
             not command):
         return result.error('请将参数填写完整')
+    command_list = config().terminal_audit.disable_command_list
+    if not group_task_util.command_legal(command=command, command_list=command_list.split('\n')):
+        return result.error('禁用命令不可执行')
     if execPath and not os.path.isabs(execPath):
         return result.error('执行路径格式错误')
     if req.method == 'PUT':
@@ -59,7 +68,10 @@ def create_group_task(req: HttpRequest):
         execTime: str = data.get('execTime', '')
         if not execTime:
             return result.error('请选择执行时间')
-        date_time_exec_time = datetime.strptime(execTime, '%Y-%m-%dT%H:%M')
+        try:
+            date_time_exec_time = datetime.strptime(execTime, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            date_time_exec_time = datetime.strptime(execTime, '%Y-%m-%d %H:%M:%S')
         if date_time_exec_time.timestamp() < datetime.now().timestamp():
             return result.error('执行时间不能小于当前时间')
         g_task.that_time = date_time_exec_time
@@ -317,3 +329,24 @@ def get_task_by_uuid(req: HttpRequest):
         'execCycle': exec_cycle
     }
     return result.success(r_data)
+
+
+def command_legal(req: HttpRequest):
+    """
+    命令是否合法
+    """
+    if req.method != 'GET':
+        return result.api_error('请求方式错误', http_code=405)
+    disable_command_list: [list[str]] = config().terminal_audit.disable_command_list.split('\n')
+    warn_command_list: [list[str]] = config().terminal_audit.warn_command_list.split('\n')
+    command = req.GET.get('command', '')
+    if not command:
+        return result.error('请输入命令')
+
+    if not group_task_util.command_legal(command, warn_command_list):
+        # 命令在警告列表中
+        return result.success(data=False, msg='命令在警告列表中')
+    if not group_task_util.command_legal(command, disable_command_list):
+        # 命令在禁用列表中
+        return result.error('命令已禁用')
+    return result.success(data=True)

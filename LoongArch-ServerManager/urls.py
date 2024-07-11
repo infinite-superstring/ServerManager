@@ -63,7 +63,8 @@ urlpatterns = [
     path('api/admin/permissionManager/getPermissionList', permission_manager.getPermissionList),  # 获取权限列表（ALL）
     path('api/admin/permissionManager/addPermissionGroup', permission_manager.addPermissionGroup),  # 新增权限组列表 （POST）
     path('api/admin/permissionManager/delPermissionGroup', permission_manager.delPermissionGroup),  # 删除权限组 （POST）(OTP)
-    path('api/admin/permissionManager/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),  # 获取权限组信息 （POST）
+    path('api/admin/permissionManager/getPermissionGroupInfo', permission_manager.getPermissionGroupInfo),
+    # 获取权限组信息 （POST）
     path('api/admin/permissionManager/setPermissionGroup', permission_manager.setPermissionGroup),  # 设置权限组 （POST）
     # 节点管理器
     path('api/node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
@@ -95,8 +96,10 @@ urlpatterns = [
     path('api/admin/auditAndLogger/nodeSessionLog', auditAndLogger.get_node_session_log),  # 获取节点会话记录(POST)
     path('api/admin/auditAndLogger/terminalRecord/loadNodeList', terminal_record.load_node_list),  # 加载节点列表
     path('api/admin/auditAndLogger/terminalRecord/loadUserList', terminal_record.load_terminal_user_list),  # 加载终端用户列表
-    path('api/admin/auditAndLogger/terminalRecord/loadSessionList', terminal_record.load_terminal_session_list),  # 加载会话列表
-    path('api/admin/auditAndLogger/terminalRecord/downloadSessionRecord', terminal_record.load_terminal_session_record),  # 下载会话记录
+    path('api/admin/auditAndLogger/terminalRecord/loadSessionList', terminal_record.load_terminal_session_list),
+    # 加载会话列表
+    path('api/admin/auditAndLogger/terminalRecord/downloadSessionRecord', terminal_record.load_terminal_session_record),
+    # 下载会话记录
     path('api/admin/auditAndLogger/groupTask/getNameList', group_task.get_task_name),  # 获取集群任务名称列表(GET)
     path('api/admin/auditAndLogger/groupTask/get_node', group_task.by_task_uuid_get_node),  # 根据UUID获取节点列表(GET)
     path('api/admin/auditAndLogger/groupTask/get_result', group_task.by_node_uuid_get_result),  # 获取结果唯一ID(GET)
@@ -152,4 +155,5 @@ urlpatterns = [
     path('api/group_task/deleteByUuid', group_task.delete_by_uuid),  # 删除任务(DELETE)
     path('api/group_task/get_task_detailed', group_task.get_task_detailed),  # 获取任务详细信息(GET))
     path('api/group_task/get_task_by_uuid', group_task.get_task_by_uuid),  # 获取任务详细信息(GET))
+    path('api/group_task/command_legal', group_task.command_legal),  # 命令是否合法(GET)
 ]

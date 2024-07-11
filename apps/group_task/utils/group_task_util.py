@@ -1,7 +1,10 @@
 import hashlib
+import re
 import uuid
 from datetime import datetime
+from typing import Callable
 from uuid import UUID
+from django.apps import apps
 
 from asgiref.sync import async_to_sync
 
@@ -176,3 +179,16 @@ def by_key_get_uuid(key: str) -> UUID:
 def write_file(file_path, content):
     with open(file_path, 'a+', encoding='utf-8') as file:
         file.write(content)
+
+
+def command_legal(command: str, command_list: list[str]):
+    """
+    检查命令是否合法
+    """
+    for c in command_list:
+        if re.match(c, command):
+            return False
+    for c in command_list:
+        if c in command:
+            return False
+    return True
