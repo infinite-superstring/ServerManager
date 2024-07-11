@@ -188,6 +188,14 @@ class Command(BaseCommand):
                 'value': 5
             },
             {
+                'Settings': "security.security.password_level",
+                'value': 0
+            },
+            {
+                'Settings': "security.security.force_otp_bind",
+                'value': False
+            },
+            {
                 'Settings': "security.login_expiry",
                 'value': 5
             },
@@ -322,7 +330,7 @@ class Command(BaseCommand):
             Settings.objects.get_or_create(**item)
         Log.success("初始化设置成功")
 
-        defaultPassword = GeneratePassword(16)
+        defaultPassword = "123456"
 
         hashed_password, salt = encrypt_password(defaultPassword)
 
@@ -341,7 +349,8 @@ class Command(BaseCommand):
             email=adminUser['email'],
             password=adminUser['password'],
             passwordSalt=adminUser['passwordSalt'],
-            permission_id=Permission_Item.objects.filter(id=1).first().id
+            permission_id=Permission_Item.objects.filter(id=1).first().id,
+            isNewUser=False,
         )
         Log.success("用户初始化成功")
 
