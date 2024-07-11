@@ -40,11 +40,6 @@ class Command(BaseCommand):
                 'translate': '查看网站监控'
             },
             {
-                'permission': 'editWebStatus',
-                'description': '允许用户添加/修改/删除网站监控',
-                'translate': '管理网站监控'
-            },
-            {
                 'permission': 'clusterExecuteCommand',
                 'description': '允许用户执行集群命令',
                 'translate': '集群命令'
@@ -57,7 +52,7 @@ class Command(BaseCommand):
             {
                 'permission': 'changeSettings',
                 'description': '允许用户更改系统设置',
-                'translate': '更改设备设置'
+                'translate': '更改系统设置'
             },
             {
                 'permission': 'manageUser',
@@ -86,7 +81,7 @@ class Command(BaseCommand):
             },
             {
                 'permission': 'editWebStatus',
-                'description': '允许用户编辑网站监控',
+                'description': '允许用户添加/修改/删除网站监控',
                 'translate': '管理网站监控'
             },
             {
@@ -103,6 +98,7 @@ class Command(BaseCommand):
         ]
 
         for item in PermissionItem:
+            print(item)
             Permission_Item.objects.get_or_create(**item)
         Log.success("权限项初始化完成")
 
