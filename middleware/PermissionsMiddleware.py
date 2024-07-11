@@ -21,6 +21,8 @@ class PermissionsMiddleware(MiddlewareMixin):
             "/api/auth/login",
             "/api/auth/nodeAuth",
             "/ws/node/node_client",
+            "/api/settings/getServerConfig",
+            "/api/auth/getUserLoginStatus"
         ]
 
         # 页面权限表
