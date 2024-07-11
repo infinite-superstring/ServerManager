@@ -30,6 +30,9 @@ class WebStatusConfig(AppConfig):
         scheduler.add_job(self.__start_monitor, IntervalTrigger(seconds=heartbeat))
         scheduler.start()
         Log.success("Web Status: Initialization complete")
+        auto_empty_log = BackgroundScheduler()
+        auto_empty_log.add_job(self.__auto_empty_log, IntervalTrigger(hours=1))
+        auto_empty_log.start()
 
     def __start_monitor(self):
         from apps.web_status.models import Web_Site
@@ -73,3 +76,7 @@ class WebStatusConfig(AppConfig):
                 # Log.debug(f'{host} 错误 {code}')
                 pass
             return
+
+    def __auto_empty_log(self):
+        from apps.web_status.models import Web_Site_Log
+        Web_Site_Log.objects.all().delete()

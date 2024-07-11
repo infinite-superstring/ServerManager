@@ -1,8 +1,10 @@
 import re
 from datetime import datetime
+
+from django.core.cache import cache
+
 from apps.web_status.models import Web_Site, Web_Site_Log, Web_Site_Abnormal_Log
 from util import httpCode
-from django.core.cache import cache
 
 
 def get_or_create_web_site_log(web_id):
