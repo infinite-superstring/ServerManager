@@ -16,7 +16,7 @@ from apps.user_manager.models import User
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from apps.user_manager.util.userUtils import uid_aexists, aget_user_by_id
 from apps.node_manager.utils.nodeEventUtil import createEvent, stopEvent, createPhase
-from permission_manager.util.permission import groupPermission
+from apps.permission_manager.util.permission import groupPermission
 from util.logger import Log
 
 
