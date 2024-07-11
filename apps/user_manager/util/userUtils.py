@@ -14,6 +14,14 @@ def get_user_by_id(uid) -> bool | User:
         return False
     return User.objects.get(id=uid)
 
+async def aget_user_by_id(uid) -> User:
+    """
+    根据用户id获取用户实例
+    :param uid:
+    :return: User
+    """
+    return User.objects.aget(id=uid)
+
 
 def get_user_by_username(username) -> User:
     return User.objects.get(userName=username)

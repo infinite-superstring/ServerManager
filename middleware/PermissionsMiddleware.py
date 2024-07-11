@@ -1,5 +1,7 @@
+import re
+import fnmatch
+
 from django.utils.deprecation import MiddlewareMixin
-from django.shortcuts import redirect
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Response import ResponseJson
 from apps.permission_manager.util.permission import groupPermission
@@ -16,44 +18,60 @@ class PermissionsMiddleware(MiddlewareMixin):
 
         # 忽略权限
         Ignore = [
-            "/login",
             "/api/auth/login",
             "/api/auth/nodeAuth",
             "/ws/node/node_client",
-            "/error/403"
         ]
 
         # 页面权限表
         accessPermission = {
-            "page": {
-                "/admin/users": "manageUsers",
-                "/admin/permission": "managePermissionGroups",
-                "/admin/audit": "viewAudit",
-                "/admin/settings": "changeSettings",
-            },
-            "api": {
-                "/admin/api/userManager/getUserList": "manageUsers",
-                "/admin/api/userManager/addUser": "manageUsers",
-                "/admin/api/userManager/delUser": "manageUsers",
-                "/admin/api/userManager/getUserPermission": "manageUsers",
-                "/admin/api/userManager/getUserInfo": "manageUsers",
-                "/admin/api/userManager/setUserInfo": "manageUsers",
-
-                "/admin/api/permissionManager/getPermissionGroups": "managePermissionGroups",
-                "/admin/api/permissionManager/getPermissionList": "managePermissionGroups",
-                "/admin/api/permissionManager/addPermissionGroup": "managePermissionGroups",
-                "/admin/api/permissionManager/delPermissionGroup": "managePermissionGroups",
-                "/admin/api/permissionManager/getPermissionGroupInfo": "managePermissionGroups",
-                "/admin/api/permissionManager/setPermissionGroup": "managePermissionGroups",
-
-                "/admin/api/auditAndLogger/audit": "viewAudit",
-                "/admin/api/auditAndLogger/accessLog": "viewAudit",
-                "/admin/api/auditAndLogger/fileChangeLog": "viewAudit",
-                "/admin/api/auditAndLogger/systemLog": "viewAudit",
-
-                "api/task/getDuty": 'viewDuty',
-
-            }
+            # 用户管理
+            "/api/admin/userManager/.*": "manageUser",
+            # 权限管理
+            "/api/admin/permissionManager/.*": "managePermissionGroup",
+            # 节点管理器
+            "/api/node_manager/addNode": "addNode",
+            (
+                "/api/node_manager/delNode",
+                "/api/node_manager/editNode",
+                "/api/node_manager/resetToken"
+            ): "editNode",
+            "/api/node_manager/getNodeList": ['editNode', 'deleteNode', 'addNode', 'viewAllNode'],
+            "/api/node_manager/getBaseNodeList": ['editNodeGroup', 'editNode', 'addNode', 'viewAllNode'],
+            "/api/node_manager/getNodeInfo": ['editNodeGroup', 'editNode', 'addNode', 'viewAllNode'],
+            "/api/node_manager/node_tag/search_tag": ['addNode', 'editNode'],
+            # 集群/节点组
+            "/api/node_manager/node_group/.*": "editNodeGroup",
+            # 集群 - 执行
+            "/api/node_manager/cluster/execute/.*": "clusterExecuteCommand",
+            # 集群 - 任务
+            "/api/group_task/.*": 'clusterTask',
+            # 节点信息
+            "/api/node_manager/node_info/.*": "editNode",
+            # 网站监控
+            "/api/webStatus/getList": "viewWebStatus",
+            (
+                "/api/webStatus/addWeb",
+                "/api/webStatus/delWeb",
+                "/api/webStatus/update"
+            ): "editWebStatus",
+            "/api/webStatus/getSiteNames": ['viewWebStatus', "viewAudit"],
+            "/api/webStatus/getLog": ['viewWebStatus', "viewAudit"],
+            # 审计与日志
+            "/api/admin/auditAndLogger/.*": "viewAudit",
+            # 系统设置
+            "/api/admin/settings/.*": "changeSettings",
+            # 巡检记录
+            (
+                "/api/patrol/addARecord",
+                "/api/patrol/getList"
+            ): "viewPatrol",
+            (
+                "/api/patrol/updateARecord",
+                "/api/patrol/deleteRecord"
+            ): "editPatrol",
+            # 值班记录
+            "/api/task/getDuty": 'viewDuty',
         }
 
         # 忽略权限过滤器
@@ -62,53 +80,37 @@ class PermissionsMiddleware(MiddlewareMixin):
 
         user = get_user_by_id(userId)
 
-        """
-            all = models.BooleanField("所有权限", default=False, null=True)
-            viewDevice = models.BooleanField("查看设备", default=False, null=True)
-            controllingDevice = models.BooleanField("控制设备", default=False, null=True)
-            changeDevicePowerState = models.BooleanField("开关机", default=False, null=True)
-            changeSettings = models.BooleanField("更改设置", default=False, null=True)
-            manageUsers = models.BooleanField("管理用户", default=False, null=True)
-            managePermissionGroups = models.BooleanField("管理权限组", default=False, null=True)
-            viewAudit = models.BooleanField("查看审计内容", default=False, null=True)
-            editAudit = models.BooleanField("编辑审计", default=False, null=True)
-        """
-
         # 无权限时
-        if not user.permission_id:
-            if path_info in accessPermission.get("api").keys():
-                return ResponseJson({"status": -1, "msg": "未授权访问-账户无权限"}, 403)
-            elif path_info in accessPermission.get("page").keys():
-                return redirect("/error/403")
+        if not user.permission_id and path_info in accessPermission.keys():
+            return ResponseJson({"status": -1, "msg": "未授权访问-账户无权限"}, 403)
 
-        gp = groupPermission(user.permission_id)
+        gp = groupPermission(user.permission)
 
         # 权限组被禁用时
-        if gp.is_disable():
-            if path_info in accessPermission.get("api").keys():
-                return ResponseJson({"status": -1, "msg": "未授权访问-组已禁用"}, 403)
-            elif path_info in accessPermission.get("page").keys():
-                return redirect("/error/403")
+        if gp.is_disable() and path_info in accessPermission.keys():
+            return ResponseJson({"status": -1, "msg": "未授权访问-组已禁用"}, 403)
 
-        # 拥有全部权限时
-        if gp.check_group_permission("all"):
+        # 是超级管理员时
+        if gp.is_superuser():
             return
 
-        # 检查API权限
-        if path_info in accessPermission.get("api").keys():
-            required = accessPermission.get("api").get(path_info)
+        for pattern, permission in accessPermission.items():
+            # 处理正则
+            if isinstance(pattern, str) and re.match(pattern, path_info):
+                return self.__check_permission(gp, permission)
+            # 处理元组
+            elif isinstance(pattern, tuple):
+                for p in pattern:
+                    if isinstance(p, str) and re.match(p, path_info):
+                        return self.__check_permission(gp, permission)
 
-            if required:
-                if gp.check_group_permission(required):
+    def __check_permission(self, gp, permission):
+        """检查是否拥有权限"""
+        if isinstance(permission, str) and not gp.check_group_permission(permission):
+            return ResponseJson({"status": -1, "msg": "未授权访问-无权限访问该API"}, 403)
+        elif isinstance(permission, list):
+            for p in permission:
+                if gp.check_group_permission(p):
                     return
-                else:
-                    return ResponseJson({"status": -1, "msg": "未授权访问-无权限访问该API"}, 403)
-
-        # 检查页面权限
-        elif path_info in accessPermission.get("page").keys():
-            required = accessPermission.get("page").get(path_info)
-            if required:
-                if required and gp.check_group_permission(required):
-                    return
-                else:
-                    return redirect("/error/403")
+            return ResponseJson({"status": -1, "msg": "未授权访问-无权限访问该API"}, 403)
+        return

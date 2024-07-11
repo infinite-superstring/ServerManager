@@ -14,8 +14,9 @@ from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
 from apps.user_manager.models import User
 from consumers.AsyncConsumer import AsyncBaseConsumer
-from apps.user_manager.util.userUtils import uid_aexists
+from apps.user_manager.util.userUtils import uid_aexists, aget_user_by_id
 from apps.node_manager.utils.nodeEventUtil import createEvent, stopEvent, createPhase
+from permission_manager.util.permission import groupPermission
 from util.logger import Log
 
 
@@ -52,6 +53,12 @@ class node_control(AsyncBaseConsumer):
             Log.info(f"节点{self.__node_uuid}不存在")
             return self.close(0)
         self.__node = await Node.objects.aget(uuid=self.__node_uuid)
+        creator = await sync_to_async(lambda: self.__node.creator)()
+        group_utils = groupPermission(await sync_to_async(lambda: self.__user.permission)())
+        is_superuser = await sync_to_async(group_utils.is_superuser)()
+        if not is_superuser and creator != self.__user:
+            Log.warning("非法访问：无权限")
+            return self.close(-1)
         # 加入组
         await self.channel_layer.group_add(
             f"NodeControl_{self.__node.uuid}",

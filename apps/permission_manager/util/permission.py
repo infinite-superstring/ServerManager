@@ -101,7 +101,6 @@ class groupPermission:
         return permission_name in self.get_permissions_list()
 
     def is_superuser(self) -> bool:
-        print(self.check_group_permission('all'))
         return self.check_group_permission('all')
 
     def is_disable(self) -> bool:

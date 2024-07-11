@@ -20,19 +20,29 @@ class Command(BaseCommand):
                 'translate': '所有权限'
             },
             {
-                'permission': 'visitAllNodes',
+                'permission': 'viewAllNode',
                 'description': '允许用户访问所有节点',
                 'translate': '访问所有节点'
             },
             {
-                'permission': 'addNode',
-                'description': '允许用户新增节点',
-                'translate': '新增节点'
+                'permission': 'editNode',
+                'description': '允许用户编辑节点',
+                'translate': '编辑节点'
             },
             {
                 'permission': 'editNodeGroup',
                 'description': '允许用户编排节点组',
                 'translate': '编辑节点组'
+            },
+            {
+                'permission': 'viewWebStatus',
+                'description': '允许用户查看网站监控',
+                'translate': '查看网站监控'
+            },
+            {
+                'permission': 'editWebStatus',
+                'description': '允许用户添加/修改/删除网站监控',
+                'translate': '管理网站监控'
             },
             {
                 'permission': 'clusterExecuteCommand',
@@ -45,18 +55,13 @@ class Command(BaseCommand):
                 'translate': '集群任务'
             },
             {
-                'permission': 'allocateNode',
-                'description': '允许用户分配节点',
-                'translate': '分配节点'
-            },
-            {
                 'permission': 'changeSettings',
-                'description': '允许用户更改LoongArch-Server-Manager设置',
+                'description': '允许用户更改系统设置',
                 'translate': '更改设备设置'
             },
             {
                 'permission': 'manageUser',
-                'description': '允许用户管理LoongArch-Server-Manager用户',
+                'description': '允许用户管理用户',
                 'translate': '管理用户'
             },
             {
@@ -70,11 +75,6 @@ class Command(BaseCommand):
                 'translate': '查看审计数据'
             },
             {
-                'permission': 'clearAudit',
-                'description': '允许用户清除审计数据',
-                'translate': '管理审计数据'
-            },
-            {
                 'permission': 'viewDuty',
                 'description': '允许用户查看值班记录',
                 'translate': '管理值班记录'
@@ -82,11 +82,21 @@ class Command(BaseCommand):
             {
                 'permission': 'viewWebStatus',
                 'description': '允许用户查看网站监控',
+                'translate': '查看网站监控'
+            },
+            {
+                'permission': 'editWebStatus',
+                'description': '允许用户编辑网站监控',
                 'translate': '管理网站监控'
             },
             {
                 "permission": "viewPatrol",
                 "description": "允许用户查看巡检记录",
+                "translate": "查看巡检记录",
+            },
+            {
+                "permission": "editPatrol",
+                "description": "允许用户维护巡检记录",
                 "translate": "管理巡检记录",
             },
 
