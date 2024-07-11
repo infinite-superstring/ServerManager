@@ -1,3 +1,8 @@
+from django.db.models import QuerySet
+
+from apps.audit.models import Node_Session_Log
+from apps.node_manager.models import Node, Node_BaseInfo, Node_Event
+from util import result
 from util.Response import *
 from util.Request import *
 from util.logger import Log
@@ -23,7 +28,22 @@ def get_overview(req: HttpRequest):
 
 def get_node_list(req: HttpRequest):
     """获取仪表盘用节点列表"""
-    pass
+    if req.method != 'GET':
+        return result.api_error('请求方式错误')
+    nodes: QuerySet[Node] = Node.objects.order_by('?')[:5]
+    r = []
+    for node in nodes:
+        node_log: Node_Session_Log = Node_Session_Log.objects.filter(node=node).order_by('-time').first()
+        node_base: Node_BaseInfo = Node_BaseInfo.objects.filter(node=node).first()
+        node_event: Node_Event = Node_Event.objects.filter(node=node).first()
+        r.append({
+            'uuid': node.uuid,
+            'name': node.name,
+            'auth_ip': node_log.ip,
+            'online': node_base.online,
+            'warning': node_event.level
+        })
+    return result.success(r)
 
 
 def get_statistics(req: HttpRequest):
