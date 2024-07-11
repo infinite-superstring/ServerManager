@@ -85,17 +85,12 @@ def get_list(req: HttpRequest):
     """
     if req.method != 'GET':
         return result.api_error('请求方式错误', http_code=405)
-    params = dict(req.GET)
-    page = params.get('page', 1)
-    page_size = params.get('pageSize', 20)
-    search = params.get('search', '')
-    query_results = GroupTask.objects.filter(
-        name__contains=search,
-        node_group__name__contains=search,
-        node_group__description__contains=search,
-    )
-    page_result: dict = pageUtils.get_page_content(query_results, page, page_size)
-    max_page = pageUtils.get_max_page(query_results.count(), page_size)
+    page = req.GET.get('page', 1)
+    page_size = req.GET.get('pageSize', 20)
+    search = req.GET.get('search', "")
+    query_results = GroupTask.objects.filter(name__contains=search)
+    page_result = pageUtils.get_page_content(query_results, int(page), int(page_size))
+    max_page = pageUtils.get_max_page(int(query_results.count()), int(page_size))
     r_list = []
     for g in page_result:
         node_group = Node_Group.objects.get(id=g.get('node_group_id'))

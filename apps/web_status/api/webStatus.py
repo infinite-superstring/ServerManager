@@ -21,10 +21,7 @@ def getList(req: HttpRequest):
     page = int(req.GET.get("page", 1))
     pageSize = int(req.GET.get("pageSize", 10))
     name = req.GET.get("name", "")
-    web_list = (Web_Site.objects.filter(
-        title__contains=name,
-        host__contains=name,
-        description__contains=name).order_by('id'))
+    web_list = Web_Site.objects.filter(title__contains=name,).order_by('id')
     count = web_list.count()
     web_list: QuerySet = pageUtils.get_page_content(web_list, int(page), int(pageSize))
     result = []

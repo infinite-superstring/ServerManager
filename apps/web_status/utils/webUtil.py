@@ -88,7 +88,7 @@ def createErrLog(web_id, status, error_info=None, start_time=None, end_time=None
             recent_log.save()
             return
 
-    if status == 200:
+    if status == 200 or status == '200':
         return
     web = Web_Site_Abnormal_Log()
     web.web_id = web_id
