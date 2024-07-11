@@ -39,9 +39,9 @@ def get_node_list(req: HttpRequest):
         r.append({
             'uuid': node.uuid,
             'name': node.name,
-            'auth_ip': node_log.ip,
-            'online': node_base.online,
-            'warning': node_event.level
+            'auth_ip': node_log.ip if node_log and node_base.online else False,
+            'online': node_base.online if node_base else None,
+            'warning': node_event.level if node_event and node_base.online else False
         })
     return result.success(r)
 
