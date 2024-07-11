@@ -11,4 +11,4 @@ sudo systemctl start docker
 
 sudo docker build -t loonginx-server ./
 
-sudo docker run --name=loong -p 80:80 -v "$(pwd):/ServerManager-Panel" -itd loonginx-server
+sudo docker run --name=loong -p 80:80 -v -itd loonginx-server
