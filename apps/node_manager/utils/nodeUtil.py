@@ -1,11 +1,15 @@
 from asgiref.sync import sync_to_async
 from django.apps import apps
+from django.db.models import Q
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
 from apps.node_manager.entity.alarm_setting import AlarmSetting, cpu, memory, network, disk
 from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData, Node_AlarmSetting, \
-    Node_Event
+    Node_Event, Node_Group
 from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
+from apps.user_manager.models import User
+from permission_manager.util.permission import groupPermission
 from util.passwordUtils import verify_password
 from util.logger import Log
 
@@ -226,6 +230,49 @@ def load_node_alarm_setting(node: Node):
     )
     return setting
 
+
+def filter_user_available_nodes(user: User, base: Node = None):
+    """
+    过滤用户可用的节点
+    :param user: 用户
+    :param base: 基础查询
+    """
+    if base is None:
+        result = Node.objects
+    else:
+        result = base
+    # 查询创建者为自己的节点
+    nodes_created_by_me = result.filter(creator=user)
+    # 查询我作为节点负责人的节点
+    nodes_i_lead = result.filter(group__leader=user)
+    # 获取当前时间
+    current_time = timezone.now().time()
+    # 获取今天是星期几，0 表示星期一，6 表示星期日
+    current_day_of_week = timezone.now().weekday()
+    # 星期对应的字段名称
+    weekday_field = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][current_day_of_week]
+    query = Q(**{f"time_slot_recipient__{weekday_field}": True})
+    node_group = Node_Group.objects.filter(
+        time_slot_recipient__start_time__lte=current_time,
+        time_slot_recipient__end_time__gte=current_time,
+        time_slot_recipient__recipients=user
+    ).filter(query)
+    # 合并所有查询结果，去重
+    return nodes_created_by_me.union(nodes_i_lead, result.filter(group__in=node_group))
+
+
+def is_node_available_for_user(user, node):
+    """
+    检查用户当前是否可用该节点
+    :param user: 用户实例
+    :param node: 节点实例
+    """
+    if groupPermission(user.permission).check_group_permission("viewAllNode"):
+        return True
+    nodes = filter_user_available_nodes(user)
+    if node not in nodes:
+        return False
+    return True
 
 async def a_load_node_alarm_setting(node: Node) -> AlarmSetting:
     Log.debug("load node alarm setting")

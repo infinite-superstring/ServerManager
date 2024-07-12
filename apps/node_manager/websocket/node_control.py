@@ -9,12 +9,12 @@ from channels.exceptions import StopConsumer
 from django.core.cache import cache
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData, Node_TerminalRecord, Node_Event
-from apps.node_manager.utils.nodeUtil import read_performance_record
+from apps.node_manager.utils.nodeUtil import read_performance_record, is_node_available_for_user
 from apps.node_manager.utils.tagUtil import aget_node_tags
 from apps.setting.entity import Config
 from apps.user_manager.models import User
 from consumers.AsyncConsumer import AsyncBaseConsumer
-from apps.user_manager.util.userUtils import uid_aexists, aget_user_by_id
+from apps.user_manager.util.userUtils import uid_aexists
 from apps.node_manager.utils.nodeEventUtil import createEvent, stopEvent, createPhase
 from apps.permission_manager.util.permission import groupPermission
 from util.logger import Log
@@ -50,15 +50,12 @@ class node_control(AsyncBaseConsumer):
             return self.close(-1)
         self.__node_uuid = UUID(self.scope['url_route']['kwargs']['node_uuid'])
         if not await Node.objects.filter(uuid=self.__node_uuid).aexists():
-            Log.info(f"节点{self.__node_uuid}不存在")
+            Log.info(f"用户{self.__user.userName}尝试连接的节点{self.__node_uuid}不存在，连接已断开")
             return self.close(0)
         self.__node = await Node.objects.aget(uuid=self.__node_uuid)
-        creator = await sync_to_async(lambda: self.__node.creator)()
-        group_utils = groupPermission(await sync_to_async(lambda: self.__user.permission)())
-        is_superuser = await sync_to_async(group_utils.is_superuser)()
-        if not is_superuser and creator != self.__user:
-            Log.warning("非法访问：无权限")
-            return self.close(-1)
+        if not await sync_to_async(is_node_available_for_user)(self.__user, self.__node):
+            Log.warning(f"用户{self.__user.userName}当前无权限操作节点，连接已断开")
+            return self.close(0)
         # 加入组
         await self.channel_layer.group_add(
             f"NodeControl_{self.__node.uuid}",
@@ -78,6 +75,13 @@ class node_control(AsyncBaseConsumer):
         if self.__connect_terminal_flag:
             await self.__close_terminal()
         raise StopConsumer
+
+    async def receive(self, *args, **kwargs):
+        """处理节点收到信息时"""
+        if not await sync_to_async(is_node_available_for_user)(self.__user, self.__node):
+            Log.warning(f"用户{self.__user.userName}当前无权限操作节点")
+            return self.close(0)
+        await super().receive(*args, **kwargs)
 
     @Log.catch
     async def __init_data(self):

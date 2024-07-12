@@ -9,3 +9,6 @@ Log.add(
     level="INFO",  # 只记录 INFO 及以上级别的日志
     filter=lambda record: record["level"].name != "DEBUG"  # 不记录 DEBUG 级别的日志
 )
+
+# 禁用所有apscheduler INFO 级别的日志输出
+Log.disable('apscheduler.INFO')

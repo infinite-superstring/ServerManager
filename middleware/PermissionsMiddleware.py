@@ -29,15 +29,20 @@ class PermissionsMiddleware(MiddlewareMixin):
         # 页面权限表
         accessPermission = {
             # 用户管理
+            "/api/admin/userManager/getUserList": [
+                "manageUser",
+                "editNodeGroup"
+            ],
             "/api/admin/userManager/.*": "manageUser",
             # 权限管理
             "/api/admin/permissionManager/.*": "managePermissionGroup",
             # 节点管理器
-            "/api/node_manager/addNode": "addNode",
             (
+                "/api/node_manager/addNode"
                 "/api/node_manager/delNode",
                 "/api/node_manager/editNode",
                 "/api/node_manager/resetToken"
+                "/api/node_manager/node_info/save_alarm_setting"
             ): "editNode",
             "/api/node_manager/node_tag/search_tag": 'editNode',
             "/api/node_manager/getNodeList": ['editNode', 'viewAllNode', "editNodeGroup"],
@@ -102,10 +107,6 @@ class PermissionsMiddleware(MiddlewareMixin):
         # 权限组被禁用时
         if gp.is_disable() and path_info in accessPermission.keys():
             return ResponseJson({"status": -1, "msg": "未授权访问-组已禁用"}, 403)
-
-        # 是超级管理员时
-        if gp.is_superuser():
-            return
 
         for pattern, permission in accessPermission.items():
             # 处理正则

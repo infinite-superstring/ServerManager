@@ -98,10 +98,9 @@ class groupPermission:
         :param permission_name: 权限名
         :return: bool
         """
+        if 'all' in self.get_permissions_list():
+            return True
         return permission_name in self.get_permissions_list()
-
-    def is_superuser(self) -> bool:
-        return self.check_group_permission('all')
 
     def is_disable(self) -> bool:
         return self.__group.disable

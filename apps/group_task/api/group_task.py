@@ -104,24 +104,25 @@ def get_list(req: HttpRequest):
     page_result = pageUtils.get_page_content(query_results, int(page), int(page_size))
     max_page = pageUtils.get_max_page(int(query_results.count()), int(page_size))
     r_list = []
-    for g in page_result:
-        node_group = Node_Group.objects.get(id=g.get('node_group_id'))
-        cycle = {}
-        if g.get('exec_type') == 'cycle':
-            cycle = async_to_sync(group_task_util.getCycle)((g.get('uuid')))
-        r_list.append({
-            'uuid': g.get('uuid'),
-            'name': g.get('name'),
-            'node_group_name': node_group.name,
-            'exec_type': g.get('exec_type'),
-            'exec_count': g.get('exec_count'),
-            'interval': g.get('interval'),
-            'that_time': g.get('that_time'),
-            'enable': g.get('enable'),
-            'exec_path': g.get('exec_path'),
-            'command': g.get('command'),
-            'cycle': cycle,
-        })
+    if r_list:
+        for g in page_result:
+            node_group = Node_Group.objects.get(id=g.get('node_group_id'))
+            cycle = {}
+            if g.get('exec_type') == 'cycle':
+                cycle = async_to_sync(group_task_util.getCycle)((g.get('uuid')))
+            r_list.append({
+                'uuid': g.get('uuid'),
+                'name': g.get('name'),
+                'node_group_name': node_group.name,
+                'exec_type': g.get('exec_type'),
+                'exec_count': g.get('exec_count'),
+                'interval': g.get('interval'),
+                'that_time': g.get('that_time'),
+                'enable': g.get('enable'),
+                'exec_path': g.get('exec_path'),
+                'command': g.get('command'),
+                'cycle': cycle,
+            })
     response = {
         'list': r_list,
         'maxPage': max_page,

@@ -215,6 +215,7 @@ class Command(BaseCommand):
                 'Settings': "node.heartbeat_time",
                 'value': 3000
             },
+            # 节点告警默认设置
             {
                 'Settings': "node_default_alarm_setting.enable",
                 'value': False
@@ -255,6 +256,7 @@ class Command(BaseCommand):
                 'Settings': "node_default_alarm_setting.network__receive_threshold",
                 'value': 104858074
             },
+            # 消息设置
             {
                 'Settings': "message.message_send_type",
                 'value': "email"

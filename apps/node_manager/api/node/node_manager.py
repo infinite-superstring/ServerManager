@@ -1,12 +1,13 @@
 import secrets
 
 from django.db.models import Q
+from django.utils import timezone
 
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData, Node_DiskPartition, Node_Event, \
-    Node_AlarmSetting
+    Node_AlarmSetting, Node_MessageRecipientRule, Node_Group
 from apps.node_manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists
 from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists, node_name_exists, \
-    init_node_alarm_setting
+    init_node_alarm_setting, filter_user_available_nodes, is_node_available_for_user
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from apps.auth.utils.otpUtils import verify_otp_for_request
@@ -42,6 +43,7 @@ def __advanced_search(search: str):
         case "warning":
             query |= Q(node_event__level__in=["Warning", "Error"], node_event__end_time=None)
     return Node.objects.filter(query)
+
 
 def add_node(req):
     """添加节点"""
@@ -90,7 +92,6 @@ def add_node(req):
         }})
 
 
-
 def del_node(req):
     """删除节点"""
     if not req.method == 'POST':
@@ -111,8 +112,8 @@ def del_node(req):
         user = get_user_by_id(uid)
         group_utils = groupPermission(user.permission)
         node = get_node_by_uuid(node_id)
-        if not group_utils.is_superuser() and node.creator != user:
-            return ResponseJson({'status': 0, 'msg': "无权限: 无法删除他人的节点"})
+        if not group_utils.check_group_permission("viewAllNode") and not is_node_available_for_user(user, node):
+            return ResponseJson({'status': 0, 'msg': "当前无权限操作该节点"})
         node.delete()
         return ResponseJson({"status": 1, "msg": "节点已删除"})
     else:
@@ -140,8 +141,10 @@ def reset_node_token(req):
     if not node_uuid_exists(node_id):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
     node = get_node_by_uuid(node_id)
-    if not group_utils.is_superuser() and node.creator != user:
-       return ResponseJson({'status': 0, 'msg': "无权限:无法删除他人的节点"})
+    # if not group_utils.check_group_permission("viewAllNode") and node.creator != user:
+    #     return ResponseJson({'status': 0, 'msg': "无权限:无法删除他人的节点"})
+    if not group_utils.check_group_permission("viewAllNode") and not is_node_available_for_user(user, node):
+        return ResponseJson({'status': 0, 'msg': "当前无权限操作该节点"})
     token = secrets.token_hex(32)
     hashed_token, salt = encrypt_password(token)
     node.token_hash = hashed_token
@@ -154,6 +157,7 @@ def reset_node_token(req):
             "token": token
         }
     })
+
 
 def get_node_list(req):
     """获取节点列表"""
@@ -172,8 +176,8 @@ def get_node_list(req):
     user = get_user_by_id(uid)
     group_utils = groupPermission(user.permission)
     result = __advanced_search(search)
-    if not group_utils.is_superuser():
-        result = result.filter(creator=user)
+    if not group_utils.check_group_permission("viewAllNode"):
+        result = filter_user_available_nodes(user, result)
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
         for item in pageQuery:
@@ -191,6 +195,7 @@ def get_node_list(req):
                 "description": item.get("description"),
                 "group": get_node_group_by_id(item.get("group_id")).name if item.get("group_id") else None,
                 "tags": get_node_tags(item.get("uuid")),
+                "creator": get_user_by_id(item.get("creator_id")).userName if item.get("creator_id") else None,
                 "baseData": {
                     "platform": node_base_info.system if node_base_info else "未知",
                     "hostname": node_base_info.hostname if node_base_info else "未知",
@@ -208,6 +213,7 @@ def get_node_list(req):
         }
     })
 
+
 def get_base_node_list(req):
     if req.method != 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -224,8 +230,8 @@ def get_base_node_list(req):
     user = get_user_by_id(uid)
     group_utils = groupPermission(user.permission)
     result = __advanced_search(search)
-    if not group_utils.is_superuser():
-        result.filter(creator=user)
+    if not group_utils.check_group_permission("viewAllNode"):
+        result = filter_user_available_nodes(user, result)
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
         for item in pageQuery:
@@ -242,7 +248,6 @@ def get_base_node_list(req):
             "PageContent": PageContent
         }
     })
-
 
 
 def get_node_info(req):
@@ -263,8 +268,8 @@ def get_node_info(req):
     user = get_user_by_id(uid)
     group_utils = groupPermission(user.permission)
     node = get_node_by_uuid(node_id)
-    if not group_utils.is_superuser() and node.creator != user:
-       return ResponseJson({'status': 0, 'msg': "无权限: 无法获取他人的节点信息"}, 403)
+    if not group_utils.check_group_permission("viewAllNode") and not is_node_available_for_user(user, node):
+        return ResponseJson({'status': 0, 'msg': "当前无权限操作该节点"})
     return ResponseJson({
         "status": 1,
         "data": {
@@ -276,6 +281,7 @@ def get_node_info(req):
             "node_tags": list(get_node_tags(node.uuid)),
         }
     })
+
 
 def edit_node(req):
     """编辑节点"""
@@ -299,8 +305,8 @@ def edit_node(req):
     user = get_user_by_id(uid)
     group_utils = groupPermission(user.permission)
     node = get_node_by_uuid(node_id)
-    if not group_utils.is_superuser() and node.creator != user:
-       return ResponseJson({'status': 0, 'msg': "无权限: 无法修改他人的节点"})
+    if not group_utils.check_group_permission("viewAllNode") and not is_node_available_for_user(user, node):
+        return ResponseJson({'status': 0, 'msg': "当前无权限操作该节点"})
     if node_name is not None and node_name != node.name:
         node.name = node_name
     if node_description is not None and node_description != node.description:

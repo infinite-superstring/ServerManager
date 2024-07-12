@@ -144,7 +144,7 @@ CACHES = {
 LOGGING_CONFIG = None
 
 # 配置Django使用Loguru的日志处理器
-logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO)
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.WARNING)
 
 LOGGING = {
     'version': 1,
@@ -156,7 +156,7 @@ LOGGING = {
     },
     'root': {
         'handlers': ['loguru'],
-        'level': 'INFO',  # 仅输出INFO及以上级别的日志
+        'level': "INFO",  # 仅输出INFO及以上级别的日志
     },
     'loggers': {
         'django': {
@@ -173,7 +173,7 @@ LOGGING = {
             'handlers': ['loguru'],
             'level': 'INFO',
             'propagate': False,
-        },
+        }
     },
 }
 
