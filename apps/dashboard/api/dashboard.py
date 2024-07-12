@@ -10,20 +10,41 @@ from util.Request import *
 from util.logger import Log
 from apps.dashboard.utils.api_call_count import get_hourly_api_call_count, get_alarm_trend
 from apps.node_manager.utils.nodeUtil import get_node_count, get_node_online_count, get_node_offline_count, \
-    get_node_warning_count, filter_user_available_nodes
+    get_node_warning_count, filter_user_available_nodes, get_user_node_count, get_user_node_online_count, \
+    get_user_node_offline_count, get_user_node_warning_count
 from django.http.request import HttpRequest
 from apps.task.api.task import getList
 
 
 def get_overview(req: HttpRequest):
     """获取总览信息"""
+    uid = req.session['userID']
+    user = get_user_by_id(uid)
+    gp = groupPermission(user.permission)
+    viewAllNode = gp.check_group_permission('viewAllNode')
+    if not viewAllNode:
+        nodes = filter_user_available_nodes(user)
+        node_uuids = [u.uuid for u in nodes]
+        node_bases = Node_BaseInfo.objects.filter(node_id__in=node_uuids)
+        node_events = Node_Event.objects.filter(node_id__in=node_uuids)
+        node_online_count = node_bases.filter(online=True).count()
+        node_warning_count = node_events.filter(type__in=['Warning', 'Error']).count()
+
+        node_count = nodes.count()
+        node_offline_count = nodes.count() - node_online_count
+    else:
+        node_count = get_node_count()
+        node_online_count = get_node_online_count()
+        node_offline_count = get_node_offline_count()
+        node_warning_count = get_node_warning_count()
+
     return ResponseJson({
         'status': 1,
         'data': {
-            'node_count': get_node_count(),
-            'node_online_count': get_node_online_count(),
-            'node_offline_count': get_node_offline_count(),
-            'node_warning_count': get_node_warning_count(),
+            'node_count': node_count,
+            'node_online_count': node_online_count,
+            'node_offline_count': node_offline_count,
+            'node_warning_count': node_warning_count,
         }
     })
 

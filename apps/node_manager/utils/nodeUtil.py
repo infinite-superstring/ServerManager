@@ -56,6 +56,29 @@ def get_node_warning_count() -> int:
     return Node_Event.objects.filter(level__in=["Warning", "Error"]).filter(end_time=None).count()
 
 
+def get_user_node_count(user: User) -> int:
+    """获取用户可用的节点数量"""
+    return filter_user_available_nodes(user).count()
+
+
+def get_user_node_online_count(user: User) -> int:
+    """获取用户可用的在线节点数量"""
+    return filter_user_available_nodes(user, Node.objects.filter(node_baseinfo__online=True)).count()
+
+
+def get_user_node_offline_count(user: User) -> int:
+    """获取用户可用的离线节点数量"""
+    return get_user_node_count(user) - filter_user_available_nodes(user, Node.objects.filter(node_baseinfo__online=True)).count()
+
+
+def get_user_node_warning_count(user: User) -> int:
+    """获取用户可用的正在告警的节点数量"""
+    node_uuids = filter_user_available_nodes(user).values_list('uuid')
+    Node_Event.objects.filter(level__in=["Warning", "Error"]).filter(end_time=None).filter()
+    return Node_Event.objects.filter(level__in=["Warning", "Error"]).filter(end_time=None).filter(
+        node_id__in=[u for u in node_uuids[0]]).count()
+
+
 def node_set_group(node_uuid, group_id) -> bool:
     if not node_group_id_exists(group_id):
         Log.error('Node Group does not exist')
@@ -273,6 +296,7 @@ def is_node_available_for_user(user, node):
     if node not in nodes:
         return False
     return True
+
 
 async def a_load_node_alarm_setting(node: Node) -> AlarmSetting:
     Log.debug("load node alarm setting")
