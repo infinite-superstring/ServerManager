@@ -2,7 +2,7 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
-
+from util import init_show
 from util.logger import Log
 
 
@@ -22,17 +22,24 @@ def main():
 
 
 if __name__ == '__main__':
+    # init_show.logo2()
+    init_show.logo5()
     Log.info("""
- _____        __ _       _ _          _____                           _        _             
-|_   _|      / _(_)     (_) |        / ____|                         | |      (_)            
-  | |  _ __ | |_ _ _ __  _| |_ ___  | (___  _   _ _ __   ___ _ __ ___| |_ _ __ _ _ __   __ _ 
-  | | | '_ \|  _| | '_ \| | __/ _ \  \___ \| | | | '_ \ / _ \ '__/ __| __| '__| | '_ \ / _` |
- _| |_| | | | | | | | | | | ||  __/  ____) | |_| | |_) |  __/ |  \__ \ |_| |  | | | | | (_| |
-|_____|_| |_|_| |_|_| |_|_|\__\___| |_____/ \__,_| .__/ \___|_|  |___/\__|_|  |_|_| |_|\__, |
-                                                 | |                                    __/ |
-                                                 |_|                                   |___/ 
 前端：https://github.com/infinite-superstring/ServerManager-UI
 后端：https://github.com/infinite-superstring/ServerManager-Panel
 节点：https://github.com/infinite-superstring/ServerManager-Node
     """)
+#     Log.info("""
+#  _____        __ _       _ _          _____                           _        _
+# |_   _|      / _(_)     (_) |        / ____|                         | |      (_)
+#   | |  _ __ | |_ _ _ __  _| |_ ___  | (___  _   _ _ __   ___ _ __ ___| |_ _ __ _ _ __   __ _
+#   | | | '_ \|  _| | '_ \| | __/ _ \  \___ \| | | | '_ \ / _ \ '__/ __| __| '__| | '_ \ / _` |
+#  _| |_| | | | | | | | | | | ||  __/  ____) | |_| | |_) |  __/ |  \__ \ |_| |  | | | | | (_| |
+# |_____|_| |_|_| |_|_| |_|_|\__\___| |_____/ \__,_| .__/ \___|_|  |___/\__|_|  |_|_| |_|\__, |
+#                                                  | |                                    __/ |
+#                                                  |_|                                   |___/
+# 前端：https://github.com/infinite-superstring/ServerManager-UI
+# 后端：https://github.com/infinite-superstring/ServerManager-Panel
+# 节点：https://github.com/infinite-superstring/ServerManager-Node
+#     """)
     main()

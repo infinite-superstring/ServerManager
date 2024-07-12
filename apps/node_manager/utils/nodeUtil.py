@@ -9,7 +9,7 @@ from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, No
     Node_Event, Node_Group
 from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
 from apps.user_manager.models import User
-from permission_manager.util.permission import groupPermission
+from apps.permission_manager.util.permission import groupPermission
 from util.passwordUtils import verify_password
 from util.logger import Log
 
