@@ -104,6 +104,7 @@ class node_client(AsyncBaseConsumer):
         """节点断开连接时"""
         if self.__auth:
             node_name = self.scope["session"].get("node_name")
+            self.scope["session"].clear()
             self.__node_base_info.online = False
             await self.__node_base_info.asave()
             await self.channel_layer.group_discard(

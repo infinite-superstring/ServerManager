@@ -43,12 +43,7 @@ def logo():
  +***%%#***%%%%%%%***+=-:.  ..............:--===--:::::------==*#%%%%@%%#+=-:::::::::.......:#+====:
  :#**#%*****%%%%%%%*-       .................::::----===-=+**#%%%%##*+=-:::::::::::.....    :%+===: 
   :*##%#####*%%%%%%%*-.  .  ........::::::::----========*##*+====--::::::::::::::..        :+*+++-  
-   :++++++++**#%%%%%%%%*#+ ..::::::::::::::::..::.::::-*#+--:::::::::::::.::..         .:--+====-   
-     .:.....:--+%@@%%%@@#.........        ++ -* .*:      =*.:*:                   ...:::::...:..    
-      .:::......:=*###*-...    . :+*--+=: -= #@.-@+ -=++-.#%@+.=+++.        .    ..........:..      
-         ..::....   前端：https://github.com/infinite-superstring/ServerManager-UI     .........::..        
-            ...::.. 后端：https://github.com/infinite-superstring/ServerManager-Panel   .......:....           
-                ....节点：https://github.com/infinite-superstring/ServerManager-Node..........                
+   :++++++++**#%%%%%%%%*#+ ..::::::::::::::::..::.::::-*#+--:::::::::::::.::..         .:--+====-             
     """
     print(logo)
 
@@ -101,70 +96,14 @@ def logo2():
 
 def logo3():
     print("""
-                  t, .                      tEK                 
-                  . i                       jLW                 
-                   j                        GjKK#               
-                                       .    KjtKKWG     t       
-                                            EtjKEEEKKEEE        
-                                        ,  itttEEEELKKi         
-  .           .                            Kttt.EEWKKL     ,    
-              i            t             .WjjL EEWKK#      .,,  
- .            t            j             EtjtGjtGKKK        ,,i 
-              j            L,          tjLjLLjtjjLKE        .,. 
-             LL            Lj             .EGEtjjLKW         ,,,
-             tE            Li              ,. ,tjjKW         ,,i
-             .j            j i L,         ..    KiKW         .,,
-            L i            t .j            , .   tKW          ,,
-            i ,j              ,j           ..,,    tj       EiLG
-            . .jLL              ,.         .,.,i     ,Ej   t    
-           j. j.i,                t.       .. K..       iEL   . 
-           it  .j.          ,       j..     ,L G.,i          G  
-           t     j.         t         G.,,. .,  i.,,,   E   t   
-          L.      t         G           .Ej...,  ,Ki,,j     G  i
-          j       t                        jLLG   ,K,,itG   G   
-          i        j         i                i     jj,itj  t . 
-         ,i       ,.jG .     i                .     ..GitiE  G..
-         jt     K   tij                 W      ,     .,GtiiKi  .
- .       Gi G WWWWWEL  GtL    ,    ..L  W, .W  L       ,iii,,jti
- .      .L,,.KW#EW#WKt  tLj        .  EW###WWE.i       ,,tLtiiEi
-        ,j. WWi,KWWKW.   ,G.it .     EWWjijEEii.   GKjtKWKG,,. .
-.       ,tGKK#tKKK#KK      ,   Lj   Et     .   . ..       .   ..
-.       it.,Kii.EW  Kj             i           t,               
-.       it. Ki iK#  WW                        .jjjj    .,i.,  ..
-.       tj. j, LEK  KW                         jL   iii.,,,iitGW
-.      ,jG.. ,  KLGLtG     t                   LG         ,,,,,,
-.      ,LiE.    WjLjj      .                   LG         ,,,,,,
-.      ,GitG     #LLK                          EL         .,,,,,
-,      ,Liii.                                  ,E         .,,,,,
-.      ,LG,iL   .                 .           G,E         .,,,,,
-.     ,,j,GtL.                   ,,E          t,L         .i,,,,
-.     ,,i,,LiG                  L,E.         E,,i         .,,,,,
-       ,,,,,Gj.           ,    L            L,,.         ...,,,,
-     . ,,,,..Gj                            ,t,,j         ..,,,,,
-  ,   ,,,,,,,,L.                           .,,,j        ..j.,,.,
-  ,   ,,,,,,i,iG                         ,L,,,,         ..i,,,..
-  ,   ,,,,,,i,,,L                       jt,,,,t         .,,,.,,.
- .,   ,,,,,,i,,,,iL                   .GG,,,,,  ,      ..i,,,,..
- ,,   ,,,,,,i,,,,,,jt.                G.E,,,,L i       . ,,,,,..
- .,  .,,,,,,ii,,,,,,,,LL        iKWWKKKEEEGEj ,       ..i..,....
-,.,  ,,,,,,,,,t,,,,,,,,,jGj WWKKKKKKKKKKWWWL j       ..ji,,,....
-,,,  ,,,..,,,i,t,,,,,,,,GWEEEKKKKKKKKKKWKWjiG       ..,WE,i.....
-,,,  ,,,   ,,jE,i,,,,.WKEEKKKKKKKEKKKKGjjLWWj      ..,EWj.,,....
-,,,  ,,,    ,. K.i,.WWKKKEKKKKKKKKKKKKKKKWWL      ..,WW#j..,....
-i,,  ,,,    .,t..WWKKKKKKKEKKEKKEKKKKKKKWWK      ..L#W#W,j......
-,,.  ...,   ,    ,WWKKKKKKKKKKKEKKKKKKKWWK      ..t####K..,....,
-i.,    . ,,..    KWWKKEEKEKKKKKKKKKKKKWWL     . j######Li,....,,
-i,,  ,   .,,...,KWWWWKKKKKKKKKKKKKKKKWL.      jWW######,,......,
- ,,..,,.   ,,,,,,EWW###WWW#WKKKKKKKEt      ijWW#W#####Ei,...... 
- t,..,,,,,.    ,,,t######WKKKKEEEEEEKKKKKKKKKWKW######t.......i 
-  .,..,,,,,,j.,,,,,L####WWKKKKEEEEEEEEEEEEKKKKWK#####jL,......  
-  WEKKKKKKKW#WKKKKEEE####WW W#W#WWWW#WW#WW#W#WW#####WWKKKKEEKW  
-   EEKKKKKWW####WKKKKEKWWWK W W WWWW# G WWWWWWWW####WKKKKKKKE   
-    KKKKKKKW#####W#WW. j  W W # W#  Kj W   WWWWW#W#WEKKKKKKK    
-     KEKKKK#########W # # W W   W #K,# # # WWW##W#KKKKKKKKE     
-      WKKKKK#####WWW# W W # W # W WW # WK#,WWW###WKKKKKKKW      
-        WKKK#####WWWW # W   # # #   ## W   WWW#WKKEKKKK#        
-          E#KW##WW##WKWWWWEWWKWKWWW#WWW#WK####WWEEEKWE          
+ _____        __ _       _ _          _____                           _        _
+|_   _|      / _(_)     (_) |        / ____|                         | |      (_)
+  | |  _ __ | |_ _ _ __  _| |_ ___  | (___  _   _ _ __   ___ _ __ ___| |_ _ __ _ _ __   __ _
+  | | | '_ \|  _| | '_ \| | __/ _ \  \___ \| | | | '_ \ / _ \ '__/ __| __| '__| | '_ \ / _` |
+ _| |_| | | | | | | | | | | ||  __/  ____) | |_| | |_) |  __/ |  \__ \ |_| |  | | | | | (_| |
+|_____|_| |_|_| |_|_| |_|_|\__\___| |_____/ \__,_| .__/ \___|_|  |___/\__|_|  |_|_| |_|\__, |
+                                                 | |                                    __/ |
+                                                 |_|                                   |___/     
     """)
 
 
@@ -230,3 +169,5 @@ def logo5():
                                                                                                        LL                                                                                                                
                                                                                                        ,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
     """)
+
+log_list = [logo,logo2,logo3,logo4,logo5]
