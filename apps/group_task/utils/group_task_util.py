@@ -186,9 +186,13 @@ def command_legal(command: str, command_list: list[str]):
     检查命令是否合法
     """
     for c in command_list:
+        if not c:
+            continue
         if re.match(c, command):
             return False
     for c in command_list:
+        if not c:
+            continue
         if c in command:
             return False
     return True
