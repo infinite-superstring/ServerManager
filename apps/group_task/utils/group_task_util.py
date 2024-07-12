@@ -11,7 +11,6 @@ from asgiref.sync import async_to_sync
 from apps.group_task.models import GroupTask_Cycle, GroupTask
 from apps.node_manager.models import Node_Group
 from apps.node_manager.utils.groupUtil import GroupUtil
-from user_manager.models import User
 
 day_mapping = {
     1: 'monday',
