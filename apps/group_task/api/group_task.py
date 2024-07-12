@@ -12,7 +12,7 @@ from apps.group_task.utils import group_task_util
 from apps.node_manager.models import Node_Group, Node
 from apps.setting.entity.Config import config
 from apps.permission_manager.util.permission import groupPermission
-from user_manager.util.userUtils import get_user_by_id
+from apps.user_manager.util.userUtils import get_user_by_id
 from util import result, pageUtils
 from util.Request import RequestLoadJson
 from util.logger import Log
@@ -47,7 +47,8 @@ def create_group_task(req: HttpRequest):
         return result.error('请将参数填写完整')
     command_list = config().terminal_audit.disable_command_list
     gp = groupPermission(get_user_by_id(req.session.get("userID")).permission)
-    if not gp.is_superuser() and not group_task_util.command_legal(command=command, command_list=command_list.split('\n')):
+    if not gp.is_superuser() and not group_task_util.command_legal(command=command,
+                                                                   command_list=command_list.split('\n')):
         return result.error('禁用命令不可执行')
     if execPath and not os.path.isabs(execPath):
         return result.error('执行路径格式错误')
