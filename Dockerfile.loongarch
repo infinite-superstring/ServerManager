@@ -1,13 +1,13 @@
 FROM cr.loongnix.cn/library/python:3.10.14-slim-buster
-LABEL authors="fsj"
+LABEL authors="fsj, yf"
 
 EXPOSE 8000
 
 USER root
 
-COPY . /ServerManager-Panel
+WORKDIR /
 
-WORKDIR /ServerManager-Panel
+RUN apt install gcc libpq-dev libffi-dev g++ wget
 
 RUN wget http://ftp.loongnix.cn/toolchain/rust/rust-1.78/2024-05-06/abi1.0/rust-1.78.0-loongarch64-unknown-linux-gnu.tar.gz
 
@@ -19,11 +19,12 @@ RUN rm rust-1.78.0-loongarch64-unknown-linux-gnu.tar.gz
 
 RUN rm -rf ./rust-1.78.0-loongarch64-unknown-linux-gnu/
 
+COPY . /app
+
+WORKDIR /app
+
 RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
-RUN pip3 install -r ./requirements.txt && \
-    python3 manage.py makemigrations && \
-    python3 manage.py migrate && \
-    python3 manage.py initial_data
+RUN pip install -r requirements.txt
 
-CMD ["gunicorn", "LoongArch-ServerManager.asgi:applicatio", "--bind", "0.0.0.0:8000"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000", "--noreload"]
