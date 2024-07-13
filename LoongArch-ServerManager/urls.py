@@ -46,7 +46,6 @@ urlpatterns = [
     path('api/auth/logout', user_auth.AuthOutLog),  # 用户登出（ALL）
     path('api/auth/getUserLoginStatus', user_auth.getLoginStatus),  # 获取用户登录状态 (ALL)
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
-    path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
     path('api/auth/OTP/bind/sendEmailCode', otp_bind.send_email_code),  # 发送邮箱验证码
     path('api/auth/OTP/bind/verifyEmailCode', otp_bind.check_emali_code),  # 检查邮箱验证码
     path('api/auth/OTP/bind/verifyOTP_Code', otp_bind.bind_otp_check),  # 检查

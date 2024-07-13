@@ -47,7 +47,8 @@ def create_group_task(req: HttpRequest):
         return result.error('请将参数填写完整')
     command_list = config().terminal_audit.disable_command_list
     gp = groupPermission(get_user_by_id(req.session.get("userID")).permission)
-    if not gp.is_superuser() and not group_task_util.command_legal(command=command, command_list=command_list.split('\n')):
+    if not gp.is_superuser() and not group_task_util.command_legal(command=command,
+                                                                   command_list=command_list.split('\n')):
         return result.error('禁用命令不可执行')
     if execPath and not os.path.isabs(execPath):
         return result.error('执行路径格式错误')
@@ -107,25 +108,24 @@ def get_list(req: HttpRequest):
     page_result = pageUtils.get_page_content(query_results, int(page), int(page_size))
     max_page = pageUtils.get_max_page(int(query_results.count()), int(page_size))
     r_list = []
-    if r_list:
-        for g in page_result:
-            node_group = Node_Group.objects.get(id=g.get('node_group_id'))
-            cycle = {}
-            if g.get('exec_type') == 'cycle':
-                cycle = async_to_sync(group_task_util.getCycle)((g.get('uuid')))
-            r_list.append({
-                'uuid': g.get('uuid'),
-                'name': g.get('name'),
-                'node_group_name': node_group.name,
-                'exec_type': g.get('exec_type'),
-                'exec_count': g.get('exec_count'),
-                'interval': g.get('interval'),
-                'that_time': g.get('that_time'),
-                'enable': g.get('enable'),
-                'exec_path': g.get('exec_path'),
-                'command': g.get('command'),
-                'cycle': cycle,
-            })
+    for g in page_result:
+        node_group = Node_Group.objects.get(id=g.get('node_group_id'))
+        cycle = {}
+        if g.get('exec_type') == 'cycle':
+            cycle = async_to_sync(group_task_util.getCycle)((g.get('uuid')))
+        r_list.append({
+            'uuid': g.get('uuid'),
+            'name': g.get('name'),
+            'node_group_name': node_group.name,
+            'exec_type': g.get('exec_type'),
+            'exec_count': g.get('exec_count'),
+            'interval': g.get('interval'),
+            'that_time': g.get('that_time'),
+            'enable': g.get('enable'),
+            'exec_path': g.get('exec_path'),
+            'command': g.get('command'),
+            'cycle': cycle,
+        })
     response = {
         'list': r_list,
         'maxPage': max_page,
