@@ -1,4 +1,4 @@
-FROM cr.loongnix.cn/library/python:3.10.14-slim-buster
+FROM cr.loongnix.cn/library/python:3.11.9-slim-buster
 LABEL authors="fsj, yf"
 
 EXPOSE 8000
@@ -7,7 +7,9 @@ USER root
 
 WORKDIR /
 
-RUN apt install gcc libpq-dev libffi-dev g++ wget
+RUN apt update
+
+RUN apt install -y gcc libpq-dev libffi-dev g++ wget libssl-dev pkg-config
 
 RUN wget http://ftp.loongnix.cn/toolchain/rust/rust-1.78/2024-05-06/abi1.0/rust-1.78.0-loongarch64-unknown-linux-gnu.tar.gz
 
