@@ -38,7 +38,6 @@ services:
       - ServerManager_app:/app/group_task_run_result
       - ServerManager_app:/app/avatar
       - ServerManager_app:/app/logs
-      - ServerManager_app:/app/.init
     links:
       - redis
       - postgres
@@ -61,6 +60,7 @@ services:
   nginx:
     image: cr.loongnix.cn/library/nginx:1.23.1-alpine
     container_name: nginx
+    restart: always
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf  # 你需要在项目根目录创建nginx.conf文件
       - ServerManager_static:/www/static

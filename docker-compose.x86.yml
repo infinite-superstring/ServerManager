@@ -38,7 +38,6 @@ services:
       - ServerManager_app:/app/group_task_run_result
       - ServerManager_app:/app/avatar
       - ServerManager_app:/app/logs
-      - ServerManager_app:/app/.init
     links:
       - redis
       - postgres
@@ -63,7 +62,7 @@ services:
     container_name: nginx
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf  # 你需要在项目根目录创建nginx.conf文件
-      - ./static:/www/static
+      - ServerManager_static:/www/static
     links:
       - django_app
     ports:

@@ -72,13 +72,15 @@ elif [ "$ARCH" = "loongarch64" ]; then
     tar -xf docker-27.0.3.tgz
     cp docker/* /usr/local/bin/
     wget https://raw.githubusercontent.com/jumpserver/installer/master/scripts/docker.service -O /etc/systemd/system/docker.service
+    systemctl daemon-reload
     systemctl start docker
+    systemctl enable docker
     # 安装 docker compose
     wget -O /usr/local/bin/docker-compose https://github.com/wojiushixiaobai/compose-loongarch64/releases/download/v2.28.1/docker-compose-linux-loongarch64
     chmod +x /usr/local/bin/docker-compose
     # 安装 buildx
-    wget -O /usr/local/bin/docker-buildx https://github.com/wojiushixiaobai/buildx-loongarch64/releases/download/v0.16.0/buildx-v0.16.0-linux-loongarch64
-    chmod +x /usr/local/bin/docker-buildx
+    # wget -O /usr/local/bin/docker-buildx https://github.com/wojiushixiaobai/buildx-loongarch64/releases/download/v0.16.0/buildx-v0.16.0-linux-loongarch64
+    # chmod +x /usr/local/bin/docker-buildx
     # 运行docker
     docker-compose -f docker-compose.loongarch.yml up -d
     # 清理
