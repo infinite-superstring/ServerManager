@@ -5,6 +5,7 @@ services:
   postgres:
     image: cr.loongnix.cn/library/postgres:13-alpine
     container_name: postgres
+    restart: always
     environment:
       POSTGRES_DB: 'sm_sys_data'
       POSTGRES_USER: 'ServerManager'
@@ -18,6 +19,7 @@ services:
   redis:
     image: cr.loongnix.cn/library/redis:latest
     container_name: redis
+    restart: always
     networks:
       - backend
 
