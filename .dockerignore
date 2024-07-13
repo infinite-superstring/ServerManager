@@ -3,8 +3,10 @@
 /terminal_record
 /web_develop
 /apps/*/migrations/0*
+/static
 db.sqlite3.*
 docker-*
 Dockerfile
 Dockerfile.*
 test.py
+.init

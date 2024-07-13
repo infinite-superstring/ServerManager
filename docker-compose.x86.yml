@@ -1,6 +1,7 @@
 version: '2.8'
 
 services:
+  # 数据库服务
   postgres:
     image: docker-hub.pigeon-server.cn/library/postgres:13-alpine
     container_name: postgres
@@ -8,29 +9,36 @@ services:
       POSTGRES_DB: 'sm_sys_data'
       POSTGRES_USER: 'ServerManager'
       POSTGRES_PASSWORD: 'ServerManager'
-#    volumes:
-#      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    volumes:
+      - ServerManager_db:/var/lib/postgresql/data
     networks:
       - backend
 
+  # 缓存
   redis:
     image: docker-hub.pigeon-server.cn/library/redis:latest
     container_name: redis
     networks:
       - backend
 
+  # 应用服务器
   django_app:
     build:
       context: .  # Dockerfile 的上下文路径
       dockerfile: Dockerfile.x86  # 指定要使用的 Dockerfile
     container_name: django_app
+    restart: always
     environment:
       DEBUG: 'False'
       DJANGO_SETTINGS_MODULE: 'LoongArch-ServerManager.settings'
       DATABASE_URL: 'postgres://ServerManager:ServerManager@postgres:5432/sm_sys_data'
       REDIS_URL: 'redis://redis:6379'
+    volumes:
+      - ServerManager_app:/app/terminal_record
+      - ServerManager_app:/app/group_task_run_result
+      - ServerManager_app:/app/avatar
+      - ServerManager_app:/app/logs
+      - ServerManager_app:/app/.init
     links:
       - redis
       - postgres
@@ -40,26 +48,37 @@ services:
     networks:
       - backend
 
+  # 编译静态资源
+  build_static:
+    build:
+      context: ./web_develop
+      dockerfile: Dockerfile.x86
+    volumes:
+      - ServerManager_static:/app/dist
+    command: [ "sh", "-c", "npm install && npm run build" ]
 
+  # 反向代理
   nginx:
     image: docker-hub.pigeon-server.cn/library/nginx:latest
     container_name: nginx
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf  # 你需要在项目根目录创建nginx.conf文件
-      - ./static:/ServerManager/static
+      - ./static:/www/static
     links:
       - django_app
     ports:
       - "80:80"
       - '443:443'
     depends_on:
+      - build_static
       - django_app
     networks:
       - backend
 
 volumes:
-  postgres_data:
+  ServerManager_db:
+  ServerManager_app:
+  ServerManager_static:
 
 networks:
   backend:
-  frontend:
