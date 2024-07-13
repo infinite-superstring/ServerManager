@@ -45,7 +45,7 @@ install_docker() {
     sudo systemctl enable docker
 
     # 安装 Docker Compose
-    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo curl -L "https://github.com/docker/compose/releases/download/v2.28.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
 }
 
@@ -74,13 +74,15 @@ elif [ "$ARCH" = "loongarch64" ]; then
     wget https://raw.githubusercontent.com/jumpserver/installer/master/scripts/docker.service -O /etc/systemd/system/docker.service
     systemctl start docker
     # 安装 docker compose
-    wget -O /usr/libexec/docker/cli-plugins/docker-compose https://github.com/wojiushixiaobai/compose-loongarch64/releases/download/v2.28.1/docker-compose-linux-loongarch64
-    chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+    wget -O /usr/local/bin/docker-compose https://github.com/wojiushixiaobai/compose-loongarch64/releases/download/v2.28.1/docker-compose-linux-loongarch64
+    chmod +x /usr/local/bin/docker-compose
     # 安装 buildx
-    wget -O /usr/libexec/docker/cli-plugins/docker-buildx https://github.com/wojiushixiaobai/buildx-loongarch64/releases/download/v0.16.0/buildx-v0.16.0-linux-loongarch64
-    chmod +x /usr/libexec/docker/cli-plugins/docker-buildx
+    wget -O /usr/local/bin/docker-buildx https://github.com/wojiushixiaobai/buildx-loongarch64/releases/download/v0.16.0/buildx-v0.16.0-linux-loongarch64
+    chmod +x /usr/local/bin/docker-buildx
     # 运行docker
     docker-compose -f docker-compose.loongarch.yml up -d
+    # 清理
+    rm -rf docker
 else
     echo "不支持的系统架构: ${ARCH}" && exit 1;
 fi
