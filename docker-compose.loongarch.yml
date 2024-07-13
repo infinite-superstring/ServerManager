@@ -1,0 +1,56 @@
+version: '2.8'
+
+services:
+  postgres:
+    image: cr.loongnix.cn/library/postgres:13-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: sm_sys_data
+      POSTGRES_USER: ServerManager
+      POSTGRES_PASSWORD: ServerManager
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  redis:
+    image: cr.loongnix.cn/library/redis:latest
+    container_name: redis
+    networks:
+      - backend
+
+  django_app:
+    build:
+      context: .  # Dockerfile 的上下文路径
+      dockerfile: Dockerfile.prod  # 指定要使用的 Dockerfile
+    container_name: django_app
+    environment:
+      DEBUG: 'False'
+      DATABASE_URL: 'postgres://ServerManager:ServerManager@postgres:5432/sm_sys_data'
+      REDIS_URL: 'redis://redis:6379'
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - backend
+
+
+  nginx:
+    image: cr.loongnix.cn/library/nginx:1.23.1-alpine
+    container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf  # 你需要在项目根目录创建nginx.conf文件
+    ports:
+      - "80:80"
+      - '443:443'
+    depends_on:
+      - django
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+  frontend:

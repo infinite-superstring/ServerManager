@@ -5,9 +5,11 @@ daphne
 channels==3.0.4
 channels_redis
 django-eventstream
+dj-config-url
 apscheduler
 redis
 hiredis
 pyotp
 qrcode
 requests
+psycopg2-binary

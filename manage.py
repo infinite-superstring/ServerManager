@@ -29,5 +29,4 @@ if __name__ == '__main__':
 前端：https://github.com/infinite-superstring/ServerManager-UI
 后端：https://github.com/infinite-superstring/ServerManager-Panel
 节点：https://github.com/infinite-superstring/ServerManager-Node""")
-
     main()

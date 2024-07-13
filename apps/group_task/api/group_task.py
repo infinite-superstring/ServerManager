@@ -12,7 +12,7 @@ from apps.group_task.utils import group_task_util
 from apps.node_manager.models import Node_Group, Node
 from apps.setting.entity.Config import config
 from apps.permission_manager.util.permission import groupPermission
-from user_manager.util.userUtils import get_user_by_id
+from apps.user_manager.util.userUtils import get_user_by_id
 from util import result, pageUtils
 from util.Request import RequestLoadJson
 from util.logger import Log
