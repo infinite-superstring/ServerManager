@@ -6,17 +6,19 @@ on:
       - main
     paths-ignore:
       - '.github/**'
+  workflow_dispatch:
 
 jobs:
   release:
-    if: startsWith(github.event.head_commit.message, 'release-')
+    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release-') }}
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        submodules: recursive
+        submodules: true
+        token:  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  # 使用个人访问令牌替代默认的 GITHUB_TOKEN
 
     - name: Archive source code
       run: |
@@ -25,19 +27,19 @@ jobs:
 
     - name: Get commit ID
       id: get_commit
-      run: echo "::set-output name=commit_id::$(git rev-parse --short HEAD)"
+      run: echo "commit_id=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       with:
         tag_name: v${{ github.run_number }}
-        release_name: ${{ steps.get_commit.outputs.commit_id }}
+        release_name: ${{ env.commit_id }}
         body: |
-          Release notes for commit ${{ steps.get_commit.outputs.commit_id }}.
+          Release notes for commit ${{ env.commit_id }}.
         draft: false
         prerelease: false
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token:  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  # 使用个人访问令牌替代默认的 GITHUB_TOKEN
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
@@ -46,4 +48,4 @@ jobs:
         asset_path: ./source-code.zip
         asset_name: source-code.zip
         asset_content_type: application/zip
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token:  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  # 使用个人访问令牌替代默认的 GITHUB_TOKEN
