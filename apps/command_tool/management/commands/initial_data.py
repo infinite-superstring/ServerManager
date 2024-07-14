@@ -34,11 +34,6 @@ class Command(BaseCommand):
                 'description': '允许用户编排节点组',
                 'translate': '编辑节点组'
             },
-            {
-                'permission': 'viewWebStatus',
-                'description': '允许用户查看网站监控',
-                'translate': '查看网站监控'
-            },
             # {
             #     'permission': 'clusterExecuteCommand',
             #     'description': '允许用户执行集群命令',
@@ -48,6 +43,16 @@ class Command(BaseCommand):
                 'permission': 'clusterTask',
                 'description': '允许用户添加/修改/删除集群任务',
                 'translate': '集群任务'
+            },
+            {
+                'permission': 'viewWebStatus',
+                'description': '允许用户查看网站监控',
+                'translate': '查看网站监控'
+            },
+            {
+                'permission': 'editWebStatus',
+                'description': '允许用户添加/修改/删除网站监控',
+                'translate': '管理网站监控'
             },
             {
                 'permission': 'changeSettings',
@@ -75,16 +80,6 @@ class Command(BaseCommand):
                 'translate': '管理值班记录'
             },
             {
-                'permission': 'viewWebStatus',
-                'description': '允许用户查看网站监控',
-                'translate': '查看网站监控'
-            },
-            {
-                'permission': 'editWebStatus',
-                'description': '允许用户添加/修改/删除网站监控',
-                'translate': '管理网站监控'
-            },
-            {
                 "permission": "viewPatrol",
                 "description": "允许用户查看巡检记录",
                 "translate": "查看巡检记录",
@@ -102,48 +97,61 @@ class Command(BaseCommand):
             Permission_Item.objects.get_or_create(**item)
         Log.success("权限项初始化完成")
 
-        all = Permission_Item.objects.get(id=1)
-        viewDevice = Permission_Item.objects.get(id=2)
-        controllingDevice = Permission_Item.objects.get(id=3)
-        changeDevicePowerState = Permission_Item.objects.get(id=4)
-        changeSettings = Permission_Item.objects.get(id=5)
-        manageUsers = Permission_Item.objects.get(id=6)
-        managePermissionGroups = Permission_Item.objects.get(id=7)
-        viewAudit = Permission_Item.objects.get(id=8)
-        editAudit = Permission_Item.objects.get(id=9)
-
         PermissionGroup = [
             {
-                'id': 1,
                 'name': '超级管理员(super_admin)',
                 'permissions': [
-                    all,
-                    viewDevice,
-                    controllingDevice,
-                    changeDevicePowerState,
-                    changeSettings,
-                    manageUsers,
-                    managePermissionGroups,
-                    viewAudit,
-                    editAudit
+                    'all',
+                    'viewAllNode',
+                    'editNode',
+                    'editNodeGroup',
+                    'clusterTask',
+                    'viewWebStatus',
+                    'editWebStatus',
+                    'changeSettings',
+                    'manageUser',
+                    'managePermissionGroup',
+                    'viewAudit',
+                    'viewDuty',
+                    'viewPatrol',
+                    'editPatrol'
                 ]
             },
             {
-                'id': 2,
                 'name': '管理员(admin)',
                 'permissions': [
-                    changeSettings,
-                    manageUsers,
-                    managePermissionGroups,
+                    'viewAllNode',
+                    'editNode',
+                    'editNodeGroup',
+                    'clusterTask',
+                    'viewWebStatus',
+                    'editWebStatus',
+                    'viewAudit',
+                    'viewDuty',
+                    'viewPatrol',
+                    'editPatrol'
+                ]
+            },
+            {
+                'name': '普通用户(user)',
+                'permissions': [
+                    'editNode',
+                    'clusterTask',
+                    'viewWebStatus',
+                    'viewPatrol',
+                    'editPatrol'
                 ]
             }
         ]
 
         for item in PermissionGroup:
-            group, status = Permission_groups.objects.get_or_create(id=item['id'], name=item['name'])
+            group, status = Permission_groups.objects.get_or_create(name=item['name'])
             if status:
-                for permission in item['permissions']:
-                    group.permissions.add(permission)
+                for permission in item.get('permissions'):
+                    if not Permission_Item.objects.filter(permission=permission).exists():
+                        RuntimeWarning(f"权限组{group.name}权限配置失败，缺少权限项：{permission}")
+                        break
+                    group.permissions.add(Permission_Item.objects.get(permission=permission))
         Log.success("权限组初始化完成")
 
         defaultSetting = [

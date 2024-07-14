@@ -4,30 +4,50 @@ Copyright © Infinite Superstring
 
 ## 编译与部署
 
+### 在龙芯平台启动
+```shell
+    cd ServerManager-Panel
+    sudo passwd  # 设置root账户密码
+    su root  # 切换至root账户
+    chmod +x setup.sh  # 给予安装脚本运行权限
+    ./setup.sh  # 开始安装
+```
+
+### 在X86平台启动
+```shell
+    cd ServerManager-Panel
+    sudo chmod +x setup.sh
+    sudo ./setup.sh 
+```
+
+### 以Debug模式启动及调试项目
 **拉取源码**
 
 ```shell
     # 克隆源码到本地
-    git clone https://github.com/hhhfsj/LoongArch-Server-Manager.git
-    cd LoongArch-Server-Manager
+    git clone https://github.com/infinite-superstring/ServerManager-Panel.git
+    cd ServerManager-Panel
+    # 初始化子模块
+    git submodule init
+    git submodule update
 ```
 
-**编译用户界面**
+**启动前端服务器**
 
 ```shell
     # 进入UI项目文件夹
     cd web_develop
     # 安装NodeJs依赖
     npm i
-    # 将静态文件编译到指定文件夹
-    npm run buildToStatic
-    # 返回主目录
-    cd ../
+    # 运行开发服务器
+    node run dev
 ```
 
 **准备Python环境**
 
 ```shell
+    # 回到上级目录
+    cd ../
     # 新建虚拟环境
     python -m venv venv
     # 进入虚拟环境
@@ -47,20 +67,9 @@ Copyright © Infinite Superstring
     python manage.py initial_data
     # ps: 忘记密码后可通过 python manage.py resetAdmin 重置密码
 ```
-**loong平台启动**
-```shell
-    # 1.在开发环境编译完用户界面
-    # 2.压缩 
-    # 3.上传服务器解压进入目录
-    cd ServerManager-Panel
-    # 4.赋予执行权限
-    sudo chmod +x setup.sh
-    # 5.源申，启动！
-    ./setup.sh
-```
 
+**运行后端服务器**
 
-### 以Debug模式启动项目
 ```shell
     python manage.py runserver 0.0.0.0:8000
 ```

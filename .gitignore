@@ -10,3 +10,4 @@
 /static/
 /dumpdata.json
 .init
+db.sqlite3.*
