@@ -6,7 +6,7 @@ from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, username_exists, \
     real_name_exists, email_exists, uid_exists
 from apps.permission_manager.models import Permission_groups
-from apps.audit.util.auditTools import write_access_log, write_audit
+from apps.audit.util.auditTools import write_access_log, write_audit, write_system_log
 from apps.auth.utils.otpUtils import verify_otp_for_request
 from util.pageUtils import get_max_page, get_page_content
 from util.Response import ResponseJson
@@ -51,8 +51,9 @@ def getUserList(req: HttpRequest):
             })
     write_access_log(
         req.session.get("userID"),
-        getClientIp(req),
-        f"获取用户列表(搜索条件: {search} 页码: {page} 页大小: {pageSize})"
+        req,
+        "用户管理"
+        f"获取用户列表(搜索条件: {search if search else '无'} 页码: {page} 页大小: {pageSize})"
     )
     return ResponseJson({
         "status": 1,
@@ -89,6 +90,12 @@ def addUser(req: HttpRequest):
         return ResponseJson({"status": 0, "msg": "该用户已有账户"})
     if email and email_exists(email):
         return ResponseJson({"status": 0, "msg": "邮箱已使用过"})
+    if permission is not None and not group_id_exists(permission):
+        return ResponseJson({"status": 0, "msg": "权限组不存在"})
+    user = get_user_by_id(req.session.get("userID"))
+    if permission is not None and groupPermission(get_group_by_id(permission)).is_superuser() and not groupPermission(user.permission).is_superuser():
+        write_system_log(2, "用户管理", f"用户{user.userName}({user.id})尝试创建时用户添加all权限被拒绝")
+        return ResponseJson({"status": 0, "msg": "非法操作：非超管账户无法创建带超管权限的账户"})
     pv, pv_msg = verifyPasswordRules(password, config().security.password_level)
     if not pv:
         return ResponseJson(
@@ -107,7 +114,7 @@ def addUser(req: HttpRequest):
     if not createUser:
         return ResponseJson({"status": 0, "msg": "用户创建失败"})
     write_audit(
-        req.session.get("userID"),
+        user,
         "创建用户",
         "用户管理",
         f"用户名:{userName} 真实姓名: {realName} 邮箱: {email} 禁用: {disable}"
@@ -138,15 +145,15 @@ def delUser(req: HttpRequest):
     if userId == 1:
         return ResponseJson({"status": -1, "msg": "不能删除id为1的用户"})
     query = get_user_by_id(userId)
-    if query.permission_id is not None and groupPermission(query.permission_id).check_group_permission("all"):
+    if query.permission is not None and groupPermission(query.permission).is_superuser():
         return ResponseJson({"status": 0, "msg": "不能删除拥有All权限的用户"})
     if not query:
         return ResponseJson({"status": 0, "msg": "用户不存在"})
     write_audit(
         req.session.get("userID"),
-        "Del user(删除用户)",
-        "User Manager(用户管理)",
-        f"User Id: {query.id} User Name: {query.userName}")
+        "删除用户",
+        "用户管理",
+        f"{query.userName}(uid:{query.id})")
     query.delete()
     if userId in apps.get_app_config("user_manager").disable_user_list:
         apps.get_app_config("user_manager").disable_user_list.remove(userId)
@@ -169,7 +176,7 @@ def getUserPermission(req: HttpRequest):
     query = get_user_by_id(userId)
     if not uid_exists(userId):
         return ResponseJson({"status": 0, "msg": "用户不存在"}, 404)
-    write_access_log(req.session.get("userID"), getClientIp(req), f"获取用户权限(uid: {userId})")
+    write_access_log(query, req, "用户管理", f"获取用户权限：{query.userName}(uid:{userId})")
     return ResponseJson({"status": 1, "data": {
         "permissionId": query.permission_id,
         "permissionName": get_group_by_id(query.permission_id).name if query.permission_id else None,
@@ -192,14 +199,14 @@ def getUserInfo(req: HttpRequest):
     query = get_user_by_id(userId)
     if not query:
         return ResponseJson({"status": 0, "msg": "用户不存在"})
-    write_access_log(req.session.get("userID"), getClientIp(req), f"获取用户信息(uid: {userId})")
+    write_access_log(query, req, "用户管理", f"获取用户信息：{query.userName}(uid:{userId})")
     return ResponseJson({"status": 1, "data": {
         "id": query.id,
         "userName": query.userName,
         "realName": query.realName,
         "email": query.email,
         "permissionId": query.permission_id,
-        "permissionName": groupPermission(query.permission_id).get_group_name() if query.permission_id else None,
+        "permissionName": groupPermission(query.permission).get_group_name() if query.permission_id else None,
         "disable": query.disable
     }})
 
@@ -225,12 +232,13 @@ def setUserInfo(req: HttpRequest):
     password: str = data.get("password")
     permission: int = data.get("permission")
     disable: bool = data.get("disable")
+    user = get_user_by_id(req.session.get("userID"))
     if userName and userName != User.userName:
         if username_exists(userName):
             return ResponseJson({"status": 0, "msg": "用户已存在"})
         write_audit(
             req.session.get("userID"),
-            "编辑用户: 更新用户名",
+            "修改用户名",
             "用户管理",
             f"{User.userName}-->{userName}"
         )
@@ -240,16 +248,16 @@ def setUserInfo(req: HttpRequest):
             return ResponseJson({"status": 0, "msg": "用户已存在"})
         write_audit(
             req.session.get("userID"),
-            "编辑用户: 更新真实姓名",
+            "修改真实姓名",
             "用户管理",
             f"{User.realName}-->{realName}")
         User.realName = realName
     if email and email != User.email:
         if email_exists(email):
-            return ResponseJson({"status": 0, "msg": "邮箱已使用"})
+            return ResponseJson({"status": 0, "msg": "邮箱已在使用中"})
         write_audit(
             req.session.get("userID"),
-            "编辑用户: 更新邮箱",
+            "更新邮箱",
             "用户管理",
             f"{User.email}-->{email}")
         User.email = email
@@ -265,7 +273,7 @@ def setUserInfo(req: HttpRequest):
         write_user_new_password_to_database(User, password)
         write_audit(
             req.session.get("userID"),
-            "编辑用户: 更新密码",
+            "更新密码",
             "用户管理",
             ""
         )
@@ -273,9 +281,20 @@ def setUserInfo(req: HttpRequest):
         if not group_id_exists(permission):
             return ResponseJson({"status": 0, "msg": "所选择的权限组不存在"})
         newPermission = get_group_by_id(permission)
+        # 判断用户是否非法添加超管权限
+        if groupPermission(get_group_by_id(permission)).is_superuser() and not groupPermission(
+                user.permission).is_superuser():
+            write_system_log(2, "用户管理", f"用户{user.userName}({user.id})尝试向用户添加all权限被拒绝")
+            return ResponseJson({"status": 0, "msg": "非法操作：非超管账户无法给予其他账户超管权限"})
+        # 判断用户是否非法剥夺超管权限
+        if not groupPermission(newPermission).is_superuser() and groupPermission(
+                get_user_by_id(userId).permission).is_superuser() and not groupPermission(user).is_superuser():
+            write_system_log(2, "用户管理", f"用户{user.userName}({user.id})尝试剥夺其他用户的all权限被拒绝")
+            return ResponseJson({"status": 0, "msg": "非法操作：非超管账户无法剥夺超管账户权限"})
+
         write_audit(
             req.session.get("userID"),
-            "编辑用户: 更新权限组",
+            "修改权限组",
             "用户管理",
             f"{get_group_by_id(User.permission_id).name if User.permission_id else 'None'}-->{newPermission.name}"
         )

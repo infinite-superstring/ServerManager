@@ -37,6 +37,7 @@ class Access_Log(models.Model):
     ip = models.GenericIPAddressField("IP地址", null=True)
     time = models.DateTimeField("操作时间", auto_now_add=True)
     module = models.CharField("访问的模块", max_length=512)
+    content = models.CharField("数据", max_length=4096, default="")
 
     class Meta:
         db_table = "access_log"

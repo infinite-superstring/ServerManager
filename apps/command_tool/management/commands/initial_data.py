@@ -1,18 +1,43 @@
+import os.path
 import secrets
+import sys
 
 from django.core.management.base import BaseCommand
 from apps.permission_manager.models import Permission_groups, Permission_Item
 from apps.user_manager.models import User
 from apps.setting.models import Settings
 from util.logger import Log
-from util.passwordUtils import GeneratePassword, encrypt_password
+from util.passwordUtils import encrypt_password
 
 
 class Command(BaseCommand):
     help = 'Creates initial data'
 
+    def add_arguments(self, parser):
+        # 添加一个可选参数
+        parser.add_argument(
+            '--force-init',
+            action='store_true',
+            help='强制初始化数据库'
+        )
+
     def handle(self, *args, **options):
-        Log.info("开始初始化数据库~")
+        init_flag_file_path = os.path.join(os.getcwd(), '.init')
+        if not os.path.exists(init_flag_file_path) or '--force-init' in sys.argv:
+            Log.info("开始初始化数据库~")
+            self.__init_setting()
+            self.__init_permission_item()
+            self.__init_permission()
+            self.__init_user()
+            open(init_flag_file_path, 'w').close()
+        else:
+            Log.warning("您已经初始化过数据库啦，如需强制初始化数据库请添加参数：--force-init")
+
+
+    def __init_permission_item(self):
+        """
+        初始化权限项
+        """
         PermissionItem = [
             {
                 'permission': 'all',
@@ -34,11 +59,6 @@ class Command(BaseCommand):
                 'description': '允许用户编排节点组',
                 'translate': '编辑节点组'
             },
-            # {
-            #     'permission': 'clusterExecuteCommand',
-            #     'description': '允许用户执行集群命令',
-            #     'translate': '集群命令'
-            # },
             {
                 'permission': 'clusterTask',
                 'description': '允许用户添加/修改/删除集群任务',
@@ -97,6 +117,10 @@ class Command(BaseCommand):
             Permission_Item.objects.get_or_create(**item)
         Log.success("权限项初始化完成")
 
+    def __init_permission(self):
+        """
+        初始化权限
+        """
         PermissionGroup = [
             {
                 'name': '超级管理员(super_admin)',
@@ -145,15 +169,19 @@ class Command(BaseCommand):
         ]
 
         for item in PermissionGroup:
-            group, status = Permission_groups.objects.get_or_create(name=item['name'])
+            group, status = Permission_groups.objects.get_or_create(name=item['name'], disable=False)
             if status:
                 for permission in item.get('permissions'):
                     if not Permission_Item.objects.filter(permission=permission).exists():
-                        RuntimeWarning(f"权限组{group.name}权限配置失败，缺少权限项：{permission}")
+                        Log.warning(f"权限组{group.name}权限配置失败，缺少权限项：{permission}")
                         break
                     group.permissions.add(Permission_Item.objects.get(permission=permission))
         Log.success("权限组初始化完成")
 
+    def __init_setting(self):
+        """
+        初始化设置
+        """
         defaultSetting = [
             {
                 'Settings': "base.website_name",
@@ -336,6 +364,7 @@ class Command(BaseCommand):
             Settings.objects.get_or_create(**item)
         Log.success("初始化设置成功")
 
+    def __init_user(self):
         defaultPassword = "123456"
 
         hashed_password, salt = encrypt_password(defaultPassword)

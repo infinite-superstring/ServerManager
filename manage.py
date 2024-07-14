@@ -28,7 +28,6 @@ if __name__ == '__main__':
         os.system('python manage.py makemigrations')
         os.system('python manage.py migrate')
         os.system('python manage.py initial_data')
-        open('.init', 'w').close()
         exit(0)
     # init_show.log_list[random.randint(0,len(init_show.log_list))-1]()
     print("""

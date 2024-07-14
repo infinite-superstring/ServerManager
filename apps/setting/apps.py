@@ -28,6 +28,3 @@ class SettingConfig(AppConfig):
     def update_config(self, config):
         self.__config = config
 
-    def test(self):
-        self.get_config()
-

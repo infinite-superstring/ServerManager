@@ -4,10 +4,10 @@ from smtplib import SMTPException, SMTPAuthenticationError, SMTPServerDisconnect
 from asgiref.sync import sync_to_async
 from django.db.models import QuerySet
 
-from apps.audit.util.auditTools import write_access_log
+from apps.audit.util.auditTools import write_access_log, write_audit
 from apps.message.models import MessageBody, Message, UserMessage
 from apps.user_manager.models import User
-from apps.user_manager.util.userUtils import get_user_by_username
+from apps.user_manager.util.userUtils import get_user_by_username, get_user_by_id
 from util.Request import getClientIp, RequestLoadJson
 from util.Response import ResponseJson
 from apps.message.utils.messageUtil import send, send_err_handle, get_email_content, byUserGetUsername, send_ws
@@ -57,20 +57,14 @@ def get_message_list(request):
     """
     获取消息列表
     """
-
-    # send_ws(user=User.objects.all())
-
     def _get_page_list(r, current_page: int, pz: int = 20) -> QuerySet:
         result_list = get_page_content(r, current_page if current_page > 1 else 1, pz)
         return result_list
 
     if request.method != "GET":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-    write_access_log(request.session.get("userID"), getClientIp(request),
-                     f"Get message list")
-
-    user = request.session.get('user')
-    user: User = get_user_by_username(user)
+    user = request.session.get('userID')
+    user: User = get_user_by_id(user)
     method = request.GET.get('method')
     curr = request.GET.get('currentPage')
     page_size = request.GET.get('pageSize', 10)
@@ -78,6 +72,12 @@ def get_message_list(request):
     unread = 0
     read = 0
     total = 0
+    write_access_log(
+        user,
+        request,
+        "站内信",
+        f"获取消息列表"
+    )
     if not method != 'all' and method != 'read' and method != 'unread':
         method = 'all'
     if method == "unread":
@@ -126,12 +126,15 @@ def get_by_id(request):
     if request.method != "GET":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
 
-    write_access_log(request.session.get("userID"), getClientIp(request),
-                     f"Get message by id")
-
     msg_id = request.GET.get('id')
-    user = request.session.get("user")
-    user = get_user_by_username(user)
+    user = request.session.get("userID")
+    user = get_user_by_id(user)
+    write_access_log(
+        user,
+        request,
+        "站内信",
+        f"根据message_id获取消息：{msg_id}"
+    )
     msg = UserMessage.objects.get(user_id=user.id, message_id=msg_id)
     if msg is None:
         return ResponseJson({"status": 0, "msg": "消息不存在"})
@@ -158,10 +161,18 @@ def get_unread(request):
     """
     if request.method != "GET":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-    write_access_log(request.session.get("userID"), getClientIp(request),
-                     f"获取未读消息数量")
-    return ResponseJson({"status": 1, "msg": "获取成功",
-                         "data": UserMessage.objects.filter(user_id=request.session.get("userID"), read=False).count()})
+    user = get_user_by_id(request.session.get("userID"))
+    write_access_log(
+        user,
+        request,
+        "站内信",
+        f"获取未读消息数量"
+    )
+    return ResponseJson({
+        "status": 1,
+        "msg": "获取成功",
+        "data": UserMessage.objects.filter(user=user, read=False).count()
+    })
 
 
 def delete_all(request):
@@ -170,10 +181,25 @@ def delete_all(request):
     """
     if request.method != "DELETE":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-    write_access_log(request.session.get("userID"), getClientIp(request),
-                     f"删除所有已读消息")
-    UserMessage.objects.filter(user_id=request.session.get("userID"), read=True).delete()
-    return ResponseJson({"status": 1, "msg": "删除成功"})
+    user = get_user_by_id(request.session.get("userID"))
+    read_messages = UserMessage.objects.filter(user=user, read=True)
+    if read_messages.count() > 0:
+        count = read_messages.count()
+        write_audit(
+            user,
+            "删除所有已读消息",
+            "站内信",
+            f"删除{count}条已读消息"
+        )
+        read_messages.delete()
+        return ResponseJson({
+            "status": 1,
+            "msg": f"删除成功，删除了{count}条已读信息"
+        })
+    return ResponseJson({
+        "status": 1,
+        "msg": "没有已读消息"
+    })
 
 
 def read_all(request):
@@ -182,11 +208,23 @@ def read_all(request):
     """
     if request.method != "PUT":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-    write_access_log(request.session.get("userID"), getClientIp(request),
-                     f"已读所有消息")
-    UserMessage.objects.filter(user_id=request.session.get("userID"), read=False).update(read=True)
-    send_ws(user=User.objects.filter(id=request.session.get("userID")), type='unread')
-    return ResponseJson({"status": 1, "msg": "操作成功"})
+    user = get_user_by_id(request.session.get("userID"))
+    unread_messages = UserMessage.objects.filter(user=user, read=False)
+    if unread_messages.count() > 0:
+        count = unread_messages.count()
+        write_audit(
+            user,
+            "已读所有消息",
+            "站内信",
+            f"已读了{count}条消息"
+        )
+        unread_messages.update(read=True)
+        send_ws(user=User.objects.filter(id=request.session.get("userID")), type='unread')
+        return ResponseJson({"status": 1, "msg": f"操作成功，已将{count}条信息标记为已读"})
+    return ResponseJson({
+        "status": 1,
+        "msg": "没有未读消息"
+    })
 
 
 def delete_by_id(request):
@@ -195,8 +233,14 @@ def delete_by_id(request):
     """
     if request.method != "DELETE":
         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-    write_access_log(request.session.get("userID"), getClientIp(request))
+    user = get_user_by_id(request.session.get("userID"))
     msg_id = request.GET.get('id')
-    UserMessage.objects.filter(user_id=request.session.get("userID"), message_id=msg_id).delete()
+    write_audit(
+        user,
+        "删除信息",
+        '站内信',
+        f'message_id：{msg_id}'
+    )
+    UserMessage.objects.filter(user=user, message_id=msg_id).delete()
 
     return ResponseJson({"status": 1, "msg": "删除成功"})

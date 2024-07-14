@@ -4,6 +4,7 @@ from typing import Union, List, Dict
 from django.db.models import QuerySet
 
 from apps.permission_manager.models import Permission_groups, Permission_Item
+from apps.user_manager.models import User
 
 
 def get_all_permission_items():
@@ -25,15 +26,17 @@ def get_all_permission_group_name():
 
 
 class groupPermission:
-    __group: Permission_groups
+    __group: Permission_groups | None
 
-    def __init__(self, group: int | Permission_groups):
+    def __init__(self, group: int | Permission_groups | User):
         """
         :param group: 权限组id
         """
         try:
-            if isinstance(group, Permission_groups):
+            if isinstance(group, Permission_groups) or group is None:
                 self.__group = group
+            elif isinstance(group, User):
+                self.__group = group.permission
             else:
                 self.__group = Permission_groups.objects.get(id=group)
         except Permission_groups.DoesNotExist:
@@ -53,11 +56,13 @@ class groupPermission:
         """
         return self.__group.name
 
-    def get_permissions_list(self) -> QuerySet:
+    def get_permissions_list(self) -> QuerySet | list:
         """
         获取权限列表
         :return: <QuerySet [str]>
         """
+        if self.__group is None:
+            return []
         return self.__group.permissions.all().values_list('permission', flat=True)
 
     def update_permissions_list(self, permissions: Union[List[str], Dict[str, bool]]):
@@ -66,6 +71,8 @@ class groupPermission:
         :param permissions: 权限列表
         :return: None
         """
+        if self.__group is None:
+            raise RuntimeError("permission group is None")
         temp = []
         if isinstance(permissions, dict):
             for k, v in permissions.items():
@@ -98,11 +105,15 @@ class groupPermission:
         :param permission_name: 权限名
         :return: bool
         """
+        if self.__group is None:
+            return False
         if self.is_superuser():
             return True
         return permission_name in self.get_permissions_list()
 
     def is_superuser(self) -> bool:
+        if self.__group is None:
+            return False
         return 'all' in self.get_permissions_list()
 
     def is_disable(self) -> bool:

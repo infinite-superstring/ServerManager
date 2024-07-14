@@ -12,5 +12,7 @@ hiredis
 pyotp
 qrcode
 requests
-psycopg2-binary; platform_system!="Windows"
-psycopg2; platform_system!="Linux"
+python-magic
+python-magic-bin;platform_system=="Windows"
+psycopg2; platform_system!="Windows"
+psycopg2-binary; platform_system=="Windows"
