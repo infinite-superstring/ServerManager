@@ -1,6 +1,5 @@
 import json
 
-from apps.user_manager.util.userUtils import get_user_by_id
 from util.jsonEncoder import ComplexEncoder
 from util.logger import Log
 

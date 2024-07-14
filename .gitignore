@@ -6,6 +6,7 @@
 /temp/
 /avatar/
 /configs/
-/*/migrations/
+/*/migrations/0*
 /static/
 /dumpdata.json
+.init

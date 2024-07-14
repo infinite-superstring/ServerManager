@@ -1,0 +1,16 @@
+FROM docker-hub.pigeon-server.cn/library/python:slim-bullseye
+LABEL authors="fsj"
+
+EXPOSE 8000
+
+USER root
+
+COPY . /app
+
+WORKDIR /app
+
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
+RUN pip install -r ./requirements.txt
+
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000", "--noreload"]

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 import sys
 import logging
+import dj_database_url
 from pathlib import Path
 from util.logger import Log
 from .logger import InterceptHandler
@@ -28,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-h$p@2x!f5$2n8-f0d4xp#t1=d0_uhn2ld0sg2h3g^t2otbltz&'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ["*"]
 
@@ -83,13 +84,7 @@ if DEBUG:
     }
 else:
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "OPTIONS": {
-                "service": "my_service",
-                "passfile": ".my_pgpass",
-            },
-        }
+        'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
     }
 
 # Password validation
@@ -138,7 +133,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('localhost', 6379)],
+            'hosts': [os.getenv('REDIS_URL', 'redis://localhost:6379')],
         },
     },
 }
@@ -146,7 +141,7 @@ CHANNEL_LAYERS = {
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://localhost:6379",
+        "LOCATION": os.getenv('REDIS_URL', "redis://localhost:6379"),
     }
 }
 # SECURE_CONTENT_TYPE_NOSNIFF = False

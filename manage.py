@@ -23,11 +23,16 @@ def main():
 
 
 if __name__ == '__main__':
-    # init_show.logo2()
-    init_show.log_list[random.randint(0,len(init_show.log_list))-1]()
+    if not os.path.exists(".init") and 'runserver' in sys.argv:
+        Log.info('Initializing server...')
+        os.system('python manage.py makemigrations')
+        os.system('python manage.py migrate')
+        os.system('python manage.py initial_data')
+        open('.init', 'w').close()
+        exit(0)
+    # init_show.log_list[random.randint(0,len(init_show.log_list))-1]()
     print("""
 前端：https://github.com/infinite-superstring/ServerManager-UI
 后端：https://github.com/infinite-superstring/ServerManager-Panel
 节点：https://github.com/infinite-superstring/ServerManager-Node""")
-
     main()
