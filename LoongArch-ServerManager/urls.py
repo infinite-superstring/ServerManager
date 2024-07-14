@@ -154,5 +154,5 @@ urlpatterns = [
     path('api/group_task/deleteByUuid', group_task.delete_by_uuid),  # 删除任务(DELETE)
     path('api/group_task/get_task_detailed', group_task.get_task_detailed),  # 获取任务详细信息(GET))
     path('api/group_task/get_task_by_uuid', group_task.get_task_by_uuid),  # 获取任务详细信息(GET))
-    path('api/group_task/command_legal', group_task.command_legal),  # 命令是否合法(GET)
+    path('api/group_task/command_legal', group_task.command_legal),  # 命令是否合法(POST)
 ]

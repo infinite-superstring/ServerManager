@@ -339,11 +339,15 @@ def command_legal(req: HttpRequest):
     """
     命令是否合法
     """
-    if req.method != 'GET':
+    if req.method != 'POST':
         return result.api_error('请求方式错误', http_code=405)
     disable_command_list: [list[str]] = config().terminal_audit.disable_command_list.split('\n')
     warn_command_list: [list[str]] = config().terminal_audit.warn_command_list.split('\n')
-    command = req.GET.get('command', '')
+    try:
+        data = RequestLoadJson(req)
+    except Exception as e:
+        return result.api_error('请求数据错误', http_code=400)
+    command = data.get('command', '')
 
     gp = groupPermission(get_user_by_id(req.session.get("userID")).permission)
     if gp.is_superuser():
