@@ -6,10 +6,11 @@ on:
       - main
     paths-ignore:
       - '.github/**'
+  workflow_dispatch:
 
 jobs:
   release:
-    if: startsWith(github.event.head_commit.message, 'release-')
+    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'release-') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -25,16 +26,16 @@ jobs:
 
     - name: Get commit ID
       id: get_commit
-      run: echo "::set-output name=commit_id::$(git rev-parse --short HEAD)"
+      run: echo "commit_id=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       with:
         tag_name: v${{ github.run_number }}
-        release_name: ${{ steps.get_commit.outputs.commit_id }}
+        release_name: ${{ env.commit_id }}
         body: |
-          Release notes for commit ${{ steps.get_commit.outputs.commit_id }}.
+          Release notes for commit ${{ env.commit_id }}.
         draft: false
         prerelease: false
         token: ${{ secrets.GITHUB_TOKEN }}
