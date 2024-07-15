@@ -197,7 +197,7 @@ def setPermissionGroup(req):
             f"{Group.name}: {Group.disable}-->{disable}")
         Group.disable = disable
     gp = groupPermission(Group)
-    if set(gp.get_permissions_list()) != set(permissions):
+    if permissions and set(gp.get_permissions_list()) != set(permissions):
         if 'all' in permissions and not groupPermission(user).is_superuser():
             write_system_log(2, "用户权限管理", f"用户{user.userName}(uid:{user.id})尝试给权限组添加all权限被拒绝")
             return ResponseJson({'status': 0, 'msg': '非法操作：非超管账户无法添加all权限到组中'})
