@@ -4,12 +4,6 @@ import re
 import secrets
 import string
 from re import Match
-from typing import Tuple
-
-# import app.util.Config
-from django.apps import apps
-
-from apps.user_manager.models import User
 
 
 def GeneratePassword(length=12):

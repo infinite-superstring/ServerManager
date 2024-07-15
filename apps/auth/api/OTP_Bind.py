@@ -11,7 +11,7 @@ from apps.auth.models import OTP
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
-from util.result import api_error, success, error
+from util.result import api_error
 
 config = apps.get_app_config('setting').get_config
 

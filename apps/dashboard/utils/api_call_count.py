@@ -1,4 +1,3 @@
-import math
 import time
 
 from django.core.cache import cache

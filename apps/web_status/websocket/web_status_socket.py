@@ -4,7 +4,6 @@ import json
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from asgiref.sync import sync_to_async
-from channels.layers import get_channel_layer
 from django.core.cache import cache
 from django.db.models import QuerySet
 

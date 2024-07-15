@@ -3,7 +3,6 @@ import time
 
 from django.apps import apps
 from django.core.cache import cache
-from django.db.models import QuerySet
 
 from apps.message.models import MessageBody
 from apps.message.api.message import send_email

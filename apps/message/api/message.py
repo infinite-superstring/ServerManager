@@ -7,8 +7,7 @@ from django.db.models import QuerySet
 from apps.audit.util.auditTools import write_access_log, write_audit
 from apps.message.models import MessageBody, Message, UserMessage
 from apps.user_manager.models import User
-from apps.user_manager.util.userUtils import get_user_by_username, get_user_by_id
-from util.Request import getClientIp, RequestLoadJson
+from apps.user_manager.util.userUtils import get_user_by_id
 from util.Response import ResponseJson
 from apps.message.utils.messageUtil import send, send_err_handle, get_email_content, byUserGetUsername, send_ws
 from util.pageUtils import get_page_content, get_max_page

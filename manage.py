@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 import os
-import random
 import sys
-from util import init_show
 from util.logger import Log
 
 

@@ -6,12 +6,9 @@ from apps.permission_manager.util.permission import groupPermission
 from apps.user_manager.util.userUtils import get_user_by_id
 from util import result
 from util.Response import *
-from util.Request import *
-from util.logger import Log
 from apps.dashboard.utils.api_call_count import get_hourly_api_call_count, get_alarm_trend
 from apps.node_manager.utils.nodeUtil import get_node_count, get_node_online_count, get_node_offline_count, \
-    get_node_warning_count, filter_user_available_nodes, get_user_node_count, get_user_node_online_count, \
-    get_user_node_offline_count, get_user_node_warning_count
+    get_node_warning_count, filter_user_available_nodes
 from django.http.request import HttpRequest
 from apps.task.api.task import getList
 

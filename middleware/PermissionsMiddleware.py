@@ -1,5 +1,4 @@
 import re
-import fnmatch
 
 from django.shortcuts import redirect
 from django.utils.deprecation import MiddlewareMixin

@@ -2,9 +2,7 @@ import hashlib
 import re
 import uuid
 from datetime import datetime
-from typing import Callable
 from uuid import UUID
-from django.apps import apps
 
 from asgiref.sync import async_to_sync
 

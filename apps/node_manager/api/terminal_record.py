@@ -2,14 +2,13 @@
 import os.path
 
 from django.apps import apps
-from django.http import HttpRequest, HttpResponse, FileResponse, StreamingHttpResponse
+from django.http import HttpRequest, HttpResponse, FileResponse
 
 from apps.node_manager.models import Node, Node_TerminalRecord
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import uid_exists, get_user_by_id
 from util.Response import ResponseJson
-from util.logger import Log
 
 
 def load_node_list(req: HttpRequest) -> HttpResponse:

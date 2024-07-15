@@ -1,7 +1,7 @@
 from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
 from apps.node_manager.utils.groupUtil import create_message_recipient_rules, node_group_id_exists, \
     get_node_group_by_id, get_group_nodes
-from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid, node_set_group
+from apps.node_manager.utils.nodeUtil import node_uuid_exists, node_set_group
 from apps.user_manager.util.userUtils import uid_exists, get_user_by_id
 from apps.auth.utils.otpUtils import verify_otp_for_request
 from util.Request import RequestLoadJson

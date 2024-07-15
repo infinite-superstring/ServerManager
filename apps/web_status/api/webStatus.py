@@ -3,7 +3,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 
 import util.result as R
-from apps.web_status.models import Web_Site, Web_Site_Log, Web_Site_Abnormal_Log
+from apps.web_status.models import Web_Site, Web_Site_Abnormal_Log
 from apps.web_status.utils.webUtil import is_valid_host, hostIsExist, get_or_create_web_site_log, \
     get_latest_or_default_abnormal_log
 from util import result, pageUtils

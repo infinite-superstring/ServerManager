@@ -1,9 +1,6 @@
 import uuid
 
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.utils import timezone
-
 from apps.user_manager.models import User
 
 

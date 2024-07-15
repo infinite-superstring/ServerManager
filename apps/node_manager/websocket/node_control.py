@@ -1,4 +1,3 @@
-import json
 import time
 
 from asgiref.sync import sync_to_async
@@ -16,7 +15,6 @@ from apps.user_manager.models import User
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from apps.user_manager.util.userUtils import uid_aexists
 from apps.node_manager.utils.nodeEventUtil import createEvent, stopEvent, createPhase
-from apps.permission_manager.util.permission import groupPermission
 from util.logger import Log
 
 

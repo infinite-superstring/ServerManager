@@ -10,7 +10,7 @@ from apps.audit.util.auditTools import write_access_log, write_audit, write_syst
 from apps.auth.utils.otpUtils import verify_otp_for_request
 from util.pageUtils import get_max_page, get_page_content
 from util.Response import ResponseJson
-from util.Request import RequestLoadJson, getClientIp
+from util.Request import RequestLoadJson
 from util.logger import Log
 from util.passwordUtils import verifyPasswordRules, encrypt_password
 from apps.permission_manager.util.permission import groupPermission
