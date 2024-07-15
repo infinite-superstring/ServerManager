@@ -68,7 +68,9 @@ if [ "$ARCH" = "x86_64" ]; then
 elif [ "$ARCH" = "loongarch64" ]; then
     yum install wget git
     # 安装 docker ce
-    tar -xf ./installer/loongarch64/docker-27.0.3.tgz -C /usr/local/bin/
+    tar -xf ./installer/loongarch64/docker-27.0.3.tgz
+    mv docker/* /usr/local/bin/
+    rm -rf docker
     cp ./installer/loongarch64/docker.service /etc/systemd/system/docker.service
     systemctl daemon-reload
     systemctl start docker
