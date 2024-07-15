@@ -33,7 +33,6 @@ def send_auth_code(user: User):
     }, config().security.auth_code_timeout * 60)
     title = f"需验证您的操作"
     content = f"【操作验证】验证码：{code}（{config().security.auth_code_timeout}分钟内有效）。您正在绑定OTP令牌，请勿将验证码告诉他人。\n（系统消息请勿回复）"
-    print(code)
     return send_email(MessageBody(
         title=title,
         content=content,

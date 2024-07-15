@@ -198,8 +198,6 @@ def setPermissionGroup(req):
             f"{Group.name}: {Group.disable}-->{disable}")
         Group.disable = disable
     gp = groupPermission(Group)
-    print(list(gp.get_permissions_list()))
-    print(permissions)
     if set(gp.get_permissions_list()) != set(permissions):
         if 'all' in permissions and not groupPermission(user).is_superuser():
             write_system_log(2, "用户权限管理", f"用户{user.userName}(uid:{user.id})尝试给权限组添加all权限被拒绝")

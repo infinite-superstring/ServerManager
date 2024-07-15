@@ -27,7 +27,6 @@ def sendEmailVerifyCode(request: HttpRequest) -> HttpResponse:
         return api_error("请求方法不正确", 405)
     uid = request.session['userID']
     user = get_user_by_id(uid)
-    print(user.isNewUser)
     if not user.isNewUser:
         return api_error("您不是新用户，请通过正常渠道修改用户信息")
     email = request.GET.get('email', None)
@@ -46,7 +45,6 @@ def sendEmailVerifyCode(request: HttpRequest) -> HttpResponse:
     }, config().security.auth_code_timeout * 60)
     title = f"需验证您的操作"
     content = f"【操作验证】验证码：{code}（{config().security.auth_code_timeout}分钟内有效）。您正在绑定OTP令牌，请勿将验证码告诉他人。\n（系统消息请勿回复）"
-    print(code)
     send_email(MessageBody(
         title=title,
         content=content,
@@ -84,7 +82,6 @@ def initUserInfo(request: HttpRequest) -> HttpResponse:
         return error("用户名格式错误(3-20字符)")
     if user_cache.get('email') != email:
         return error("要绑定的邮箱与接收验证码的邮箱不一致")
-    print(user_name, email)
     user.userName = user_name
     user.email = email
     pv, pv_msg = verifyPasswordRules(password, config().security.password_level)

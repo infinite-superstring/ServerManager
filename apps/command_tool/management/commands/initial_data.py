@@ -113,7 +113,6 @@ class Command(BaseCommand):
         ]
 
         for item in PermissionItem:
-            print(item)
             Permission_Item.objects.get_or_create(**item)
         Log.success("权限项初始化完成")
 

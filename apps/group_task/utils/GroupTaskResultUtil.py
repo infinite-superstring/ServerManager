@@ -82,7 +82,6 @@ class GroupTaskResultUtil:
             #     stream.close()
             # m.file_stream.write(f'{line}\n')
             # print(m.file_stream.readline())
-            print(line)
 
     async def handle_task_stop(self, data: dict):
         """

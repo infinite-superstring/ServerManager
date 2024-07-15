@@ -124,7 +124,6 @@ def handle_change_task(t, task_uuid: UUID = None, group=None, task: GroupTask = 
             'data': async_to_sync(get_the_task_of_node)(task=task)
         }
         group_task_change(group, data)
-        print(data)
         return
     elif t == 'remove':
         data = {
@@ -132,14 +131,12 @@ def handle_change_task(t, task_uuid: UUID = None, group=None, task: GroupTask = 
             'data': str(task_uuid)
         }
         group_task_change(group, data)
-        print(data)
     elif t == 'reload':
         data = {
             'action': t,
             'data': async_to_sync(get_the_task_of_node)(task=task)
         }
         group_task_change(group, data)
-        print(data)
 
 
 def group_task_change(group: Node_Group, data):

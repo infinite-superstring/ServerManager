@@ -372,7 +372,6 @@ class node_client(AsyncBaseConsumer):
         """终端内容输出"""
         channel = get_key_by_value(self.__tty_uuid, payload['uuid'], True)
         if channel:
-            print(channel)
             await self.channel_layer.send(channel, {
                 'type': "terminal_output",
                 'output': payload['output']
