@@ -7,7 +7,7 @@ USER root
 
 RUN apt update
 
-RUN apt install gcc libpq-dev libmagic1
+RUN apt install -y gcc libpq-dev libmagic1
 
 COPY . /app
 

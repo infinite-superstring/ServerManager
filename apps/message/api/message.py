@@ -26,29 +26,29 @@ def send_email(message: MessageBody):
         send(message)
         return True
     except SMTPDataError as e:
-        send_err_handle("邮件数据错误，发件人请使用合法的ASCII编码的文字")
+        send_err_handle(f"邮件数据错误，发件人请使用合法的ASCII编码的文字: {e}")
     except SMTPServerDisconnected as e:
-        send_err_handle("连接错误，请尝试使用SSL连接")
+        send_err_handle(f"连接错误，请尝试使用SSL连接: {e}")
     except SMTPAuthenticationError as e:
         """
         账号或密码错误
         """
-        send_err_handle("邮件服务用户名或密码错误,认证失败,请检查配置")
+        send_err_handle(f"邮件服务用户名或密码错误,认证失败,请检查配置: {e}")
     except SMTPResponseException as e:
         send_err_handle(f"邮件服务返回错误码{e.smtp_code},错误信息{e.smtp_error}")
     except SMTPException as e:
         """
         可能是发送人的账号错误
         """
-        send_err_handle("邮件发件地址错误,认证失败,请检查配置")
+        send_err_handle(f"邮件发件地址错误,认证失败,请检查配置: {e}")
     except TimeoutError as e:
         """
         端口错误
         """
-        send_err_handle("邮件服务端口错误,请检查配置")
+        send_err_handle(f"邮件服务端口错误,请检查配置: {e}")
     except Exception as e:
         """未知错误"""
-        send_err_handle("未知错误,请检查配置")
+        send_err_handle(f"未知错误,请检查配置: {e}")
     return False
 
 

@@ -64,7 +64,7 @@ def addPermissionGroup(req):
     creator = get_user_by_id(req.session.get("userID"))
     disable = req_json.get("disable")
     permission = req_json.get("permissions")
-    if not name or not creator or not permission or not disable:
+    if not name or not creator or not permission or disable is None:
         return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     if permission.get('all') and not groupPermission(creator).is_superuser():
         write_system_log(2, "用户权限管理", f"用户{creator.userName}(uid:{creator.id})尝试创建带all的权限组被拒绝")

@@ -23,12 +23,17 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         init_flag_file_path = os.path.join(os.getcwd(), '.init')
-        if not os.path.exists(init_flag_file_path) or '--force-init' in sys.argv:
+        force_init = '--force-init' in sys.argv
+        if not os.path.exists(init_flag_file_path) or force_init:
             Log.info("开始初始化数据库~")
-            self.__init_setting()
-            self.__init_permission_item()
-            self.__init_permission()
-            self.__init_user()
+            if not Settings.objects.all().count() > 0 or force_init:
+                self.__init_setting()
+            if not Permission_Item.objects.all().count() > 0 or force_init:
+                self.__init_permission_item()
+            if not Permission_groups.objects.all().count() > 0 or force_init:
+                self.__init_permission()
+            if not User.objects.all().count() > 0 or force_init:
+                self.__init_user()
             open(init_flag_file_path, 'w').close()
         else:
             Log.warning("您已经初始化过数据库啦，如需强制初始化数据库请添加参数：--force-init")
