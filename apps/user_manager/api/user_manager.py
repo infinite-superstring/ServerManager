@@ -302,6 +302,8 @@ def setUserInfo(req: HttpRequest):
     if disable is not None and disable != User.disable:
         if User.id == 1:
             return ResponseJson({'status': 0, 'msg': "无法禁用id为1的账户"})
+        if User.id == user.id:
+            return ResponseJson({'status': 0, 'msg': "你无法禁用你自己"})
         write_audit(
             req.session.get("userID"),
             "编辑用户: 禁用用户" if disable else "编辑用户: 启用用户",
