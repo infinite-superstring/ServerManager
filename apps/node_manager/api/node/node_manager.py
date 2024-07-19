@@ -1,4 +1,7 @@
 import secrets
+from typing import Callable
+
+from django.apps import apps
 
 from django.db.models import Q
 
@@ -16,6 +19,9 @@ from util.Response import ResponseJson
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
 from util.passwordUtils import encrypt_password
+from apps.setting.entity.Config import config
+
+config: Callable[[], config] = apps.get_app_config('setting').get_config
 
 
 def __advanced_search(search: str):
@@ -81,12 +87,14 @@ def add_node(req):
             node.tags.add(tag)
     node.save()
     init_node_alarm_setting(node)
+    server_token = config().base.server_token
     return ResponseJson({
         "status": 1,
         "msg": "节点创建成功",
         "data": {
             "node_name": node.name,
-            "token": token
+            "token": token,
+            'server_token': server_token,
         }})
 
 
@@ -148,11 +156,13 @@ def reset_node_token(req):
     node.token_hash = hashed_token
     node.token_salt = salt
     node.save()
+    server_token = config().base.server_token
     return ResponseJson({
         "status": 1,
         "msg": "Token重置成功",
         "data": {
-            "token": token
+            "token": token,
+            'server_token': server_token,
         }
     })
 
