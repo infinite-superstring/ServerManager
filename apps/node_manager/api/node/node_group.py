@@ -1,3 +1,4 @@
+from apps.audit.util.auditTools import write_audit, write_access_log
 from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
 from apps.node_manager.utils.groupUtil import create_message_recipient_rules, node_group_id_exists, \
     get_node_group_by_id, get_group_nodes
@@ -33,6 +34,7 @@ def get_group_list(req: HttpRequest):
                 "group_leader": get_user_by_id(item.get("leader_id")).userName,
                 "group_desc": item.get("description"),
             })
+    write_access_log(req.session["userID"], req, "集群编辑", f"获取集群列表(搜索条件: {search if search else '无'} 页码: {page} 页大小: {pageSize})")
     return ResponseJson({
         "status": 1,
         "data": {
@@ -65,9 +67,9 @@ def create_group(req: HttpRequest):
     if not (group_name and group_leader):
         return ResponseJson({'status': -1, 'msg': '参数不完整'})
     if Node_Group.objects.filter(name=group_name).exists():
-        return ResponseJson({"status": 0, "msg": "节点组已存在"})
+        return ResponseJson({"status": 0, "msg": "集群已存在"})
     if not uid_exists(group_leader):
-        return ResponseJson({'status': 0, 'msg': '节点组负责人不存在'})
+        return ResponseJson({'status': 0, 'msg': '负责人不存在'})
     group = Node_Group.objects.create(
         name=group_name,
         description=group_desc,
@@ -82,7 +84,8 @@ def create_group(req: HttpRequest):
         rules = create_message_recipient_rules(rules)
         for rule in rules:
             group.time_slot_recipient.add(rule)
-    return ResponseJson({'status': 1, 'msg': '节点组创建成功'})
+    write_audit(req.session['userID'], "创建集群", "集群编辑", f"集群：{group.name}(gid: {group.id})")
+    return ResponseJson({'status': 1, 'msg': '创建集群成功'})
 
 
 def del_group(req: HttpRequest):
@@ -101,7 +104,7 @@ def del_group(req: HttpRequest):
     if not verify_otp_for_request(req, code):
         return ResponseJson({"status": 0, "msg": "操作验证失败，请检查您的手机令牌"})
     if not node_group_id_exists(group_id):
-        return ResponseJson({'status': 0, 'msg': '节点组不存在'})
+        return ResponseJson({'status': 0, 'msg': '集群不存在'})
     group = get_node_group_by_id(group_id)
     nodes = get_group_nodes(group)
     for node in nodes:
@@ -111,7 +114,8 @@ def del_group(req: HttpRequest):
         group.time_slot_recipient.remove(rule)
         rule.delete()
     group.delete()
-    return ResponseJson({'status': 1, 'msg': '节点组删除成功'})
+    write_audit(req.session['userID'], "删除集群", "集群编辑", f"gid: {group_id}")
+    return ResponseJson({'status': 1, 'msg': '删除集群成功'})
 
 
 def edit_group(req: HttpRequest):
@@ -148,6 +152,7 @@ def get_group_by_id(req: HttpRequest):
     if not node_group_id_exists(group_id):
         return ResponseJson({'status': 0, 'msg': '节点组不存在'})
     group = get_node_group_by_id(group_id)
+    write_access_log(req.session["userID"], req, "集群编辑", f"获取集群信息：{group.name}(gid: {group.id})")
     return ResponseJson({
         "status": 1,
         "data": {

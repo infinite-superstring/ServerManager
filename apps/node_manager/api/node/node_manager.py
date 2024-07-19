@@ -2,6 +2,7 @@ import secrets
 
 from django.db.models import Q
 
+from apps.audit.util.auditTools import write_audit, write_access_log
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists
 from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists, node_name_exists, \
@@ -81,6 +82,7 @@ def add_node(req):
             node.tags.add(tag)
     node.save()
     init_node_alarm_setting(node)
+    write_audit(req.session['userID'], "创建节点", "节点管理", f"UUID: {node.uuid} 节点名：{node.name}")
     return ResponseJson({
         "status": 1,
         "msg": "节点创建成功",
@@ -113,6 +115,7 @@ def del_node(req):
         if not group_utils.check_group_permission("viewAllNode") and not is_node_available_for_user(user, node):
             return ResponseJson({'status': 0, 'msg': "当前无权限操作该节点"})
         node.delete()
+        write_audit(req.session['userID'], "删除节点", "节点管理", f"UUID: {node_id}")
         return ResponseJson({"status": 1, "msg": "节点已删除"})
     else:
         return ResponseJson({"status": 0, "msg": "节点不存在"})
@@ -148,6 +151,7 @@ def reset_node_token(req):
     node.token_hash = hashed_token
     node.token_salt = salt
     node.save()
+    write_audit(req.session['userID'], "重置节点Token", "节点管理", f"UUID: {node.uuid}")
     return ResponseJson({
         "status": 1,
         "msg": "Token重置成功",
@@ -202,6 +206,7 @@ def get_node_list(req):
                     "memory_used": f"{memory_used}%" if online and node_base_info.memory_total else "0%",
                 }
             })
+    write_access_log(req.session["userID"], req, "节点管理", f"获取节点列表(搜索条件: {search if search else '无'} 页码: {page} 页大小: {pageSize})")
     return ResponseJson({
         "status": 1,
         "data": {
@@ -238,6 +243,7 @@ def get_base_node_list(req):
                 "name": item.get("name"),
                 "group": True if item.get("group_id") else False,
             })
+    write_access_log(req.session["userID"], req, "节点管理", f"获取节点列表-基础(搜索条件: {search if search else '无'} 页码: {page} 页大小: {pageSize})")
     return ResponseJson({
         "status": 1,
         "data": {
@@ -268,6 +274,7 @@ def get_node_info(req):
     node = get_node_by_uuid(node_id)
     if not group_utils.check_group_permission("viewAllNode") and not is_node_available_for_user(user, node):
         return ResponseJson({'status': 0, 'msg': "当前无权限操作该节点"})
+    write_access_log(req.session["userID"], req, "节点管理", f"获取节点信息：{node.name}(uuid: {node.id})")
     return ResponseJson({
         "status": 1,
         "data": {
@@ -319,6 +326,7 @@ def edit_node(req):
         node.tags.clear()
         node.tags.add(*tags_obj)
     node.save()
+    write_audit(req.session['userID'], "编辑节点", "节点管理", f"UUID: {node.uuid} 节点名：{node.name} 集群归属：{node.group.name}(gid: {node.group.id})")
     return ResponseJson({
         "status": 1,
         "msg": "节点信息保存成功",

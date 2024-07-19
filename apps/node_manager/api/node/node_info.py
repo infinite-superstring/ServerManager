@@ -2,6 +2,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.http import HttpRequest
 
+from apps.audit.util.auditTools import write_access_log, write_audit
 from apps.node_manager.models import Node_DiskPartition, Node_AlarmSetting
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid, init_node_alarm_setting
 from util.Request import RequestLoadJson
@@ -24,6 +25,7 @@ def get_disk_partition_list(req: HttpRequest):
     if not node_uuid_exists(node_uuid):
         ResponseJson({'status': 0, 'msg': '节点不存在'})
     node = get_node_by_uuid(node_uuid)
+    write_access_log(req.session['userID'], req, "节点信息", f"获取节点{node.name}(uuid:{node.uuid})磁盘列表")
     return ResponseJson({
         'status': 1,
         'data': {
@@ -52,6 +54,7 @@ def get_alarm_setting(req: HttpRequest):
     memory_rule = alarm_setting.general_rules.filter(module="Memory").first() if alarm_setting else None
     network_rule = alarm_setting.network_rule if alarm_setting else None
     disk_rules = alarm_setting.disk_used_rules.all() if alarm_setting and alarm_setting.disk_used_rules.exists() else []
+    write_access_log(req.session['userID'], req, "节点信息", f"获取节点{node.name}(uuid:{node.uuid})告警设置")
     return ResponseJson({
         'status': 1,
         'data': {
@@ -150,6 +153,7 @@ def save_alarm_setting(req: HttpRequest):
                         ))
                 disk_rules.exclude(device__in=devices).delete()
     a_setting.save()
+    write_audit(req.session['userID'], "编辑节点告警设置", "节点信息", f"设置数据：{setting}")
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(f'NodeClient_{node_uuid}', {
         'type': 'reload_alarm_setting',

@@ -179,7 +179,7 @@ def setPermissionGroup(req):
     if newName and newName != Group.name:
         write_audit(
             user,
-            "重命名权限组",
+            "编辑权限组：重命名",
             "用户权限管理",
             f"{Group.name}-->{newName}"
         )
@@ -190,11 +190,16 @@ def setPermissionGroup(req):
                 "status": 0,
                 "msg": "无法禁用GID为1的组"
             })
+        if Group.id == user.permission.id:
+            return ResponseJson({
+                "status": 0,
+                "msg": "无法禁用您所在的权限组"
+            })
         write_audit(
             user,
-            "禁用权限组",
+            f"编辑权限组：{'禁用' if disable else '启用'}权限组",
             "用户权限管理",
-            f"{Group.name}: {Group.disable}-->{disable}")
+            f"{Group.name}(gid: {Group.id})")
         Group.disable = disable
     gp = groupPermission(Group)
     if permissions and set(gp.get_permissions_list()) != set(permissions):

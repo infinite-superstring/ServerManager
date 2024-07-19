@@ -1,5 +1,6 @@
 from django.http import HttpRequest
 
+from apps.audit.util.auditTools import write_access_log
 from apps.node_manager.utils.nodeUtil import node_uuid_exists
 from apps.node_manager.utils.nodeEventUtil import getNodeEvents, event_id_exists, get_event_by_id
 from apps.node_manager.models import Node_Event
@@ -37,6 +38,7 @@ def get_node_events(req: HttpRequest):
                 'update_time': item.get('update_time'),
                 'closed': True if item.get('end_time') else False,
             })
+    write_access_log(req.session["userID"], req, "节点事件", f"获取节点列表(页码: {page} 页大小: {pageSize})")
     return ResponseJson({
         "status": 1,
         "data": {
@@ -62,6 +64,7 @@ def get_event_info(req: HttpRequest):
     if not event_id_exists(event):
         return ResponseJson({'status': 0, 'msg': '事件ID不存在'})
     event: Node_Event = get_event_by_id(event)
+    write_access_log(req.session["userID"], req, "节点事件", f"根据id获取节点事件信息：{event.id}")
     return ResponseJson({'status': 1, 'data': {
         "start_time": event.start_time,
         "update_time": event.update_time,

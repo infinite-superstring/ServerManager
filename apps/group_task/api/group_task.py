@@ -7,9 +7,11 @@ from django.apps import apps
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
+from apps.audit.util.auditTools import write_audit
 from apps.group_task.models import GroupTask, Group_Task_Audit
 from apps.group_task.utils import group_task_util
 from apps.node_manager.models import Node_Group, Node
+from apps.node_manager.utils.groupUtil import get_node_group_by_id
 from apps.setting.entity.Config import config
 from apps.permission_manager.util.permission import groupPermission
 from apps.user_manager.util.userUtils import get_user_by_id
@@ -92,6 +94,7 @@ def create_group_task(req: HttpRequest):
             return result.api_error('周期设置错误')
         cycle.save()
     group_task_util.handle_change_task(t='add', task=g_task)
+    write_audit(req.session['userID'], "新增集群任务", "集群任务", f"任务名: {taskName} 执行集群：{get_node_group_by_id(group).name} 执行方式：{execType} 执行目录：{execPath if execPath else 'Default'} shell：{command}")
     return result.success(msg='操作完成')
 
 
@@ -245,6 +248,7 @@ def change_enable(req: HttpRequest):
         group_task_util.handle_change_task(t='add', group=g.node_group, task=g)
     else:
         group_task_util.handle_change_task(t='remove', group=g.node_group, task_uuid=g.uuid, task=g)
+    write_audit(req.session['userID'], f"{'启用' if g.enable else '禁用'}集群任务", "集群任务", f"task：{g.uuid}")
     return result.success(msg=f'任务{g.name}已{"启用" if g.enable else "禁用"}')
 
 
@@ -264,6 +268,7 @@ def delete_by_uuid(req: HttpRequest):
     task_uuid = group.uuid
     group.delete()
     group_task_util.handle_change_task(t='remove', group=node_group, task_uuid=task_uuid)
+    write_audit(req.session['userID'], f"删除集群任务", "集群任务", f"task：{uuids}")
     return result.success(msg='删除成功')
 
 
