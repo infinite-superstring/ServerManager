@@ -4,20 +4,11 @@ Copyright © Infinite Superstring
 
 ## 编译与部署
 
-### 在龙芯平台启动
+### 使用自动安装脚本
 ```shell
     cd ServerManager-Panel
-    sudo passwd  # 设置root账户密码
-    su root  # 切换至root账户
-    chmod +x setup.sh  # 给予安装脚本运行权限
-    ./setup.sh  # 开始安装
-```
-
-### 在X86平台启动
-```shell
-    cd ServerManager-Panel
-    sudo chmod +x setup.sh
-    sudo ./setup.sh 
+    sudo chmod +x setup.sh  # 给予安装脚本运行权限
+    sudo ./setup.sh  # 开始安装
 ```
 
 ### 以Debug模式启动及调试项目

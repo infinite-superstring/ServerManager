@@ -1,5 +1,6 @@
 from django.http import HttpRequest, HttpResponse
 
+from apps.audit.util.auditTools import write_audit
 from apps.node_manager.models import Cluster_Execute
 from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id, GroupUtil
 from apps.user_manager.util.userUtils import get_user_by_id
@@ -42,6 +43,7 @@ def createTask(request: HttpRequest) -> HttpResponse:
         'task_uuid': task.uuid,
         "shell": shell,
     })
+    write_audit(request.session['userID'], "创建执行器", "集群命令", f"集群：{group.name}(gid: {group.id}) 运行目录：{base_path if base_path else 'Default'} shell: {shell}")
     return success()
 
 

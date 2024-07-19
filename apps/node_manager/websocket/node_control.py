@@ -70,8 +70,8 @@ class node_control(AsyncBaseConsumer):
                 f"NodeControl_{self.__node.uuid}",
                 self.channel_name
             )
-        if self.__connect_terminal_flag:
-            await self.__close_terminal()
+            if self.__connect_terminal_flag:
+                await self.__close_terminal()
         raise StopConsumer
 
     async def receive(self, *args, **kwargs):

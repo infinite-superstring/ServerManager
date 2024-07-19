@@ -240,7 +240,7 @@ def setUserInfo(req: HttpRequest):
             req.session.get("userID"),
             "修改用户名",
             "用户管理",
-            f"{User.userName}-->{userName}"
+            f"被操作用户：{User.userName}(id: {User.id}) 数据：{User.userName}-->{userName}"
         )
         User.userName = userName
     if realName and realName != User.realName:
@@ -250,7 +250,7 @@ def setUserInfo(req: HttpRequest):
             req.session.get("userID"),
             "修改真实姓名",
             "用户管理",
-            f"{User.realName}-->{realName}")
+            f"被操作用户：{User.userName}(id: {User.id}) 数据：{User.realName}-->{realName}")
         User.realName = realName
     if email and email != User.email:
         if email_exists(email):
@@ -259,7 +259,7 @@ def setUserInfo(req: HttpRequest):
             req.session.get("userID"),
             "更新邮箱",
             "用户管理",
-            f"{User.email}-->{email}")
+            f"被操作用户：{User.userName}(id: {User.id}) 数据：{User.email}-->{email}")
         User.email = email
     if password:
         pv, pv_msg = verifyPasswordRules(password, config().security.password_level)
@@ -275,7 +275,7 @@ def setUserInfo(req: HttpRequest):
             req.session.get("userID"),
             "更新密码",
             "用户管理",
-            ""
+            f"被操作用户：{User.userName}(id: {User.id})"
         )
     if permission and permission != User.permission_id:
         if not group_id_exists(permission):
@@ -302,11 +302,13 @@ def setUserInfo(req: HttpRequest):
     if disable is not None and disable != User.disable:
         if User.id == 1:
             return ResponseJson({'status': 0, 'msg': "无法禁用id为1的账户"})
+        if User.id == user.id:
+            return ResponseJson({'status': 0, 'msg': "你无法禁用你自己"})
         write_audit(
             req.session.get("userID"),
             "编辑用户: 禁用用户" if disable else "编辑用户: 启用用户",
             "用户管理",
-            f"{User.disable}-->{disable}"
+            f"被操作用户：{User.userName}(id: {User.id})"
         )
         User.disable = disable
         apps.get_app_config("user_manager").disable_user_list.append(userId) if disable else apps.get_app_config("user_manager").disable_user_list.remove(userId)

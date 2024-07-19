@@ -3,6 +3,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 
 import util.result as R
+from apps.audit.util.auditTools import write_audit
 from apps.web_status.models import Web_Site, Web_Site_Abnormal_Log
 from apps.web_status.utils.webUtil import is_valid_host, hostIsExist, get_or_create_web_site_log, \
     get_latest_or_default_abnormal_log
@@ -29,12 +30,6 @@ def getList(req: HttpRequest):
     for web in web_list:
         runtime = get_or_create_web_site_log(web.get("id"))
         error_time = get_latest_or_default_abnormal_log(web.get("id"))
-        # runtime: Web_Site_Log = cache.get(f'web_status_log_{web.get("id")}') if cache.get(
-        #     f'web_status_log_{web.get("id")}') else Web_Site_Log()
-        # error_time: Web_Site_Abnormal_Log = \
-        #     Web_Site_Abnormal_Log.objects.filter(web_id=web.get("id")).order_by('-end_time')[0] if \
-        #         Web_Site_Abnormal_Log.objects.filter(web_id=web.get("id")).order_by(
-        #             '-end_time') else Web_Site_Abnormal_Log()
         result.append({
             "id": web.get("id"),
             "title": web.get("title"),
@@ -93,6 +88,7 @@ def addWeb(req: HttpRequest):
         return ResponseJson({"status": 0, "msg": "主机地址已存在"})
     web = Web_Site.objects.create(title=title, host=host, description=description)
     cache.delete(f'web_status_web_list')
+    write_audit(req.session['userID'], "新增网站监控", "网站监控", f"ID：{web.id} 标题：{title} 主机：{host}")
     return ResponseJson({"status": 1, "msg": "添加成功"})
 
 
@@ -107,6 +103,7 @@ def delWeb(req: HttpRequest, id):
             return ResponseJson({"status": 0, "msg": "主机不存在"})
     Web_Site.objects.filter(id=int(id)).delete()
     cache.delete(f'web_status_web_list')
+    write_audit(req.session['userID'], "删除网站监控", "网站监控", f"ID: {id}")
     return ResponseJson({"status": 1, "msg": "删除成功"})
 
 
@@ -130,6 +127,7 @@ def update(req: HttpRequest):
     site.title = data.get('title', site.title)
     site.description = data.get('description', site.description)
     site.save()
+    write_audit(req.session['userID'], "编辑网站监控", "网站监控", f"ID: {id}")
     return result.success(msg='更新成功')
 
 
