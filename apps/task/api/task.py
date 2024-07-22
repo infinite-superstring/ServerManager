@@ -3,6 +3,7 @@ from datetime import datetime
 from django.forms import model_to_dict
 from django.http import HttpRequest
 from django.db.models import Count
+from django.views.decorators.http import require_GET, require_POST
 
 from apps.permission_manager.util.api_permission import api_permission
 from apps.task.models import Task
@@ -21,13 +22,12 @@ def getList(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "获取任务列表成功", 'data': []})
 
 
+@require_GET
 @api_permission("viewDuty")
 def getDuty(req: HttpRequest):
     """
     获取所有用户的值班记录（每日签到记录）
     """
-    if req.method != 'GET':
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     str_year_and_month = req.GET.get('year_and_month')
     if str_year_and_month is None:
         return ResponseJson({"status": 0, "msg": "参数错误"}, 400)
@@ -55,13 +55,11 @@ def getDuty(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "获取值班记录成功", 'data': result})
 
 
+@require_POST
 def attendanceCheckIn(req: HttpRequest):
     """
     签到
     """
-    if req.method != 'POST':
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-
     try:
         # 如果请求体为空，则不解析
         if req.body == b'':
@@ -90,12 +88,11 @@ def attendanceCheckIn(req: HttpRequest):
         return ResponseJson({"status": 1, "msg": "签到成功", 'date': model_to_dict(task)})
 
 
+@require_GET
 def getCheckInStatus(req: HttpRequest):
     """
     获取签到状态
     """
-    if req.method != 'GET':
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     user_id = req.session.get("userID")
     time = get_current_time()
     status = byUserIDGetAttendanceState(user_id, time)

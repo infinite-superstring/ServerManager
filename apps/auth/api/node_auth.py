@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.http import HttpRequest
+from django.views.decorators.http import require_POST
 
 from apps.node_manager.models import Node, Node_BaseInfo
 from apps.node_manager.utils.nodeUtil import verify_node_token
@@ -10,12 +11,11 @@ from util.passwordUtils import encrypt_password
 
 config = apps.get_app_config('setting').get_config
 
+@require_POST
 def node_auth(req: HttpRequest):
     """
     节点认证
     """
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方法不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
         Log.debug(str(req_json))

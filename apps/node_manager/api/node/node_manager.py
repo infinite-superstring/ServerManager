@@ -4,6 +4,7 @@ from typing import Callable
 from django.apps import apps
 
 from django.db.models import Q
+from django.views.decorators.http import require_POST
 
 from apps.audit.util.auditTools import write_audit, write_access_log
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
@@ -51,11 +52,10 @@ def __advanced_search(search: str):
     return Node.objects.filter(query)
 
 
+@require_POST
 @api_permission("editNode")
 def add_node(req):
     """添加节点"""
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -102,11 +102,10 @@ def add_node(req):
         }})
 
 
+@require_POST
 @api_permission("editNode")
 def del_node(req):
     """删除节点"""
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -132,11 +131,10 @@ def del_node(req):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
 
 
+@require_POST
 @api_permission("editNode")
 def reset_node_token(req):
     """重置节点Token"""
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -154,8 +152,6 @@ def reset_node_token(req):
     if not node_uuid_exists(node_id):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
     node = get_node_by_uuid(node_id)
-    # if not group_utils.check_group_permission("viewAllNode") and node.creator != user:
-    #     return ResponseJson({'status': 0, 'msg': "无权限:无法删除他人的节点"})
     if not group_utils.check_group_permission("viewAllNode") and not is_node_available_for_user(user, node):
         return ResponseJson({'status': 0, 'msg': "当前无权限操作该节点"})
     token = secrets.token_hex(32)
@@ -175,10 +171,9 @@ def reset_node_token(req):
     })
 
 
+@require_POST
 def get_node_list(req):
     """获取节点列表"""
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -231,9 +226,8 @@ def get_node_list(req):
     })
 
 
+@require_POST
 def get_base_node_list(req):
-    if req.method != 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -268,10 +262,9 @@ def get_base_node_list(req):
     })
 
 
+@require_POST
 def get_node_info(req):
     """获取节点信息"""
-    if req.method != 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -302,11 +295,10 @@ def get_node_info(req):
     })
 
 
+@require_POST
 @api_permission("editNode")
 def edit_node(req):
     """编辑节点"""
-    if req.method != 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:

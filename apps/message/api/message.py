@@ -3,6 +3,7 @@ from smtplib import SMTPException, SMTPAuthenticationError, SMTPServerDisconnect
 
 from asgiref.sync import sync_to_async
 from django.db.models import QuerySet
+from django.views.decorators.http import require_GET, require_http_methods
 
 from apps.audit.util.auditTools import write_access_log, write_audit
 from apps.message.models import MessageBody, Message, UserMessage
@@ -52,16 +53,16 @@ def send_email(message: MessageBody):
     return False
 
 
+@require_GET
 def get_message_list(request):
     """
     获取消息列表
     """
+
     def _get_page_list(r, current_page: int, pz: int = 20) -> QuerySet:
         result_list = get_page_content(r, current_page if current_page > 1 else 1, pz)
         return result_list
 
-    if request.method != "GET":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     user = request.session.get('userID')
     user: User = get_user_by_id(user)
     method = request.GET.get('method')
@@ -118,13 +119,11 @@ def get_message_list(request):
     }})
 
 
+@require_GET
 def get_by_id(request):
     """
     根据id获取消息
     """
-    if request.method != "GET":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-
     msg_id = request.GET.get('id')
     user = request.session.get("userID")
     user = get_user_by_id(user)
@@ -154,12 +153,11 @@ def get_by_id(request):
     return ResponseJson({"status": 1, "msg": "获取成功", "data": msg})
 
 
+@require_GET
 def get_unread(request):
     """
     获取未读消息数量
     """
-    if request.method != "GET":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     user = get_user_by_id(request.session.get("userID"))
     write_access_log(
         user,
@@ -174,12 +172,11 @@ def get_unread(request):
     })
 
 
+@require_http_methods("DELETE")
 def delete_all(request):
     """
     删除所有已读消息
     """
-    if request.method != "DELETE":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     user = get_user_by_id(request.session.get("userID"))
     read_messages = UserMessage.objects.filter(user=user, read=True)
     if read_messages.count() > 0:
@@ -201,12 +198,11 @@ def delete_all(request):
     })
 
 
+@require_http_methods("PUT")
 def read_all(request):
     """
     已读所有消息
     """
-    if request.method != "PUT":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     user = get_user_by_id(request.session.get("userID"))
     unread_messages = UserMessage.objects.filter(user=user, read=False)
     if unread_messages.count() > 0:
@@ -226,12 +222,11 @@ def read_all(request):
     })
 
 
+@require_http_methods("DELETE")
 def delete_by_id(request):
     """
     根据id删除消息
     """
-    if request.method != "DELETE":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     user = get_user_by_id(request.session.get("userID"))
     msg_id = request.GET.get('id')
     write_audit(

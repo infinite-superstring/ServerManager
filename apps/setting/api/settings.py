@@ -1,6 +1,7 @@
 import json
 from django.shortcuts import HttpResponse
 from django.apps import apps
+from django.views.decorators.http import require_POST
 
 from apps.audit.util.auditTools import write_system_log
 from apps.permission_manager.util.api_permission import api_permission
@@ -18,22 +19,19 @@ def getSetting(req):
     return HttpResponse(json.dumps(app_setting.get_config(), default=lambda o: o.__dict__, indent=2))
 
 
+@require_POST
 @api_permission("changeSettings")
 def editSetting(req):
-    if req.method == 'POST':
-        try:
-            req_json = RequestLoadJson(req)
-        except Exception as e:
-            Log.error(e)
-            return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
-        else:
-            uid = req.session['userID']
-            user = get_user_by_id(uid)
-            app_setting.update_config(saveConfig(dictToConfig(req_json)))
-            write_system_log(1, "系统设置", f"用户{user.userName}(uid: {user.id})更新了设置")
-            return getSetting(req)
-    else:
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
+    uid = req.session['userID']
+    user = get_user_by_id(uid)
+    app_setting.update_config(saveConfig(dictToConfig(req_json)))
+    write_system_log(1, "系统设置", f"用户{user.userName}(uid: {user.id})更新了设置")
+    return getSetting(req)
 
 
 def getPageConfig(req):

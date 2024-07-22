@@ -1,3 +1,5 @@
+from django.views.decorators.http import require_POST
+
 from apps.audit.models import Audit, Access_Log, FileChange_Log, System_Log, User_Session_Log, Node_Session_Log
 from apps.node_manager.models import Node
 from apps.permission_manager.util.api_permission import api_permission
@@ -8,10 +10,9 @@ from util.Response import ResponseJson
 from util.logger import Log
 
 
+@require_POST
 @api_permission("viewAudit")
 def getAudit(req):
-    if not req.method == "POST":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -42,10 +43,9 @@ def getAudit(req):
     })
 
 
+@require_POST
 @api_permission("viewAudit")
 def getAccessLog(req):
-    if not req.method == "POST":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -77,10 +77,9 @@ def getAccessLog(req):
     })
 
 
+@require_POST
 @api_permission("viewAudit")
 def getFileChangeLog(req):
-    if not req.method == "POST":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -110,10 +109,9 @@ def getFileChangeLog(req):
     })
 
 
+@require_POST
 @api_permission("viewAudit")
 def getSystemLog(req):
-    if not req.method == "POST":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -143,10 +141,9 @@ def getSystemLog(req):
     })
 
 
+@require_POST
 @api_permission("viewAudit")
 def get_user_session_log(req):
-    if req.method != "POST":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -176,10 +173,9 @@ def get_user_session_log(req):
     })
 
 
+@require_POST
 @api_permission("viewAudit")
 def get_node_session_log(req):
-    if req.method != "POST":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:

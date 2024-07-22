@@ -1,4 +1,5 @@
 from django.http import HttpRequest
+from django.views.decorators.http import require_POST, require_http_methods
 
 from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import get_user_by_id
@@ -9,10 +10,9 @@ from apps.patrol.models import Patrol
 from util.pageUtils import get_page_content, get_max_page
 
 
+@require_POST
 @api_permission("viewPatrol")
 def addARecord(req: HttpRequest):
-    if req.method != "POST":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         data = RequestLoadJson(req)
     except Exception as e:
@@ -29,10 +29,9 @@ def addARecord(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "添加成功"})
 
 
+@require_POST
 @api_permission("viewPatrol")
 def getList(req: HttpRequest):
-    if req.method != "POST":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         data = RequestLoadJson(req)
     except Exception as e:
@@ -64,10 +63,9 @@ def getList(req: HttpRequest):
         })
 
 
+@require_http_methods("PUT")
 @api_permission("editPatrol")
 def updateRecord(req: HttpRequest):
-    if req.method != "PUT":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         data = RequestLoadJson(req)
     except Exception as e:
@@ -84,18 +82,15 @@ def updateRecord(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "更新成功"})
 
 
+@require_http_methods("DELETE")
 @api_permission("editPatrol")
 def deleteRecord(req: HttpRequest):
-    if req.method != "DELETE":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
-
-    else:
-        id = req.GET.get("id")
-        if id is None:
-            return ResponseJson({"status": -1, "msg": "参数错误"}, 400)
-        if not Patrol.objects.filter(id=id).exists():
-            return ResponseJson({"status": -1, "msg": "记录不存在"}, 400)
-        if not req.session.get("userID") == Patrol.objects.get(id=id).user_id:
-            return ResponseJson({"status": -1, "msg": "权限不足"})
-        Patrol.objects.filter(id=id).delete()
-        return ResponseJson({"status": 1, "msg": "删除成功"})
+    id = req.GET.get("id")
+    if id is None:
+        return ResponseJson({"status": -1, "msg": "参数错误"}, 400)
+    if not Patrol.objects.filter(id=id).exists():
+        return ResponseJson({"status": -1, "msg": "记录不存在"}, 400)
+    if not req.session.get("userID") == Patrol.objects.get(id=id).user_id:
+        return ResponseJson({"status": -1, "msg": "权限不足"})
+    Patrol.objects.filter(id=id).delete()
+    return ResponseJson({"status": 1, "msg": "删除成功"})

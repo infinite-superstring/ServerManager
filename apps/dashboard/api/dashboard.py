@@ -1,8 +1,6 @@
 from django.db.models import QuerySet
-
 from apps.audit.models import Node_Session_Log
 from apps.node_manager.models import Node, Node_BaseInfo, Node_Event
-from apps.permission_manager.util.api_permission import api_permission
 from apps.permission_manager.util.permission import groupPermission
 from apps.user_manager.util.userUtils import get_user_by_id
 from util import result
@@ -14,7 +12,6 @@ from django.http.request import HttpRequest
 from apps.task.api.task import getList
 
 
-# @api_permission(["viewAllNode", "editNode"])
 def get_overview(req: HttpRequest):
     """获取总览信息"""
     uid = req.session['userID']
@@ -50,8 +47,6 @@ def get_overview(req: HttpRequest):
 
 def get_node_list(req: HttpRequest):
     """获取仪表盘用节点列表"""
-    if req.method != 'GET':
-        return result.api_error('请求方式错误')
     uid = req.session['userID']
     user = get_user_by_id(uid)
     group_utils = groupPermission(user.permission)

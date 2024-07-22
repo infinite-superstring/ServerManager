@@ -1,6 +1,7 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.http import HttpRequest
+from django.views.decorators.http import require_POST
 
 from apps.audit.util.auditTools import write_access_log, write_audit
 from apps.node_manager.models import Node_DiskPartition, Node_AlarmSetting
@@ -11,10 +12,9 @@ from util.Response import ResponseJson
 from util.logger import Log
 
 
+@require_POST
 def get_disk_partition_list(req: HttpRequest):
     """获取节点磁盘分区列表"""
-    if req.method != 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -35,10 +35,9 @@ def get_disk_partition_list(req: HttpRequest):
     })
 
 
+@require_POST
 def get_alarm_setting(req: HttpRequest):
     """获取节点告警设置"""
-    if req.method != 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -86,11 +85,10 @@ def get_alarm_setting(req: HttpRequest):
         }
     })
 
+@require_POST
 @api_permission("editNode")
 def save_alarm_setting(req: HttpRequest):
     """保存节点告警设置"""
-    if req.method != 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:

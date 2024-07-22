@@ -4,6 +4,7 @@ from django.apps import apps
 
 from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse
+from django.views.decorators.http import require_POST
 
 from apps.auth.utils.authCodeUtils import user_otp_is_binding, send_auth_code, check_auth_code
 from apps.user_manager.util.userUtils import get_user_by_id
@@ -45,12 +46,11 @@ def send_email_code(request: HttpRequest) -> HttpResponse:
         })
 
 
+@require_POST
 def check_emali_code(request: HttpRequest) -> HttpResponse:
     """绑定:检查邮箱验证码并获取OPT二维码"""
     uid = request.session['userID']
     user = get_user_by_id(uid)
-    if not request.method == 'POST':
-        return api_error("请求方法不正确", 405)
     try:
         req_json = RequestLoadJson(request)
         Log.debug(str(req_json))
@@ -83,10 +83,9 @@ def check_emali_code(request: HttpRequest) -> HttpResponse:
     })
 
 
+@require_POST
 def bind_otp_check(request: HttpRequest) -> HttpResponse:
     """绑定:检查OTP验证码"""
-    if not request.method == 'POST':
-        return api_error("请求方法不正确", 405)
     try:
         req_json = RequestLoadJson(request)
         Log.debug(str(req_json))

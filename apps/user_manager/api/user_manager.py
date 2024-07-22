@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.http import HttpRequest
+from django.views.decorators.http import require_POST
 
 from apps.permission_manager.util.api_permission import api_permission
 from apps.permission_manager.util.permissionGroupUtils import group_id_exists, get_group_by_id
@@ -20,10 +21,9 @@ config = apps.get_app_config('setting').get_config
 
 
 # 获取用户列表
+@require_POST
 @api_permission(["manageUser", "editNodeGroup"])
 def getUserList(req: HttpRequest):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -68,10 +68,9 @@ def getUserList(req: HttpRequest):
 
 
 # 新增用户
+@require_POST
 @api_permission("manageUser")
 def addUser(req: HttpRequest):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
         Log.debug(req_json)
@@ -127,10 +126,9 @@ def addUser(req: HttpRequest):
 
 
 # 删除用户
+@require_POST
 @api_permission("manageUser")
 def delUser(req: HttpRequest):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -163,10 +161,9 @@ def delUser(req: HttpRequest):
 
 
 # 获取用户权限
+@require_POST
 @api_permission("manageUser")
 def getUserPermission(req: HttpRequest):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -186,10 +183,9 @@ def getUserPermission(req: HttpRequest):
 
 
 # 获取用户信息
+@require_POST
 @api_permission("manageUser")
 def getUserInfo(req: HttpRequest):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -214,10 +210,9 @@ def getUserInfo(req: HttpRequest):
 
 
 # 修改用户信息
+@require_POST
 @api_permission("manageUser")
 def setUserInfo(req: HttpRequest):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:

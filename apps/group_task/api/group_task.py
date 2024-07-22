@@ -6,6 +6,7 @@ from asgiref.sync import async_to_sync
 from django.apps import apps
 from django.db.models import QuerySet
 from django.http import HttpRequest
+from django.views.decorators.http import require_http_methods, require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit
 from apps.group_task.models import GroupTask, Group_Task_Audit
@@ -24,13 +25,12 @@ from util.logger import Log
 config: Callable[[], config] = apps.get_app_config('setting').get_config
 
 
+@require_POST
 @api_permission('clusterTask')
 def create_group_task(req: HttpRequest):
     """
     创建集群任务
     """
-    if req.method != 'POST' and req.method != 'PUT':
-        return result.api_error('请求方式错误', http_code=405)
     try:
         data = RequestLoadJson(req)
     except:
@@ -101,12 +101,11 @@ def create_group_task(req: HttpRequest):
     return result.success(msg='操作完成')
 
 
+@require_GET
 def get_list(req: HttpRequest):
     """
     获取集群任务列表
     """
-    if req.method != 'GET':
-        return result.api_error('请求方式错误', http_code=405)
     page = req.GET.get('page', 1)
     page_size = req.GET.get('pageSize', 20)
     search = req.GET.get('search', "")
@@ -145,8 +144,6 @@ def get_task_name(req: HttpRequest):
     """
     获取所有任务名称
     """
-    if req.method != 'GET':
-        result.api_error('请求方式错误', http_code=405)
     all_tasks = GroupTask.objects.all()
     return result.success(data=[
         {
@@ -158,13 +155,12 @@ def get_task_name(req: HttpRequest):
         for t in all_tasks])
 
 
+@require_GET
 @api_permission('clusterTask')
 def by_task_uuid_get_node(req: HttpRequest):
     """
     根据任务UUID获取节点
     """
-    if req.method != 'GET':
-        return result.api_error('请求方式错误', http_code=405)
     task_uuid = req.GET.get('uuid', '')
     node_group: Node_Group = GroupTask.objects.get(uuid=task_uuid).node_group
     nodes = Node.objects.filter(group=node_group)
@@ -179,10 +175,9 @@ def by_task_uuid_get_node(req: HttpRequest):
         for n in nodes])
 
 
+@require_GET
 @api_permission('clusterTask')
 def by_node_uuid_get_result(req: HttpRequest):
-    if req.method != 'GET':
-        return result.api_error('请求方式错误', http_code=405)
     node_uuid = req.GET.get('uuid', '')
     task_uuid = req.GET.get('task_uuid', '')
     show_count = req.GET.get('show_count', 30)
@@ -205,10 +200,9 @@ def by_node_uuid_get_result(req: HttpRequest):
         for t in group_task_audit])
 
 
+@require_GET
 @api_permission('clusterTask')
 def get_result_detail(req: HttpRequest, char_set='utf-8'):
-    if req.method != 'GET':
-        return result.api_error('请求方式错误', http_code=405)
     uuid = req.GET.get('uuid', '')
     node_uuid = req.GET.get('node_uuid', '')
     task_uuid = req.GET.get('task_uuid', '')
@@ -231,13 +225,12 @@ def get_result_detail(req: HttpRequest, char_set='utf-8'):
     return result.success(commandLine)
 
 
+@require_http_methods("PUT")
 @api_permission('clusterTask')
 def change_enable(req: HttpRequest):
     """
     更改任务状态
     """
-    if req.method != 'PUT':
-        return result.api_error('请求方式错误', http_code=405)
     try:
         data = RequestLoadJson(req)
     except:
@@ -260,13 +253,12 @@ def change_enable(req: HttpRequest):
     return result.success(msg=f'任务{g.name}已{"启用" if g.enable else "禁用"}')
 
 
+@require_http_methods("DELETE")
 @api_permission('clusterTask')
 def delete_by_uuid(req: HttpRequest):
     """
     根据 uuid 删除任务
     """
-    if req.method != 'DELETE':
-        return result.api_error('请求方式错误', http_code=405)
     uuids: str = req.GET.get('uuid', '')
     if not uuids:
         return result.error('请选择任务')
@@ -309,13 +301,12 @@ async def by_node_uuid_get_task(node_uuid: str, group: Node_Group = None):
     return group_tasks
 
 
+@require_GET
 @api_permission('clusterTask')
 def get_task_detailed(req: HttpRequest):
     """
     获取任务详情
     """
-    if req.method != 'GET':
-        return result.api_error('请求方式错误', http_code=405)
     uuid = req.GET.get('uuid', '')
     task: GroupTask = GroupTask.objects.filter(uuid=uuid).first()
     if not task:
@@ -324,13 +315,12 @@ def get_task_detailed(req: HttpRequest):
     return result.success(data=data)
 
 
+@require_GET
 @api_permission('clusterTask')
 def get_task_by_uuid(req: HttpRequest):
     """
     根据 uuid 获取任务
     """
-    if req.method != 'GET':
-        return result.api_error('请求方式错误', http_code=405)
     task: GroupTask = GroupTask.objects.filter(uuid=req.GET.get('uuid', '')).first()
     if not task:
         return result.error('任务不存在')
@@ -352,13 +342,12 @@ def get_task_by_uuid(req: HttpRequest):
     return result.success(r_data)
 
 
+@require_POST
 @api_permission('clusterTask')
 def command_legal(req: HttpRequest):
     """
     命令是否合法
     """
-    if req.method != 'POST':
-        return result.api_error('请求方式错误', http_code=405)
     disable_command_list: [list[str]] = config().terminal_audit.disable_command_list.split('\n')
     warn_command_list: [list[str]] = config().terminal_audit.warn_command_list.split('\n')
     try:

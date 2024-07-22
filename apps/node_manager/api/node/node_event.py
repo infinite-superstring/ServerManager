@@ -1,4 +1,5 @@
 from django.http import HttpRequest
+from django.views.decorators.http import require_POST
 
 from apps.audit.util.auditTools import write_access_log
 from apps.node_manager.utils.nodeUtil import node_uuid_exists
@@ -10,9 +11,8 @@ from util.pageUtils import get_page_content, get_max_page
 from util.logger import Log
 
 
+@require_POST
 def get_node_events(req: HttpRequest):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -49,10 +49,9 @@ def get_node_events(req: HttpRequest):
     })
 
 
+@require_POST
 def get_event_info(req: HttpRequest):
     """获取节点事件信息"""
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:

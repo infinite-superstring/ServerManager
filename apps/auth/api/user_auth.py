@@ -3,6 +3,7 @@ import datetime
 from django.apps import apps
 from django.core.cache import cache
 from django.http import HttpRequest
+from django.views.decorators.http import require_POST
 
 from util.Response import ResponseJson
 from util.Request import RequestLoadJson, getClientIp
@@ -16,13 +17,11 @@ from apps.permission_manager.util.permission import groupPermission
 config: config = apps.get_app_config('setting').get_config()
 
 
+@require_POST
 def AuthLogin(req: HttpRequest):
     """用户登录"""
     if req.session.get("user"):
         return ResponseJson({"status": 1, "msg": "当前账户已登录"})
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方法不正确"}, 405)
-
     req_json = RequestLoadJson(req)
     user = req_json.get("username")
     password = req_json.get("password")

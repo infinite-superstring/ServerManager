@@ -3,13 +3,17 @@ import base64
 import hashlib
 import os
 
+from asgiref.sync import async_to_sync
 from django.apps import apps
 from django.http import FileResponse
+from django.views.decorators.http import require_POST
+
 from apps.user_manager.models import User as Users
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, \
     verify_username_and_password, username_exists
 from apps.auth.utils.authCodeUtils import user_otp_is_binding
 from apps.auth.utils.otpUtils import verify_otp
+from util.asgi_file import async_file_response, get_file_response
 from util.base64Util import get_file_size
 from util.passwordUtils import verifyPasswordRules
 from util.Request import RequestLoadJson
@@ -22,15 +26,13 @@ config = apps.get_app_config('setting').get_config
 avatar_save_path = os.path.join(os.getcwd(), "data", "avatar")
 
 
-@Log.catch
+@require_POST
 def setPassword(req):
     """
     设置密码
     :param req:
     :return:
     """
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"})
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -82,14 +84,13 @@ def getUserInfo(req):
     }})
 
 
+@require_POST
 def setUserInfo(req):
     """
     设置用户信息
     :param req:
     :return:
     """
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -130,14 +131,13 @@ def setUserInfo(req):
 
 
 # 头像上传
+@require_POST
 def uploadAvatar(req):
     """
     头像上传
     :param req:
     :return: JSON
     """
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -220,6 +220,6 @@ def getAvatar(req):
     User = get_user_by_id(userId)
     write_access_log(userId, req, "用户信息", "获取用户头像")
     if not User.avatar:
-        return FileResponse(open(os.path.join(avatar_save_path, "fff.png"), "rb"), content_type="image/png")
+        return get_file_response(os.path.join(avatar_save_path, "fff.png"))
     if os.path.exists(os.path.join(avatar_save_path, User.avatar)):
-        return FileResponse(open(os.path.join(avatar_save_path, User.avatar), "rb"), content_type="image/webp")
+        return get_file_response(os.path.join(avatar_save_path, User.avatar))

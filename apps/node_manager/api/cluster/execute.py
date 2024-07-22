@@ -1,4 +1,5 @@
 from django.http import HttpRequest, HttpResponse
+from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit
 from apps.node_manager.models import Cluster_Execute
@@ -10,12 +11,11 @@ from util.result import api_error, error, success
 from util.logger import Log
 
 
+@require_POST
 def createTask(request: HttpRequest) -> HttpResponse:
     """
     创建Shell执行任务
     """
-    if not request.method == "POST":
-        return api_error("请求方式不正确")
     try:
         req_json = RequestLoadJson(request)
     except Exception as e:
@@ -47,12 +47,11 @@ def createTask(request: HttpRequest) -> HttpResponse:
     return success()
 
 
+@require_GET
 def getResultList(request: HttpRequest) -> HttpResponse:
     """
     获取Shell执行返回列表
     """
-    if not request.method == "GET":
-        return api_error("请求方式不正确")
     PageContent: list = []
     page = request.GET.get("page", 1)
     pageSize = request.GET.get("pageSize", 20)
@@ -73,6 +72,7 @@ def getResultList(request: HttpRequest) -> HttpResponse:
         "PageContent": PageContent
     })
 
+@require_GET
 def getResult(request: HttpRequest) -> HttpResponse:
     """
     获取Shell执行返回

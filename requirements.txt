@@ -5,6 +5,7 @@ daphne
 channels==3.0.4
 channels_redis
 django-eventstream
+aiofiles
 dj-config-url
 apscheduler
 redis

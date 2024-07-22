@@ -3,17 +3,18 @@ import os.path
 
 from django.apps import apps
 from django.http import HttpRequest, HttpResponse, FileResponse
+from django.views.decorators.http import require_GET
 
 from apps.node_manager.models import Node, Node_TerminalRecord
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import uid_exists, get_user_by_id
 from util.Response import ResponseJson
+from util.asgi_file import get_file_response
 
 
+@require_GET
 def load_node_list(req: HttpRequest) -> HttpResponse:
-    if req.method != "GET":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     temp = [{
         'name': item.name,
         'id': item.uuid,
@@ -25,10 +26,8 @@ def load_node_list(req: HttpRequest) -> HttpResponse:
         'data': temp
     })
 
-
+@require_GET
 def load_terminal_user_list(req: HttpRequest) -> HttpResponse:
-    if req.method != "GET":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     node_uuid = req.GET.get('node_uuid', None)
     if not node_uuid:
         return ResponseJson({
@@ -58,9 +57,8 @@ def load_terminal_user_list(req: HttpRequest) -> HttpResponse:
     })
 
 
+@require_GET
 def load_terminal_session_list(req: HttpRequest) -> HttpResponse:
-    if req.method != "GET":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     node_uuid = req.GET.get('node_uuid', None)
     user_id = req.GET.get('user_id', None)
     if not node_uuid or not user_id:
@@ -96,9 +94,8 @@ def load_terminal_session_list(req: HttpRequest) -> HttpResponse:
     })
 
 
+@require_GET
 def load_terminal_session_record(req: HttpRequest) -> HttpResponse | FileResponse:
-    if req.method != "GET":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     node_uuid: str = req.GET.get('node_uuid', None)
     session_id: str = req.GET.get('session_uuid', None)
     if not node_uuid or not session_id:
@@ -118,5 +115,4 @@ def load_terminal_session_record(req: HttpRequest) -> HttpResponse | FileRespons
             "status": 0,
             'msg': "会话不存在"
         }, 404)
-
-    return FileResponse(open(session_file, 'rb'), as_attachment=True)
+    return get_file_response(session_file)

@@ -1,3 +1,5 @@
+from django.views.decorators.http import require_POST
+
 from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import get_user_by_id
 from apps.audit.util.auditTools import write_access_log, write_audit, write_system_log
@@ -10,13 +12,12 @@ from util.Response import ResponseJson
 from util.logger import Log
 
 
+@require_POST
 @api_permission(["manageUser", "managePermissionGroup"])
 def getPermissionGroupsList(req):
     """
     获取权限组列表
     """
-    if not req.method == "POST":
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -53,11 +54,12 @@ def getPermissionGroupsList(req):
     })
 
 
-# 新建权限组
+@require_POST
 @api_permission("managePermissionGroup")
 def addPermissionGroup(req):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    """
+    新建权限组
+    """
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -89,11 +91,12 @@ def addPermissionGroup(req):
     return ResponseJson({"status": 1, "msg": "添加成功"})
 
 
-# 删除权限组
+@require_POST
 @api_permission("managePermissionGroup")
 def delPermissionGroup(req):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    """
+    删除权限组
+    """
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -125,11 +128,12 @@ def delPermissionGroup(req):
     return ResponseJson({"status": 1, "msg": "组已删除"})
 
 
-# 获取权限组信息
+@require_POST
 @api_permission("managePermissionGroup")
 def getPermissionGroupInfo(req):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    """
+    获取权限组信息
+    """
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -157,11 +161,12 @@ def getPermissionGroupInfo(req):
     }})
 
 
-# 修改权限组
+@require_POST
 @api_permission("managePermissionGroup")
 def setPermissionGroup(req):
-    if not req.method == 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+    """
+    修改权限组
+    """
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:

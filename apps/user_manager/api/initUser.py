@@ -7,6 +7,7 @@ import pyotp
 from django.apps import apps
 from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse
+from django.views.decorators.http import require_GET, require_POST
 
 from apps.user_manager.util.userUtils import get_user_by_id
 from apps.auth.utils.authCodeUtils import generate_verification_code
@@ -21,10 +22,9 @@ from util.logger import Log
 config = apps.get_app_config('setting').get_config
 
 
+@require_GET
 def sendEmailVerifyCode(request: HttpRequest) -> HttpResponse:
     """发送邮箱验证码"""
-    if not request.method == 'GET':
-        return api_error("请求方法不正确", 405)
     uid = request.session['userID']
     user = get_user_by_id(uid)
     if not user.isNewUser:
@@ -56,10 +56,9 @@ def sendEmailVerifyCode(request: HttpRequest) -> HttpResponse:
     })
 
 
+@require_POST
 def initUserInfo(request: HttpRequest) -> HttpResponse:
     """初始化用户信息"""
-    if not request.method == 'POST':
-        return api_error("请求方法不正确", 405)
     try:
         req_json = RequestLoadJson(request)
         Log.debug(str(req_json))
@@ -105,9 +104,8 @@ def initUserInfo(request: HttpRequest) -> HttpResponse:
     user.save()
     return success()
 
+@require_GET
 def checkOTP_Code(request: HttpRequest) -> HttpResponse:
-    if not request.method == 'GET':
-        return api_error("请求方法不正确", 405)
     if not config().security.force_otp_bind:
         return api_error("非法访问")
     code = request.GET.get('code', None)

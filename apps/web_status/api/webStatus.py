@@ -1,6 +1,7 @@
 from django.core.cache import cache
 from django.db.models import QuerySet
 from django.http import HttpRequest
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 import util.result as R
 from apps.audit.util.auditTools import write_audit
@@ -14,17 +15,16 @@ from util.Response import ResponseJson
 from util.logger import Log
 
 
+@require_GET
 @api_permission("viewWebStatus")
 def getList(req: HttpRequest):
     """
     获取监控网站列表
     """
-    if req.method != "GET":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     page = int(req.GET.get("page", 1))
     pageSize = int(req.GET.get("pageSize", 10))
     name = req.GET.get("name", "")
-    web_list = Web_Site.objects.filter(title__contains=name,).order_by('id')
+    web_list = Web_Site.objects.filter(title__contains=name, ).order_by('id')
     count = web_list.count()
     web_list: QuerySet = pageUtils.get_page_content(web_list, int(page), int(pageSize))
     result = []
@@ -49,13 +49,12 @@ def getList(req: HttpRequest):
     })
 
 
+@require_POST
 @api_permission("editWebStatus")
 def addWeb(req: HttpRequest):
     """
     添加监控站点
     """
-    if req.method != "POST":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     try:
         data = RequestLoadJson(req)
     except Exception as e:
@@ -78,13 +77,12 @@ def addWeb(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "添加成功"})
 
 
+@require_http_methods("DELETE")
 @api_permission("editWebStatus")
 def delWeb(req: HttpRequest, id):
     """
     删除监控站点
     """
-    if req.method != "DELETE":
-        return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
     if id:
         if not Web_Site.objects.get(id=int(id)):
             return ResponseJson({"status": 0, "msg": "主机不存在"})
@@ -94,13 +92,12 @@ def delWeb(req: HttpRequest, id):
     return ResponseJson({"status": 1, "msg": "删除成功"})
 
 
+@require_http_methods("PUT")
 @api_permission("editWebStatus")
 def update(req: HttpRequest):
     """
     更新监控站点
     """
-    if req.method != "PUT":
-        return result.api_error("请求方式错误", 405)
     try:
         data = RequestLoadJson(req)
     except Exception as e:
@@ -119,24 +116,22 @@ def update(req: HttpRequest):
     return result.success(msg='更新成功')
 
 
+@require_GET
 @api_permission("viewWebStatus")
 def getSiteNames(req: HttpRequest):
     """
     获取监控站点名称
     """
-    if req.method != 'GET':
-        return result.api_error("请求方式错误", http_code=405)
     names = Web_Site.objects.filter().values_list('title', 'host')
     return result.success(names)
 
 
+@require_GET
 @api_permission("viewWebStatus")
 def getLog(req: HttpRequest):
     """
     获取 监控日志
     """
-    if req.method != 'GET':
-        return result.api_error("请求方式错误", http_code=405)
     host = req.GET.get('host', '')
     page = req.GET.get('page', 1)
     pageSize = req.GET.get('pageSize', 20)

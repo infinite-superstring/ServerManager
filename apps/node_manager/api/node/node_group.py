@@ -1,3 +1,5 @@
+from django.views.decorators.http import require_POST, require_GET
+
 from apps.audit.util.auditTools import write_audit, write_access_log
 from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
 from apps.node_manager.utils.groupUtil import create_message_recipient_rules, node_group_id_exists, \
@@ -13,10 +15,9 @@ from util.pageUtils import get_page_content, get_max_page
 from django.http.request import HttpRequest
 
 
+@require_POST
 @api_permission("editNodeGroup")
 def get_group_list(req: HttpRequest):
-    if req.method != 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -47,11 +48,10 @@ def get_group_list(req: HttpRequest):
     })
 
 
+@require_POST
 @api_permission("editNodeGroup")
 def create_group(req: HttpRequest):
     """创建组"""
-    if req.method != 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -91,11 +91,10 @@ def create_group(req: HttpRequest):
     return ResponseJson({'status': 1, 'msg': '创建集群成功'})
 
 
+@require_POST
 @api_permission("editNodeGroup")
 def del_group(req: HttpRequest):
     """删除组"""
-    if req.method != 'POST':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
         req_json = RequestLoadJson(req)
     except Exception as e:
@@ -122,11 +121,13 @@ def del_group(req: HttpRequest):
     return ResponseJson({'status': 1, 'msg': '删除集群成功'})
 
 
+@require_POST
 @api_permission("editNodeGroup")
 def edit_group(req: HttpRequest):
     """编辑组"""
 
 
+@require_GET
 @api_permission("editNodeGroup")
 def get_group_by_id(req: HttpRequest):
     """获取组详细"""
@@ -150,8 +151,6 @@ def get_group_by_id(req: HttpRequest):
             week_list.append('星期日')
         return week_list
 
-    if req.method != 'GET':
-        return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     group_id: int = req.GET.get('group_id')
     if not group_id:
         return ResponseJson({'status': -1, 'msg': "参数不完整"}, 400)
