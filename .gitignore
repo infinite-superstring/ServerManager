@@ -11,3 +11,4 @@
 /dumpdata.json
 .init
 db.sqlite3.*
+/data/

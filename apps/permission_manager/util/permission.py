@@ -99,7 +99,7 @@ class groupPermission:
             temp.update({p_item: self.check_group_permission(p_item)})
         return temp
 
-    def check_group_permission(self, permission_name: str) -> bool:
+    def check_group_permission(self, permission_name: str | list) -> bool:
         """
         检查组内是否有该权限
         :param permission_name: 权限名
@@ -109,6 +109,11 @@ class groupPermission:
             return False
         if self.is_superuser():
             return True
+        if isinstance(permission_name, list):
+            for permission in permission_name:
+                if permission in self.get_permissions_list():
+                    return True
+            return False
         return permission_name in self.get_permissions_list()
 
     def is_superuser(self) -> bool:
