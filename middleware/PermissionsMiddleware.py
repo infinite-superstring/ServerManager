@@ -28,63 +28,60 @@ class PermissionsMiddleware(MiddlewareMixin):
         # 页面权限表
         accessPermission = {
             # 用户管理
-            "/api/admin/userManager/getUserList": [
-                "manageUser",
-                "editNodeGroup"
-            ],
-            "/api/admin/userManager/.*": "manageUser",
+            # "/api/admin/userManager/getUserList": [
+            #     "manageUser",
+            #     "editNodeGroup"
+            # ],
+            # "/api/admin/userManager/.*": "manageUser",
             # 权限管理
-            "/api/admin/permissionManager/.*": "managePermissionGroup",
+            # "/api/admin/permissionManager/.*": "managePermissionGroup",
             # 节点管理器
-            (
-                "/api/node_manager/addNode"
-                "/api/node_manager/delNode",
-                "/api/node_manager/editNode",
-                "/api/node_manager/resetToken"
-                "/api/node_manager/node_info/save_alarm_setting"
-            ): "editNode",
-            "/api/node_manager/node_tag/search_tag": 'editNode',
-            "/api/node_manager/getNodeList": ['editNode', 'viewAllNode', "editNodeGroup"],
-            "/api/node_manager/getBaseNodeList": ['editNodeGroup', 'editNode', 'viewAllNode'],
-            "/api/node_manager/getNodeInfo": ['editNodeGroup', 'editNode', 'viewAllNode'],
+            # (
+            #     "/api/node_manager/addNode"
+            #     "/api/node_manager/delNode",
+            #     "/api/node_manager/editNode",
+            #     "/api/node_manager/resetToken"
+            #     "/api/node_manager/node_info/save_alarm_setting"
+            # ): "editNode",
+            # "/api/node_manager/node_tag/search_tag": 'editNode',
+            # "/api/node_manager/getNodeList": ['editNode', 'viewAllNode', "editNodeGroup"],
+            # "/api/node_manager/getBaseNodeList": ['editNodeGroup', 'editNode', 'viewAllNode'],
+            # "/api/node_manager/getNodeInfo": ['editNodeGroup', 'editNode', 'viewAllNode'],
             # 集群/节点组
-            "/api/node_manager/node_group/getGroupList": ["editNodeGroup", 'clusterTask', "clusterExecuteCommand"],
-            (
-                "/api/node_manager/node_info/createGroup",
-                "/api/node_manager/node_group/delGroup"
-                "/api/node_manager/node_group/getGroupById"
-            ): "editNodeGroup",
+            # "/api/node_manager/node_group/getGroupList": ["editNodeGroup", 'clusterTask', "clusterExecuteCommand"],
+            # (
+            #     "/api/node_manager/node_info/createGroup",
+            #     "/api/node_manager/node_group/delGroup"
+            #     "/api/node_manager/node_group/getGroupById"
+            # ): "editNodeGroup",
             # 集群 - 执行
-            "/api/node_manager/cluster/execute/.*": "clusterExecuteCommand",
+            # "/api/node_manager/cluster/execute/.*": "clusterExecuteCommand",
             # 集群 - 任务
-            "/api/group_task/.*": 'clusterTask',
+            # "/api/group_task/.*": 'clusterTask',
             # 节点信息
-            "/api/node_manager/node_info/.*": "editNode",
+            # "/api/node_manager/node_info/.*": "editNode",
             # 网站监控
-            "/api/webStatus/getList": "viewWebStatus",
-            (
-                "/api/webStatus/addWeb",
-                "/api/webStatus/delWeb",
-                "/api/webStatus/update"
-            ): "editWebStatus",
-            "/api/webStatus/getSiteNames": ['viewWebStatus', "viewAudit"],
-            "/api/webStatus/getLog": ['viewWebStatus', "viewAudit"],
-            # 审计与日志
-            "/api/admin/auditAndLogger/groupTask/.*": "clusterTask",
-            "/api/admin/auditAndLogger/.*": "viewAudit",
+            # "/api/webStatus/getList": "viewWebStatus",
+            # (
+            #     "/api/webStatus/addWeb",
+            #     "/api/webStatus/delWeb",
+            #     "/api/webStatus/update"
+            # ): "editWebStatus",
+            # "/api/webStatus/getSiteNames": ['viewWebStatus', "viewAudit"],
+            # "/api/webStatus/getLog": ['viewWebStatus', "viewAudit"],
             # 系统设置
-            "/api/admin/settings/.*": "changeSettings",
+            # "/api/admin/settings/.*": "changeSettings",
             # 巡检记录
-            (
-                "/api/patrol/addARecord",
-                "/api/patrol/getList"
-            ): "viewPatrol",
-            (
-                "/api/patrol/updateARecord",
-                "/api/patrol/deleteRecord"
-            ): "editPatrol",
+            # (
+            #     "/api/patrol/addARecord",
+            #     "/api/patrol/getList"
+            # ): "viewPatrol",
+            # (
+            #     "/api/patrol/updateARecord",
+            #     "/api/patrol/deleteRecord"
+            # ): "editPatrol",
             # 值班记录
-            "/api/task/getDuty": 'viewDuty',
+            # "/api/task/getDuty": 'viewDuty',
         }
 
         # 忽略权限过滤器

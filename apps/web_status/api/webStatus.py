@@ -4,6 +4,7 @@ from django.http import HttpRequest
 
 import util.result as R
 from apps.audit.util.auditTools import write_audit
+from apps.permission_manager.util.api_permission import api_permission
 from apps.web_status.models import Web_Site, Web_Site_Abnormal_Log
 from apps.web_status.utils.webUtil import is_valid_host, hostIsExist, get_or_create_web_site_log, \
     get_latest_or_default_abnormal_log
@@ -13,6 +14,7 @@ from util.Response import ResponseJson
 from util.logger import Log
 
 
+@api_permission("viewWebStatus")
 def getList(req: HttpRequest):
     """
     获取监控网站列表
@@ -47,23 +49,7 @@ def getList(req: HttpRequest):
     })
 
 
-# def getRuntime(req: HttpRequest):
-#     if req.method != "GET":
-#         return ResponseJson({"status": 0, "msg": "请求方式错误"}, 405)
-#     logs = Web_Site_Log.objects.all()
-#     web_group = logs.only('web').distinct()
-#     web_host = [web.web.host for web in web_group]
-#     result = {}
-#     for host_key in web_host:
-#         times: QuerySet[(datetime,)] = logs.filter(web__host=host_key).values_list('time')
-#         datas: QuerySet[(int,)] = logs.filter(web__host=host_key).values_list('delay')
-#         result[host_key] = {
-#             'time': [str(time[0].strftime("%H:%M:%S")) for time in times],
-#             'data': [str(data[0]) for data in datas]
-#         }
-#     return ResponseJson({"status": 1, "msg": "获取成功", "data": result})
-
-
+@api_permission("editWebStatus")
 def addWeb(req: HttpRequest):
     """
     添加监控站点
@@ -92,6 +78,7 @@ def addWeb(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "添加成功"})
 
 
+@api_permission("editWebStatus")
 def delWeb(req: HttpRequest, id):
     """
     删除监控站点
@@ -107,6 +94,7 @@ def delWeb(req: HttpRequest, id):
     return ResponseJson({"status": 1, "msg": "删除成功"})
 
 
+@api_permission("editWebStatus")
 def update(req: HttpRequest):
     """
     更新监控站点
@@ -131,6 +119,7 @@ def update(req: HttpRequest):
     return result.success(msg='更新成功')
 
 
+@api_permission("viewWebStatus")
 def getSiteNames(req: HttpRequest):
     """
     获取监控站点名称
@@ -141,6 +130,7 @@ def getSiteNames(req: HttpRequest):
     return result.success(names)
 
 
+@api_permission("viewWebStatus")
 def getLog(req: HttpRequest):
     """
     获取 监控日志

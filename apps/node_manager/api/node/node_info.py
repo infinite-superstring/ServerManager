@@ -5,6 +5,7 @@ from django.http import HttpRequest
 from apps.audit.util.auditTools import write_access_log, write_audit
 from apps.node_manager.models import Node_DiskPartition, Node_AlarmSetting
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, get_node_by_uuid, init_node_alarm_setting
+from apps.permission_manager.util.api_permission import api_permission
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
@@ -85,7 +86,7 @@ def get_alarm_setting(req: HttpRequest):
         }
     })
 
-
+@api_permission("editNode")
 def save_alarm_setting(req: HttpRequest):
     """保存节点告警设置"""
     if req.method != 'POST':

@@ -1,5 +1,6 @@
 from apps.audit.models import Audit, Access_Log, FileChange_Log, System_Log, User_Session_Log, Node_Session_Log
 from apps.node_manager.models import Node
+from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.pageUtils import *
 from util.Request import RequestLoadJson
@@ -7,6 +8,7 @@ from util.Response import ResponseJson
 from util.logger import Log
 
 
+@api_permission("viewAudit")
 def getAudit(req):
     if not req.method == "POST":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -40,6 +42,7 @@ def getAudit(req):
     })
 
 
+@api_permission("viewAudit")
 def getAccessLog(req):
     if not req.method == "POST":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -74,6 +77,7 @@ def getAccessLog(req):
     })
 
 
+@api_permission("viewAudit")
 def getFileChangeLog(req):
     if not req.method == "POST":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -106,7 +110,7 @@ def getFileChangeLog(req):
     })
 
 
-
+@api_permission("viewAudit")
 def getSystemLog(req):
     if not req.method == "POST":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -139,6 +143,7 @@ def getSystemLog(req):
     })
 
 
+@api_permission("viewAudit")
 def get_user_session_log(req):
     if req.method != "POST":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -171,6 +176,7 @@ def get_user_session_log(req):
     })
 
 
+@api_permission("viewAudit")
 def get_node_session_log(req):
     if req.method != "POST":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)

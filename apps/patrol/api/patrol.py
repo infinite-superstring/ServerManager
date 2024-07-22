@@ -1,5 +1,6 @@
 from django.http import HttpRequest
 
+from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
@@ -8,6 +9,7 @@ from apps.patrol.models import Patrol
 from util.pageUtils import get_page_content, get_max_page
 
 
+@api_permission("viewPatrol")
 def addARecord(req: HttpRequest):
     if req.method != "POST":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -27,6 +29,7 @@ def addARecord(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "添加成功"})
 
 
+@api_permission("viewPatrol")
 def getList(req: HttpRequest):
     if req.method != "POST":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -61,6 +64,7 @@ def getList(req: HttpRequest):
         })
 
 
+@api_permission("editPatrol")
 def updateRecord(req: HttpRequest):
     if req.method != "PUT":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -80,6 +84,7 @@ def updateRecord(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "更新成功"})
 
 
+@api_permission("editPatrol")
 def deleteRecord(req: HttpRequest):
     if req.method != "DELETE":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)

@@ -3,17 +3,22 @@ from django.shortcuts import HttpResponse
 from django.apps import apps
 
 from apps.audit.util.auditTools import write_system_log
+from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
-from apps.setting.util.Config import saveConfig,dictToConfig
+from apps.setting.util.Config import saveConfig, dictToConfig
 
 app_setting = apps.get_app_config("setting")
 
+
+@api_permission("changeSettings")
 def getSetting(req):
     return HttpResponse(json.dumps(app_setting.get_config(), default=lambda o: o.__dict__, indent=2))
 
+
+@api_permission("changeSettings")
 def editSetting(req):
     if req.method == 'POST':
         try:
@@ -29,6 +34,7 @@ def editSetting(req):
             return getSetting(req)
     else:
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
+
 
 def getPageConfig(req):
     config = apps.get_app_config("setting").get_config()

@@ -13,6 +13,7 @@ from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists,
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from apps.auth.utils.otpUtils import verify_otp_for_request
+from apps.permission_manager.util.api_permission import api_permission
 from apps.permission_manager.util.permission import groupPermission
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Request import RequestLoadJson
@@ -50,6 +51,7 @@ def __advanced_search(search: str):
     return Node.objects.filter(query)
 
 
+@api_permission("editNode")
 def add_node(req):
     """添加节点"""
     if not req.method == 'POST':
@@ -100,6 +102,7 @@ def add_node(req):
         }})
 
 
+@api_permission("editNode")
 def del_node(req):
     """删除节点"""
     if not req.method == 'POST':
@@ -129,6 +132,7 @@ def del_node(req):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
 
 
+@api_permission("editNode")
 def reset_node_token(req):
     """重置节点Token"""
     if not req.method == 'POST':
@@ -298,6 +302,7 @@ def get_node_info(req):
     })
 
 
+@api_permission("editNode")
 def edit_node(req):
     """编辑节点"""
     if req.method != 'POST':

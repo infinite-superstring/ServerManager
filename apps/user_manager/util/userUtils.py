@@ -20,7 +20,7 @@ async def aget_user_by_id(uid) -> User:
     :param uid:
     :return: User
     """
-    return User.objects.aget(id=uid)
+    return await User.objects.aget(id=uid)
 
 
 def get_user_by_username(username) -> User:
@@ -29,6 +29,8 @@ def get_user_by_username(username) -> User:
 def username_exists(username) -> bool:
     return User.objects.filter(userName=username).exists()
 
+async def username_aexists(username) -> bool:
+    return await User.objects.filter(userName=username).aexists()
 
 def real_name_exists(real_name) -> bool:
     return User.objects.filter(realName=real_name).exists()

@@ -1,6 +1,7 @@
 from django.apps import apps
 from django.http import HttpRequest
 
+from apps.permission_manager.util.api_permission import api_permission
 from apps.permission_manager.util.permissionGroupUtils import group_id_exists, get_group_by_id
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, username_exists, \
@@ -17,8 +18,9 @@ from apps.permission_manager.util.permission import groupPermission
 
 config = apps.get_app_config('setting').get_config
 
+
 # 获取用户列表
-@Log.catch
+@api_permission(["manageUser", "editNodeGroup"])
 def getUserList(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -66,7 +68,7 @@ def getUserList(req: HttpRequest):
 
 
 # 新增用户
-@Log.catch
+@api_permission("manageUser")
 def addUser(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -93,7 +95,8 @@ def addUser(req: HttpRequest):
     if permission is not None and not group_id_exists(permission):
         return ResponseJson({"status": 0, "msg": "权限组不存在"})
     user = get_user_by_id(req.session.get("userID"))
-    if permission is not None and groupPermission(get_group_by_id(permission)).is_superuser() and not groupPermission(user.permission).is_superuser():
+    if permission is not None and groupPermission(get_group_by_id(permission)).is_superuser() and not groupPermission(
+            user.permission).is_superuser():
         write_system_log(2, "用户管理", f"用户{user.userName}({user.id})尝试创建时用户添加all权限被拒绝")
         return ResponseJson({"status": 0, "msg": "非法操作：非超管账户无法创建带超管权限的账户"})
     pv, pv_msg = verifyPasswordRules(password, config().security.password_level)
@@ -123,9 +126,8 @@ def addUser(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "用户创建成功"})
 
 
-
 # 删除用户
-@Log.catch
+@api_permission("manageUser")
 def delUser(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -161,7 +163,7 @@ def delUser(req: HttpRequest):
 
 
 # 获取用户权限
-@Log.catch
+@api_permission("manageUser")
 def getUserPermission(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"})
@@ -184,7 +186,7 @@ def getUserPermission(req: HttpRequest):
 
 
 # 获取用户信息
-@Log.catch
+@api_permission("manageUser")
 def getUserInfo(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -212,7 +214,7 @@ def getUserInfo(req: HttpRequest):
 
 
 # 修改用户信息
-@Log.catch
+@api_permission("manageUser")
 def setUserInfo(req: HttpRequest):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -311,7 +313,8 @@ def setUserInfo(req: HttpRequest):
             f"被操作用户：{User.userName}(id: {User.id})"
         )
         User.disable = disable
-        apps.get_app_config("user_manager").disable_user_list.append(userId) if disable else apps.get_app_config("user_manager").disable_user_list.remove(userId)
+        apps.get_app_config("user_manager").disable_user_list.append(userId) if disable else apps.get_app_config(
+            "user_manager").disable_user_list.remove(userId)
     User.save()
     return ResponseJson({"status": 1, "msg": "成功", "data": {
         "id": User.id,

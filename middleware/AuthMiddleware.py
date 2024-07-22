@@ -16,24 +16,17 @@ class AuthMiddleware(MiddlewareMixin):
         # 清理非法会话
         if (request.session.get("user") or request.session.get("userID")) and (request.session.get("node_name") or request.session.get("node_uuid")):
             request.session.clear()
-            return redirect("/error/403")
-
-        url_pu = URL_PathUtil(request.path_info)
+            return ResponseJson({'status': -1, "msg": "非法的会话"}, 403)
 
         if request.session.get("node_name") and request.session.get("node_uuid"):
-            if url_pu.is_node_path():
-                return
-            else:
+            url_pu = URL_PathUtil(request.path_info)
+            if not url_pu.is_node_path():
+                request.session.clear()
                 return ResponseJson({'status': -1, "msg": "非法访问"}, 403)
 
-        if request.session.get("user") and request.session.get("userID"):
-            if request.session.get("userID") in apps.get_app_config("user_manager").disable_user_list:
-                request.session.clear()
-                return redirect("/login")
-            return
-        else:
-            match (url_pu.is_api_path()):
-                case True:
-                    return ResponseJson({'status': -1, 'msg': '账户未登录'}, 403)
-                case False:
-                    return redirect("/login")
+        if not request.session.get("user") or not request.session.get("userID"):
+            return ResponseJson({'status': -1, 'msg': '账户未登录'}, 403)
+
+        if request.session.get("userID") in apps.get_app_config("user_manager").disable_user_list:
+            request.session.clear()
+            return ResponseJson({'status': -1, 'msg': '账户已被禁用，请联系管理员'}, 403)

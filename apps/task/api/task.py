@@ -3,6 +3,8 @@ from datetime import datetime
 from django.forms import model_to_dict
 from django.http import HttpRequest
 from django.db.models import Count
+
+from apps.permission_manager.util.api_permission import api_permission
 from apps.task.models import Task
 from apps.task.utils.taskUtil import byUserIDGetAttendanceState, createAttendance, year_month_to_start_and_end_time, \
     get_current_time
@@ -19,6 +21,7 @@ def getList(req: HttpRequest):
     return ResponseJson({"status": 1, "msg": "获取任务列表成功", 'data': []})
 
 
+@api_permission("viewDuty")
 def getDuty(req: HttpRequest):
     """
     获取所有用户的值班记录（每日签到记录）

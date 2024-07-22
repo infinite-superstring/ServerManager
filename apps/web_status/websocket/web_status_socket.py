@@ -7,6 +7,9 @@ from asgiref.sync import sync_to_async
 from django.core.cache import cache
 from django.db.models import QuerySet
 
+from apps.permission_manager.util.permission import groupPermission
+from apps.user_manager.models import User
+from apps.user_manager.util.userUtils import uid_aexists, aget_user_by_id
 from apps.web_status.models import Web_Site_Log, Web_Site
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from util import pageUtils
@@ -17,6 +20,7 @@ from util.logger import Log
 class WebStatusClient(AsyncBaseConsumer):
     __NAME = 'WebStatusClient_'
     __userID = None
+    __user: User = None
     __web_list = []
     _polling_send = None
     __page = 1
@@ -32,6 +36,13 @@ class WebStatusClient(AsyncBaseConsumer):
         if not self.__userID:
             await self.close(0)
             return
+        if not await uid_aexists(self.__userID):
+            await self.close(0)
+            return False
+        self.__user = await aget_user_by_id(self.__userID)
+        if not await sync_to_async(groupPermission(await sync_to_async(lambda: self.__user.permission)()).check_group_permission)("viewWebStatus"):
+            await self.close(0)
+            return False
         # 校验通过
         await self.accept()
         await self.channel_layer.group_add(
@@ -52,19 +63,7 @@ class WebStatusClient(AsyncBaseConsumer):
             self.channel_name
         )
         self._polling_send.shutdown() if self._polling_send else None
-        Log.debug("已断开网络监控套接字")
         await self.close()
-
-    # async def receive(self, **kwargs):
-    #     # channel = get_channel_layer()
-    #     # t = json.loads(kwargs['text_data']).get('action', '')
-    #     # d = json.loads(kwargs['text_data']).get('data', {})
-    #     # await channel.group_send(
-    #     #     f'{self.__NAME}{self.__userID}', {
-    #     #         'type': t,
-    #     #         'data': d
-    #     #     })
-    #
 
     @AsyncBaseConsumer.action_handler("initData")
     async def initData(self, data):

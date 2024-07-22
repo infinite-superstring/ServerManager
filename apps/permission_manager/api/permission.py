@@ -1,3 +1,4 @@
+from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import get_user_by_id
 from apps.audit.util.auditTools import write_access_log, write_audit, write_system_log
 from apps.auth.utils.otpUtils import verify_otp_for_request
@@ -9,8 +10,11 @@ from util.Response import ResponseJson
 from util.logger import Log
 
 
-# 获取权限组列表
+@api_permission(["manageUser", "managePermissionGroup"])
 def getPermissionGroupsList(req):
+    """
+    获取权限组列表
+    """
     if not req.method == "POST":
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
     try:
@@ -50,6 +54,7 @@ def getPermissionGroupsList(req):
 
 
 # 新建权限组
+@api_permission("managePermissionGroup")
 def addPermissionGroup(req):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -85,6 +90,7 @@ def addPermissionGroup(req):
 
 
 # 删除权限组
+@api_permission("managePermissionGroup")
 def delPermissionGroup(req):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -119,9 +125,8 @@ def delPermissionGroup(req):
     return ResponseJson({"status": 1, "msg": "组已删除"})
 
 
-
 # 获取权限组信息
-@Log.catch
+@api_permission("managePermissionGroup")
 def getPermissionGroupInfo(req):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -152,8 +157,8 @@ def getPermissionGroupInfo(req):
     }})
 
 
-
 # 修改权限组
+@api_permission("managePermissionGroup")
 def setPermissionGroup(req):
     if not req.method == 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -219,7 +224,7 @@ def setPermissionGroup(req):
     }})
 
 
-
+@api_permission("managePermissionGroup")
 def getPermissionList(req):
     write_access_log(
         req.session.get("userID"),

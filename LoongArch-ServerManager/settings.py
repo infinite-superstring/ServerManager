@@ -63,7 +63,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'middleware.AuthMiddleware.AuthMiddleware',
-    'middleware.PermissionsMiddleware.PermissionsMiddleware',
+    # 'middleware.PermissionsMiddleware.PermissionsMiddleware',
     'middleware.APICallCounterMiddleware.APICallCounterMiddleware',
 ]
 

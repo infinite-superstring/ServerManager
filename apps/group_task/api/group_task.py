@@ -12,6 +12,7 @@ from apps.group_task.models import GroupTask, Group_Task_Audit
 from apps.group_task.utils import group_task_util
 from apps.node_manager.models import Node_Group, Node
 from apps.node_manager.utils.groupUtil import get_node_group_by_id
+from apps.permission_manager.util.api_permission import api_permission
 from apps.setting.entity.Config import config
 from apps.permission_manager.util.permission import groupPermission
 from apps.user_manager.util.userUtils import get_user_by_id
@@ -23,6 +24,7 @@ from util.logger import Log
 config: Callable[[], config] = apps.get_app_config('setting').get_config
 
 
+@api_permission('clusterTask')
 def create_group_task(req: HttpRequest):
     """
     创建集群任务
@@ -94,7 +96,8 @@ def create_group_task(req: HttpRequest):
             return result.api_error('周期设置错误')
         cycle.save()
     group_task_util.handle_change_task(t='add', task=g_task)
-    write_audit(req.session['userID'], "新增集群任务", "集群任务", f"任务名: {taskName} 执行集群：{get_node_group_by_id(group).name} 执行方式：{execType} 执行目录：{execPath if execPath else 'Default'} shell：{command}")
+    write_audit(req.session['userID'], "新增集群任务", "集群任务",
+                f"任务名: {taskName} 执行集群：{get_node_group_by_id(group).name} 执行方式：{execType} 执行目录：{execPath if execPath else 'Default'} shell：{command}")
     return result.success(msg='操作完成')
 
 
@@ -137,6 +140,7 @@ def get_list(req: HttpRequest):
     return result.success(data=response)
 
 
+@api_permission('clusterTask')
 def get_task_name(req: HttpRequest):
     """
     获取所有任务名称
@@ -154,6 +158,7 @@ def get_task_name(req: HttpRequest):
         for t in all_tasks])
 
 
+@api_permission('clusterTask')
 def by_task_uuid_get_node(req: HttpRequest):
     """
     根据任务UUID获取节点
@@ -174,6 +179,7 @@ def by_task_uuid_get_node(req: HttpRequest):
         for n in nodes])
 
 
+@api_permission('clusterTask')
 def by_node_uuid_get_result(req: HttpRequest):
     if req.method != 'GET':
         return result.api_error('请求方式错误', http_code=405)
@@ -199,6 +205,7 @@ def by_node_uuid_get_result(req: HttpRequest):
         for t in group_task_audit])
 
 
+@api_permission('clusterTask')
 def get_result_detail(req: HttpRequest, char_set='utf-8'):
     if req.method != 'GET':
         return result.api_error('请求方式错误', http_code=405)
@@ -224,6 +231,7 @@ def get_result_detail(req: HttpRequest, char_set='utf-8'):
     return result.success(commandLine)
 
 
+@api_permission('clusterTask')
 def change_enable(req: HttpRequest):
     """
     更改任务状态
@@ -252,6 +260,7 @@ def change_enable(req: HttpRequest):
     return result.success(msg=f'任务{g.name}已{"启用" if g.enable else "禁用"}')
 
 
+@api_permission('clusterTask')
 def delete_by_uuid(req: HttpRequest):
     """
     根据 uuid 删除任务
@@ -272,6 +281,7 @@ def delete_by_uuid(req: HttpRequest):
     return result.success(msg='删除成功')
 
 
+@api_permission('clusterTask')
 async def by_node_uuid_get_task(node_uuid: str, group: Node_Group = None):
     """
     根据 节点 ID 获取 任务 列表
@@ -299,6 +309,7 @@ async def by_node_uuid_get_task(node_uuid: str, group: Node_Group = None):
     return group_tasks
 
 
+@api_permission('clusterTask')
 def get_task_detailed(req: HttpRequest):
     """
     获取任务详情
@@ -313,6 +324,7 @@ def get_task_detailed(req: HttpRequest):
     return result.success(data=data)
 
 
+@api_permission('clusterTask')
 def get_task_by_uuid(req: HttpRequest):
     """
     根据 uuid 获取任务
@@ -340,6 +352,7 @@ def get_task_by_uuid(req: HttpRequest):
     return result.success(r_data)
 
 
+@api_permission('clusterTask')
 def command_legal(req: HttpRequest):
     """
     命令是否合法

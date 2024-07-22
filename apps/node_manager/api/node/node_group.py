@@ -3,6 +3,7 @@ from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
 from apps.node_manager.utils.groupUtil import create_message_recipient_rules, node_group_id_exists, \
     get_node_group_by_id, get_group_nodes
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, node_set_group
+from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import uid_exists, get_user_by_id
 from apps.auth.utils.otpUtils import verify_otp_for_request
 from util.Request import RequestLoadJson
@@ -12,6 +13,7 @@ from util.pageUtils import get_page_content, get_max_page
 from django.http.request import HttpRequest
 
 
+@api_permission("editNodeGroup")
 def get_group_list(req: HttpRequest):
     if req.method != 'POST':
         return ResponseJson({"status": -1, "msg": "请求方式不正确"}, 405)
@@ -45,6 +47,7 @@ def get_group_list(req: HttpRequest):
     })
 
 
+@api_permission("editNodeGroup")
 def create_group(req: HttpRequest):
     """创建组"""
     if req.method != 'POST':
@@ -88,6 +91,7 @@ def create_group(req: HttpRequest):
     return ResponseJson({'status': 1, 'msg': '创建集群成功'})
 
 
+@api_permission("editNodeGroup")
 def del_group(req: HttpRequest):
     """删除组"""
     if req.method != 'POST':
@@ -118,10 +122,12 @@ def del_group(req: HttpRequest):
     return ResponseJson({'status': 1, 'msg': '删除集群成功'})
 
 
+@api_permission("editNodeGroup")
 def edit_group(req: HttpRequest):
     """编辑组"""
 
 
+@api_permission("editNodeGroup")
 def get_group_by_id(req: HttpRequest):
     """获取组详细"""
 
