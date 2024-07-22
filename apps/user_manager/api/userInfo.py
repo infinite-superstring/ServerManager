@@ -19,6 +19,7 @@ from apps.audit.util.auditTools import write_audit, write_access_log, write_file
 from apps.permission_manager.util.permission import groupPermission
 
 config = apps.get_app_config('setting').get_config
+avatar_save_path = os.path.join(os.getcwd(), "data", "avatar")
 
 
 @Log.catch
@@ -152,9 +153,9 @@ def uploadAvatar(req):
         return ResponseJson({"status": -1, "msg": "参数不完整"}, 400)
     if get_file_size(avatarImgBase64) > 1024 * 1024 * 0.25:
         return ResponseJson({"status": -1, "msg": "大小超出范围"}, 400)
-    if not os.path.exists("avatar"):
-        os.mkdir("avatar")
-    if os.path.exists(os.path.join("avatar", f"{avatarImgHash}")):
+    if not os.path.exists(avatar_save_path):
+        os.makedirs(avatar_save_path)
+    if os.path.exists(os.path.join(avatar_save_path, f"{avatarImgHash}")):
         User = get_user_by_id(req.session.get("userID"))
         if avatarImgHash != User.avatar:
             User.avatar = avatarImgHash
@@ -167,7 +168,7 @@ def uploadAvatar(req):
             )
         return ResponseJson({"status": 1, "msg": "上传成功"})
     dataBytes = base64.b64decode(avatarImgBase64.split(",")[1])
-    with open(os.path.join(os.getcwd(), "avatar", f"{avatarImgHash}"), "wb+") as f:
+    with open(os.path.join(avatar_save_path, f"{avatarImgHash}"), "wb+") as f:
         md5 = hashlib.md5()
         md5.update(dataBytes)
         saveFileMd5 = md5.hexdigest()
@@ -219,6 +220,6 @@ def getAvatar(req):
     User = get_user_by_id(userId)
     write_access_log(userId, req, "用户信息", "获取用户头像")
     if not User.avatar:
-        return FileResponse(open(os.path.join(os.getcwd(), "avatar", "fff.png"), "rb"), content_type="image/png")
-    if os.path.exists(os.path.join("avatar", User.avatar)):
-        return FileResponse(open(os.path.join(os.getcwd(), "avatar", User.avatar), "rb"), content_type="image/webp")
+        return FileResponse(open(os.path.join(avatar_save_path, "fff.png"), "rb"), content_type="image/png")
+    if os.path.exists(os.path.join(avatar_save_path, User.avatar)):
+        return FileResponse(open(os.path.join(avatar_save_path, User.avatar), "rb"), content_type="image/webp")

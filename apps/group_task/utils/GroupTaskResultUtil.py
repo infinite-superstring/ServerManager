@@ -16,7 +16,7 @@ class GroupTaskResultUtil:
     节点执行结果对象，用于处理任务执行结果
     """
     __node_uuid = None
-    __save_base_dir: str = ''
+    __save_base_dir: str = 'data'
     __map: dict = {str: TaskRuntime}
 
     def __init__(self, node_uuid):
@@ -30,6 +30,7 @@ class GroupTaskResultUtil:
             raise ValueError('任务uuid 不能为空')
         self.__save_base_dir = apps.get_app_config('node_manager').group_task_result_save_dir
         task_dir = os.path.join(
+            os.getcwd(),
             self.__save_base_dir,
             task_uuid,
             self.__node_uuid

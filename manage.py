@@ -27,6 +27,8 @@ if __name__ == '__main__':
         os.system('python manage.py migrate')
         os.system('python manage.py initial_data')
         exit(0)
+    if not os.path.exists("data"):
+        os.mkdir("data")
     # init_show.log_list[random.randint(0,len(init_show.log_list))-1]()
     print("""
 前端：https://github.com/infinite-superstring/ServerManager-UI
