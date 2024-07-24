@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "apps.task",  # 任务管理
     "apps.web_status",  # 网站监控
     "apps.group_task",  # 集群任务
+    "apps.group_file_distribution",  # 集群文件分发
     'django.contrib.contenttypes',
 ]
 
@@ -150,7 +151,7 @@ CACHES = {
 LOGGING_CONFIG = None
 
 # 配置Django使用Loguru的日志处理器
-logging.basicConfig(handlers=[InterceptHandler()], level=logging.WARNING)
+logging.basicConfig(handlers=[InterceptHandler()], level=logging.INFO if DEBUG else logging.WARNING)
 
 LOGGING = {
     'version': 1,
@@ -179,8 +180,8 @@ LOGGING = {
             'handlers': ['loguru'],
             'level': 'INFO',
             'propagate': False,
-        }
-    },
+        },
+    }
 }
 
 # 禁用所有默认的日志记录器

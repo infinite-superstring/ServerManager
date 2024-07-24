@@ -273,7 +273,6 @@ def delete_by_uuid(req: HttpRequest):
     return result.success(msg='删除成功')
 
 
-@api_permission('clusterTask')
 async def by_node_uuid_get_task(node_uuid: str, group: Node_Group = None):
     """
     根据 节点 ID 获取 任务 列表
