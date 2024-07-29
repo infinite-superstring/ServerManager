@@ -25,7 +25,8 @@ from util.logger import Log
 config: Callable[[], config] = apps.get_app_config('setting').get_config
 
 
-@require_POST
+# @require_POST
+@require_http_methods(['PUT', 'POST'])
 @api_permission('clusterTask')
 def create_group_task(req: HttpRequest):
     """
@@ -95,7 +96,10 @@ def create_group_task(req: HttpRequest):
         if cycle.group_task.name != g_task.name:
             return result.api_error('周期设置错误')
         cycle.save()
-    group_task_util.handle_change_task(t='add', task=g_task)
+    if req.method == 'PUT':
+        group_task_util.handle_change_task(t='reload', task=g_task, group=g_task.node_group)
+    else:
+        group_task_util.handle_change_task(t='add', task=g_task)
     write_audit(req.session['userID'], "新增集群任务", "集群任务",
                 f"任务名: {taskName} 执行集群：{get_node_group_by_id(group).name} 执行方式：{execType} 执行目录：{execPath if execPath else 'Default'} shell：{command}")
     return result.success(msg='操作完成')

@@ -99,7 +99,7 @@ urlpatterns = [
     path('api/admin/auditAndLogger/terminalRecord/loadSessionList', terminal_record.load_terminal_session_list),
     # 加载会话列表
     path('api/admin/auditAndLogger/terminalRecord/downloadSessionRecord', terminal_record.load_terminal_session_record),
-    # 下载会话记录
+    # 集群任务审计
     path('api/admin/auditAndLogger/groupTask/getNameList', group_task.get_task_name),  # 获取集群任务名称列表(GET)
     path('api/admin/auditAndLogger/groupTask/get_node', group_task.by_task_uuid_get_node),  # 根据UUID获取节点列表(GET)
     path('api/admin/auditAndLogger/groupTask/get_result', group_task.by_node_uuid_get_result),  # 获取结果唯一ID(GET)
@@ -135,7 +135,7 @@ urlpatterns = [
     path('api/dashboard/getOverview', dashboard.get_overview),  # 获取总览(ALL)
     path('api/dashboard/getNodeList', dashboard.get_node_list),  # 获取节点列表(POST)
     path('api/dashboard/getStatistics', dashboard.get_statistics),  # 获取统计信息(GET)
-    path('api/dashboard/getTasks', dashboard.get_tasks),  # 获取任务列表(GET)
+    path('api/dashboard/getTasks', dashboard.get_tasks),  # 获取任务列表(GET) 废弃
     # 任务
     path('api/task/getCheckInStatus', task.getCheckInStatus),  # 获取签到状态(GET)
     path('api/task/attendanceCheckIn', task.attendanceCheckIn),  # 签到(POST)
@@ -143,11 +143,11 @@ urlpatterns = [
     path('api/task/getDuty', task.getDuty),  # 获取值班记录(GET)
     # Web状态
     path('api/webStatus/getList', webStatus.getList),  # 获取Web状态列表(GET)
-    path('api/webStatus/addWeb', webStatus.addWeb),  # 添加Web状态(POST)
+    path('api/webStatus/addWeb', webStatus.addWeb),  # 添加网站监控(POST)
     path('api/webStatus/delWeb/<str:id>', webStatus.delWeb),  # 删除监控的web(DELETE)
     path('api/webStatus/update', webStatus.update),  # 更新Web状态(PUT)
-    path('api/webStatus/getSiteNames', webStatus.getSiteNames),  # 获取站点名称列表(GET)')
-    path('api/webStatus/getLog', webStatus.getLog),  # 获取站点名称列表(GET)')
+    path('api/webStatus/getSiteNames', webStatus.getSiteNames),  # 获取站点名称列表(GET)
+    path('api/webStatus/getLog', webStatus.getLog),  # 按站点名称获取日志(GET)
     # 集群任务
     path('api/group_task/operation', group_task.create_group_task),  # 添加|修改任务(POST|PUT)
     path('api/group_task/getList', group_task.get_list),  # 获取集群任务列表(GET)
