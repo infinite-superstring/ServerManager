@@ -39,7 +39,7 @@ import apps.patrol.api.patrol as patrol
 import apps.task.api.task as task
 import apps.web_status.api.webStatus as webStatus
 import apps.group_task.api.group_task as group_task
-import apps.group_file_distribution.api.uploadFile as uploadFile
+from apps.group_file_distribution.api import upload as group_file_distribution__upload
 
 urlpatterns = [
     # 认证
@@ -157,6 +157,6 @@ urlpatterns = [
     path('api/group_task/get_task_by_uuid', group_task.get_task_by_uuid),  # 获取任务详细信息(GET))
     path('api/group_task/command_legal', group_task.command_legal),  # 命令是否合法(POST)
     # 文件分发
-    path('api/file/upload', uploadFile.upload_chunk),
-    path('api/file/merge', uploadFile.merge_chunks),
+    path('api/file/upload', group_file_distribution__upload.upload_file_chunk),
+    path('api/file/merge', group_file_distribution__upload.merge_file),
 ]

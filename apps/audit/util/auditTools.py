@@ -16,9 +16,7 @@ def write_access_log(user: int | User, ip: str | HttpRequest, module: str, conte
     """
     if isinstance(user, int):
         user = get_user_by_id(user)
-    elif isinstance(user, User):
-        pass
-    else:
+    elif not isinstance(user, User):
         raise TypeError(f'不支持的数据格式：{type(user)}')
     if isinstance(ip, str):
         pass
@@ -43,7 +41,7 @@ def write_system_log(level: int, module: str, content: str):
 
 # 写审计内容
 @Log.catch
-def write_audit(user: int, action: str, module: str, content: str):
+def write_audit(user: int | User, action: str, module: str, content: str):
     """
     :param user: 用户
     :param action: 动作
@@ -52,22 +50,24 @@ def write_audit(user: int, action: str, module: str, content: str):
     """
     if isinstance(user, int):
         user = get_user_by_id(user)
-    elif isinstance(user, User):
-        pass
-    else:
+    elif not isinstance(user, User):
         raise TypeError(f'不支持的数据格式：{type(user)}')
     Audit.objects.create(user=user, action=action, module=module, content=content)
 
 
 # 写文件记录
 @Log.catch
-def write_file_change_log(user_id: int, action: str, filepath: str):
+def write_file_change_log(user: int | User, action: str, filepath: str):
     """
-    :param user_id: 用户ID
+    :param user: 用户
     :param action: 动作
     :param filepath: 目标
     """
-    FileChange_Log.objects.create(user=get_user_by_id(user_id), action=action, filepath=filepath)
+    if isinstance(user, int):
+        user = get_user_by_id(user)
+    elif not isinstance(user, User):
+        raise TypeError(f'不支持的数据格式：{type(user)}')
+    FileChange_Log.objects.create(user=user, action=action, filepath=filepath)
 
 
 @Log.catch
