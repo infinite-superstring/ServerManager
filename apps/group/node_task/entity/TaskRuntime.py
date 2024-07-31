@@ -1,6 +1,6 @@
 from io import TextIOWrapper
 
-from apps.group_task.models import Group_Task_Audit
+from apps.group.node_task.models import Group_Task_Audit
 
 
 class TaskRuntime:

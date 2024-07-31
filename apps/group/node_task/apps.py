@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class GroupFileDistributionConfig(AppConfig):
+class GroupTaskConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.group_file_distribution'
+    name = 'apps.group.node_task'

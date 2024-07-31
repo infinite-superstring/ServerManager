@@ -1,7 +1,8 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from apps.node_manager.models import Node_MessageRecipientRule, Node_Group, Node
+from apps.group.manager.models import Node_MessageRecipientRule, Node_Group
+from apps.node_manager.models import Node
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_id, uid_exists
 from util.logger import Log

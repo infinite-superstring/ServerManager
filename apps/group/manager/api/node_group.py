@@ -1,7 +1,7 @@
 from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit, write_access_log
-from apps.node_manager.models import Node_Group, Node_MessageRecipientRule
+from apps.group.manager.models import Node_Group, Node_MessageRecipientRule
 from apps.node_manager.utils.groupUtil import create_message_recipient_rules, node_group_id_exists, \
     get_node_group_by_id, get_group_nodes
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, node_set_group

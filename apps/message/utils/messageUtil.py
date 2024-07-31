@@ -12,7 +12,7 @@ from django.db.models import QuerySet
 from apps.audit.util.auditTools import write_system_log
 from apps.message.models import Message
 from apps.message.models import MessageBody, UserMessage
-from apps.node_manager.models import Node_MessageRecipientRule, Node_Group
+from apps.group.manager.models import Node_MessageRecipientRule, Node_Group
 from apps.permission_manager.models import Permission_groups
 from apps.user_manager.models import User
 from util.logger import Log

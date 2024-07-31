@@ -4,9 +4,9 @@ from datetime import datetime
 from django.apps import apps
 from django.core.cache import cache
 
-from apps.group_task.entity.TaskRuntime import TaskRuntime
-from apps.group_task.models import GroupTask, Group_Task_Audit
-from apps.group_task.utils import group_task_util
+from apps.group.node_task.entity.TaskRuntime import TaskRuntime
+from apps.group.node_task.models import GroupTask, Group_Task_Audit
+from apps.group.node_task.utils import group_task_util
 from apps.node_manager.models import Node
 from util.logger import Log
 

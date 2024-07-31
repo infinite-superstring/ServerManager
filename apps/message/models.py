@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import QuerySet
 
-from apps.node_manager.models import Node_Group
+from apps.group.manager.models import Node_Group
 from apps.permission_manager.models import Permission_groups
 from apps.user_manager.models import User
 

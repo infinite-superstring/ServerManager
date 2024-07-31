@@ -2,7 +2,7 @@ from django.http import HttpRequest, HttpResponse
 from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit
-from apps.node_manager.models import Cluster_Execute
+from apps.group.commandExecution.models import Cluster_Execute
 from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id, GroupUtil
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Request import RequestLoadJson

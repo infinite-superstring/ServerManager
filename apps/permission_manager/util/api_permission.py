@@ -15,7 +15,7 @@ class api_permission(object):
 
     def __call__(self, func):  # 接受函数
         def wrapper(*args, **kwargs):
-            print(args, kwargs)
+            Log.debug(f"{args} {kwargs}")
             if not isinstance(args[0], HttpRequest):
                 raise RuntimeError("request does not exist")
             req: HttpRequest = args[0]

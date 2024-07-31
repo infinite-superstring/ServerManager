@@ -45,14 +45,16 @@ INSTALLED_APPS = [
     'apps.user_manager',  # 用户管理器
     'apps.permission_manager',  # 权限管理器
     'apps.node_manager',  # 节点管理器
+    "apps.group.manager",  # 集群管理器
     'apps.dashboard',  # 仪表盘
     'apps.audit',  # 审计
     'apps.message',  # 消息
     'apps.patrol',  # 巡检
     "apps.task",  # 任务管理
     "apps.web_status",  # 网站监控
-    "apps.group_task",  # 集群任务
-    "apps.group_file_distribution",  # 集群文件分发
+    "apps.group.node_task",  # 集群任务
+    "apps.group.commandExecution",  # 集群执行
+    "apps.group.file_distribution",  # 集群文件分发
     'django.contrib.contenttypes',
 ]
 

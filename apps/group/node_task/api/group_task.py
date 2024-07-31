@@ -9,9 +9,10 @@ from django.http import HttpRequest
 from django.views.decorators.http import require_http_methods, require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit
-from apps.group_task.models import GroupTask, Group_Task_Audit
-from apps.group_task.utils import group_task_util
-from apps.node_manager.models import Node_Group, Node
+from apps.group.node_task.models import GroupTask, Group_Task_Audit
+from apps.group.node_task.utils import group_task_util
+from apps.node_manager.models import Node
+from apps.group.manager.models import Node_Group
 from apps.node_manager.utils.groupUtil import get_node_group_by_id
 from apps.permission_manager.util.api_permission import api_permission
 from apps.setting.entity.Config import config

@@ -24,12 +24,12 @@ import apps.user_manager.api.user_manager as user_manager
 import apps.user_manager.api.initUser as initUser
 import apps.user_manager.api.userInfo as userInfo
 import apps.permission_manager.api.permission as permission_manager
-import apps.node_manager.api.node.node_manager as node_manager
-import apps.node_manager.api.node.node_tag as node_tag
-import apps.node_manager.api.node.node_group as node_group
-import apps.node_manager.api.node.node_info as node_info
-import apps.node_manager.api.node.node_event as node_event
-import apps.node_manager.api.cluster.execute as cluster_execute
+import apps.node_manager.api.node_manager as node_manager
+import apps.node_manager.api.node_tag as node_tag
+import apps.group.manager.api.node_group as node_group
+import apps.node_manager.api.node_info as node_info
+import apps.node_manager.api.node_event as node_event
+import apps.group.commandExecution.api.execute as cluster_execute
 import apps.node_manager.api.terminal_record as terminal_record
 import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.setting.api.settings as setting
@@ -38,8 +38,8 @@ import apps.dashboard.api.dashboard as dashboard
 import apps.patrol.api.patrol as patrol
 import apps.task.api.task as task
 import apps.web_status.api.webStatus as webStatus
-import apps.group_task.api.group_task as group_task
-from apps.group_file_distribution.api import upload as group_file_distribution__upload
+import apps.group.node_task.api.group_task as group_task
+from apps.group.file_distribution.api import upload as group_file_distribution__upload
 
 urlpatterns = [
     # 认证

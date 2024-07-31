@@ -6,7 +6,8 @@ from django.utils.dateparse import parse_datetime
 
 from apps.node_manager.entity.alarm_setting import AlarmSetting, cpu, memory, network, disk
 from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData, Node_AlarmSetting, \
-    Node_Event, Node_Group
+    Node_Event
+from apps.group.manager.models import Node_Group
 from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
 from apps.user_manager.models import User
 from apps.permission_manager.util.permission import groupPermission

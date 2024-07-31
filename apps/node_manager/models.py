@@ -1,6 +1,8 @@
 import uuid
 
 from django.db import models
+
+from apps.group.manager.models import Node_Group
 from apps.user_manager.models import User
 
 
@@ -17,7 +19,7 @@ class Node(models.Model):
     # 节点标签列表
     tags = models.ManyToManyField('Node_Tag', related_name='tags')
     # 节点分组
-    group = models.ForeignKey('Node_Group', on_delete=models.DO_NOTHING, null=True)
+    group = models.ForeignKey(Node_Group, on_delete=models.DO_NOTHING, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     class Meta:
@@ -55,41 +57,6 @@ class Node_Tag(models.Model):
     class Meta:
         db_table = 'node_tags'
         db_table_comment = '节点标签列表'
-
-
-class Node_Group(models.Model):
-    """节点组"""
-    id = models.AutoField("组ID", primary_key=True)
-    name = models.CharField("组名", max_length=100, unique=True, null=False)
-    description = models.CharField("节点组简介", max_length=100, null=True)
-    leader = models.ForeignKey("user_manager.User", on_delete=models.DO_NOTHING)
-    time_slot_recipient = models.ManyToManyField(
-        "Node_MessageRecipientRule",
-        related_name='time_slot_recipient_mappings'
-    )
-
-    class Meta:
-        db_table = 'node_groups'
-        db_table_comment = '节点组列表'
-
-
-class Node_MessageRecipientRule(models.Model):
-    """消息接收人"""
-    id = models.AutoField("ID", primary_key=True)
-    monday = models.BooleanField("星期一", null=False)
-    tuesday = models.BooleanField("星期二", null=False)
-    wednesday = models.BooleanField("星期三", null=False)
-    thursday = models.BooleanField("星期四", null=False)
-    friday = models.BooleanField("星期五", null=False)
-    saturday = models.BooleanField("星期六", null=False)
-    sunday = models.BooleanField("星期日", null=False)
-    start_time = models.TimeField("开始时间", null=False)
-    end_time = models.TimeField("结束时间", null=False)
-    recipients = models.ManyToManyField("user_manager.User", related_name='node_message_recipients_mapping')
-
-    class Meta:
-        db_table = 'node_message_recipient'
-        db_table_comment = "节点消息接收人"
 
 
 class Node_UsageData(models.Model):
@@ -246,26 +213,3 @@ class Node_TerminalRecord(models.Model):
     class Meta:
         db_table = 'node_terminal_record'
         db_table_comment = '终端会话录制'
-
-
-# 集群执行
-class Cluster_Execute(models.Model):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # 组
-    group = models.ForeignKey(Node_Group, on_delete=models.CASCADE)
-    # 发起者
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    # 执行目录
-    base_path = models.CharField(max_length=512, null=True)
-    # Shell命令
-    shell = models.CharField(max_length=8192, null=False)
-    # 发起时间
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-
-# 集群执行返回
-class Cluster_ExecuteResult(models.Model):
-    models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    task = models.ForeignKey(Cluster_Execute, on_delete=models.CASCADE)
-    status_code = models.IntegerField()
-    timestamp = models.DateTimeField(auto_now_add=True)

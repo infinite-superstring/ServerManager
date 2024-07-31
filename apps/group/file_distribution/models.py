@@ -1,7 +1,8 @@
 import uuid
 from django.db import models
 
-from apps.node_manager.models import Node_Group, Node
+from apps.node_manager.models import Node
+from apps.group.manager.models import Node_Group
 from apps.task.models import Task
 from apps.user_manager.models import User
 
