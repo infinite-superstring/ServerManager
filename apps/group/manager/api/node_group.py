@@ -1,8 +1,8 @@
 from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit, write_access_log
-from apps.group.manager.models import Node_Group, Node_MessageRecipientRule
-from apps.node_manager.utils.groupUtil import create_message_recipient_rules, node_group_id_exists, \
+from apps.group.manager.models import Node_Group, Group_User_Permission
+from apps.node_manager.utils.groupUtil import create_node_group_user_permission_rules, node_group_id_exists, \
     get_node_group_by_id, get_group_nodes
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, node_set_group
 from apps.permission_manager.util.api_permission import api_permission
@@ -37,7 +37,7 @@ def get_group_list(req: HttpRequest):
                 "group_leader": get_user_by_id(item.get("leader_id")).userName,
                 "group_desc": item.get("description"),
             })
-    write_access_log(req.session["userID"], req, "集群编辑", f"获取集群列表(搜索条件: {search if search else '无'} 页码: {page} 页大小: {pageSize})")
+    write_access_log(req.session["userID"], req, "集群管理", f"获取集群列表(搜索条件: {search if search else '无'} 页码: {page} 页大小: {pageSize})")
     return ResponseJson({
         "status": 1,
         "data": {
@@ -84,10 +84,10 @@ def create_group(req: HttpRequest):
             continue
         node_set_group(node, group.id)
     if group_nodes:
-        rules = create_message_recipient_rules(rules)
+        rules = create_node_group_user_permission_rules(rules)
         for rule in rules:
-            group.time_slot_recipient.add(rule)
-    write_audit(req.session['userID'], "创建集群", "集群编辑", f"集群：{group.name}(gid: {group.id})")
+            group.user_permission.add(rule)
+    write_audit(req.session['userID'], "创建集群", "集群管理", f"集群：{group.name}(gid: {group.id})")
     return ResponseJson({'status': 1, 'msg': '创建集群成功'})
 
 
@@ -113,11 +113,11 @@ def del_group(req: HttpRequest):
     for node in nodes:
         node.group = None
         node.save()
-    for rule in group.time_slot_recipient.all():
-        group.time_slot_recipient.remove(rule)
+    for rule in group.user_permission.all():
+        group.user_permission.remove(rule)
         rule.delete()
     group.delete()
-    write_audit(req.session['userID'], "删除集群", "集群编辑", f"gid: {group_id}")
+    write_audit(req.session['userID'], "删除集群", "集群管理", f"gid: {group_id}")
     return ResponseJson({'status': 1, 'msg': '删除集群成功'})
 
 
@@ -132,7 +132,7 @@ def edit_group(req: HttpRequest):
 def get_group_by_id(req: HttpRequest):
     """获取组详细"""
 
-    def _get_week_list(item: Node_MessageRecipientRule):
+    def _get_week_list(item: Group_User_Permission):
         """根据布尔值返回对应的星期列表"""
         week_list = []
         if item.monday:
@@ -157,7 +157,7 @@ def get_group_by_id(req: HttpRequest):
     if not node_group_id_exists(group_id):
         return ResponseJson({'status': 0, 'msg': '节点组不存在'})
     group = get_node_group_by_id(group_id)
-    write_access_log(req.session["userID"], req, "集群编辑", f"获取集群信息：{group.name}(gid: {group.id})")
+    write_access_log(req.session["userID"], req, "集群管理", f"获取集群信息：{group.name}(gid: {group.id})")
     return ResponseJson({
         "status": 1,
         "data": {
@@ -175,7 +175,7 @@ def get_group_by_id(req: HttpRequest):
                 'week': _get_week_list(item),
                 'start_time': item.start_time.strftime("%H:%M"),
                 'end_time': item.end_time.strftime("%H:%M"),
-                'recipients': [user.userName for user in item.recipients.all()]
-            } for item in group.time_slot_recipient.all()]
+                'user_list': [user.userName for user in item.user_list.all()]
+            } for item in group.user_permission.all()]
         }
     })

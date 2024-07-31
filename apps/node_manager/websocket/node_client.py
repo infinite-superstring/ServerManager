@@ -9,8 +9,8 @@ from threading import Thread
 
 from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
-from apps.group.node_task.api import group_task
-from apps.group.node_task.utils.GroupTaskResultUtil import GroupTaskResultUtil
+from apps.group.group_task.api import group_task
+from apps.group.group_task.utils.GroupTaskResultUtil import GroupTaskResultUtil
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from django.apps import apps
 from django.core.cache import cache

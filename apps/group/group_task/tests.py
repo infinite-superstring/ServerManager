@@ -2,7 +2,7 @@ import datetime
 
 from django.test import TestCase
 
-from apps.group.node_task.utils import group_task_util
+from apps.group.group_task.utils import group_task_util
 
 
 # Create your tests here.

@@ -38,7 +38,7 @@ import apps.dashboard.api.dashboard as dashboard
 import apps.patrol.api.patrol as patrol
 import apps.task.api.task as task
 import apps.web_status.api.webStatus as webStatus
-import apps.group.node_task.api.group_task as group_task
+import apps.group.group_task.api.group_task as group_task
 from apps.group.file_distribution.api import upload as group_file_distribution__upload
 
 urlpatterns = [

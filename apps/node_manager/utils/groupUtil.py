@@ -1,7 +1,7 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from apps.group.manager.models import Node_MessageRecipientRule, Node_Group
+from apps.group.manager.models import Node_Group, Group_User_Permission
 from apps.node_manager.models import Node
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_id, uid_exists
@@ -20,11 +20,11 @@ def get_group_nodes(group):
     return Node.objects.filter(group=group)
 
 
-def create_message_recipient_rule(
+def create_node_group_user_permission_rule(
         week: list,
         start_time: str,
         end_time: str,
-        users: list[User]) -> Node_MessageRecipientRule:
+        users: list[User]) -> Group_User_Permission:
     """
     创建消息接收人
     :param week: 星期
@@ -32,7 +32,7 @@ def create_message_recipient_rule(
     :param end_time: 结束时间
     :param users: 接收用户
     """
-    rule = Node_MessageRecipientRule.objects.create(
+    rule = Group_User_Permission.objects.create(
         monday=True if "monday" in week else False,
         tuesday=True if "tuesday" in week else False,
         wednesday=True if "wednesday" in week else False,
@@ -48,17 +48,17 @@ def create_message_recipient_rule(
         if not uid_exists(user):
             Log.warning(f"用户ID{user}不存在")
             continue
-        rule.recipients.add(get_user_by_id(user))
+        rule.user_list.add(get_user_by_id(user))
     return rule
 
 
-def create_message_recipient_rules(data: list) -> list[Node_MessageRecipientRule]:
+def create_node_group_user_permission_rules(data: list) -> list[Group_User_Permission]:
     """
     根据列表创建消息发送规则
     """
     temp = []
     for item in data:
-        temp.append(create_message_recipient_rule(
+        temp.append(create_node_group_user_permission_rule(
             item.get("week"),
             item.get("start_time"),
             item.get("end_time"),

@@ -6,7 +6,7 @@ from uuid import UUID
 
 from asgiref.sync import async_to_sync
 
-from apps.group.node_task.models import GroupTask_Cycle, GroupTask
+from apps.group.group_task.models import GroupTask_Cycle, GroupTask
 from apps.group.manager.models import Node_Group
 from apps.node_manager.utils.groupUtil import GroupUtil
 

@@ -12,7 +12,7 @@ from django.db.models import QuerySet
 from apps.audit.util.auditTools import write_system_log
 from apps.message.models import Message
 from apps.message.models import MessageBody, UserMessage
-from apps.group.manager.models import Node_MessageRecipientRule, Node_Group
+from apps.group.manager.models import Group_User_Permission, Node_Group
 from apps.permission_manager.models import Permission_groups
 from apps.user_manager.models import User
 from util.logger import Log
@@ -50,7 +50,7 @@ def _get_week():
     return days[weekday]
 
 
-def _get_should_reception(node_group) -> QuerySet[Node_MessageRecipientRule]:
+def _get_should_reception(node_group) -> QuerySet[Group_User_Permission]:
     """
     获取 现在时间段应该接收消息的用户
     """
@@ -63,7 +63,7 @@ def _get_should_reception(node_group) -> QuerySet[Node_MessageRecipientRule]:
         'start_time__lte': current_time,
         'end_time__gte': current_time
     }
-    should_receptions = node_group.time_slot_recipient.filter(**conditions)
+    should_receptions = node_group.user_permission.filter(**conditions)
     should_receptions = should_receptions.distinct()
     return should_receptions
 
@@ -87,7 +87,7 @@ def _node_group_to_recipient(node_groups: Node_Group, u_list: QuerySet[User]):
     # 节点接收人
     tsr = _get_should_reception(node_groups)
     for t in tsr:
-        recipients = t.recipients.all()
+        recipients = t.user_list.all()
         u_list = u_list | recipients
     return u_list
 
