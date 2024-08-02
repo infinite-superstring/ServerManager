@@ -334,7 +334,7 @@ def edit_node(req):
         node.tags.clear()
         node.tags.add(*tags_obj)
     node.save()
-    audit_msg = f"节点名：{node.name}(node.uuid)"
+    audit_msg = f"节点名：{node.name}({node.uuid})"
     if node.group:
         audit_msg += f"集群归属：{node.group.name}(gid: {node.group.id})"
     write_audit(req.session['userID'], "编辑节点", "节点管理", audit_msg)
