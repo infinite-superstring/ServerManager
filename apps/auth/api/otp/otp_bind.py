@@ -24,7 +24,7 @@ def send_email_code(request: HttpRequest) -> HttpResponse:
     if user_otp_is_binding(user):
         return ResponseJson({
             'status': 0,
-            'msg': '您已绑定过OTP!'
+            'msg': '您已绑定过OTP令牌!'
         })
     if cache.get(f"getAuthCode_{user.id}") and cache.get(f"getAuthCode_{user.id}")['end_time'] > time.time():
         return ResponseJson({

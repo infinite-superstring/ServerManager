@@ -16,10 +16,10 @@ Including another URLconf
 """
 from django.urls import path
 
-import apps.auth.api.user_auth as user_auth
-import apps.auth.api.node_auth as node_auth
-import apps.auth.api.otp as otp
-import apps.auth.api.OTP_Bind as otp_bind
+import apps.auth.api.auth.user_auth as user_auth
+import apps.auth.api.auth.node_auth as node_auth
+import apps.auth.api.otp.otp as otp
+import apps.auth.api.otp.otp_bind as otp_bind
 import apps.user_manager.api.user_manager as user_manager
 import apps.user_manager.api.initUser as initUser
 import apps.user_manager.api.userInfo as userInfo

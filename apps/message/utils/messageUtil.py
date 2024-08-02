@@ -274,4 +274,5 @@ def send_err_handle(mes: str):
     """
     发送错误处理
     """
+    Log.error(mes)
     write_system_log(level=3, module='message', content="消息发送错误,可能原因是：”" + mes + "“")

@@ -9,6 +9,8 @@ from apps.message.api.message import send_email
 from apps.user_manager.models import User
 from apps.auth.models import OTP
 
+from util.logger import Log
+
 config = apps.get_app_config('setting').get_config
 
 
@@ -25,19 +27,22 @@ def generate_verification_code(length=8):
 def send_auth_code(user: User):
     code = generate_verification_code(config().security.auth_code_length)
     currentTime = time.time()
-    cache.set(f"getAuthCode_{user.id}", {
-        "code": code,
-        'start_time': currentTime,
-        'end_time': currentTime + config().security.auth_code_resend_interval,
-    }, config().security.auth_code_timeout * 60)
     title = f"需验证您的操作"
     content = f"【操作验证】验证码：{code}（{config().security.auth_code_timeout}分钟内有效）。您正在绑定OTP令牌，请勿将验证码告诉他人。\n（系统消息请勿回复）"
-    return send_email(MessageBody(
-        title=title,
-        content=content,
-        recipient=user,
-        email_sms_only=True
-    ))
+    send_res = send_email(MessageBody(
+            title=title,
+            content=content,
+            recipient=user,
+            email_sms_only=True
+        ))
+    if send_res:
+        cache.set(f"getAuthCode_{user.id}", {
+            "code": code,
+            'start_time': currentTime,
+            'end_time': currentTime + config().security.auth_code_resend_interval,
+        }, config().security.auth_code_timeout * 60)
+        return send_res
+    return False
 
 
 def check_auth_code(user: User, code):
