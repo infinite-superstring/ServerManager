@@ -157,6 +157,6 @@ urlpatterns = [
     path('api/group_task/get_task_by_uuid', group_task.get_task_by_uuid),  # 获取任务详细信息(GET))
     path('api/group_task/command_legal', group_task.command_legal),  # 命令是否合法(POST)
     # 文件分发
-    path('api/file/upload', group_file_distribution__upload.upload_file_chunk),
-    path('api/file/merge', group_file_distribution__upload.merge_file),
+    path('api/file_distribution/upload', group_file_distribution__upload.upload_file_chunk),
+    path('api/file_distribution/merge', group_file_distribution__upload.merge_file),
 ]

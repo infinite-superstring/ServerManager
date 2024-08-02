@@ -281,15 +281,14 @@ def get_node_info(req):
     node = get_node_by_uuid(node_id)
     if not group_utils.check_group_permission("viewAllNode") and not is_node_available_for_user(user, node):
         return ResponseJson({'status': 0, 'msg': "当前无权限操作该节点"})
-    write_access_log(req.session["userID"], req, "节点管理", f"获取节点信息：{node.name}(uuid: {node.id})")
+    write_access_log(req.session["userID"], req, "节点管理", f"获取节点信息：{node.name}(uuid: {node.uuid})")
     return ResponseJson({
         "status": 1,
         "data": {
             "node_uuid": node.uuid,
             "node_name": node.name,
             "node_desc": node.description,
-            "node_group": node.group.id if node.group else None,
-            "group_name": node.group.name if node.group else None,
+            "node_group": {"group_id": node.group.id, "group_name": node.group.name} if node.group else None,
             "node_tags": list(get_node_tags(node.uuid)),
         }
     })
@@ -328,12 +327,17 @@ def edit_node(req):
             node.group = get_node_group_by_id(node_group)
         else:
             Log.warning(f"Node Group Id: {node_group} is not exist")
+    if not node_group and node.group is not None:
+        node.group = None
     if node_tags is not None and node_tags != list(get_node_tags(node.uuid)):
         tags_obj = add_tags(node_tags)
         node.tags.clear()
         node.tags.add(*tags_obj)
     node.save()
-    write_audit(req.session['userID'], "编辑节点", "节点管理", f"UUID: {node.uuid} 节点名：{node.name} 集群归属：{node.group.name}(gid: {node.group.id})")
+    audit_msg = f"节点名：{node.name}(node.uuid)"
+    if node.group:
+        audit_msg += f"集群归属：{node.group.name}(gid: {node.group.id})"
+    write_audit(req.session['userID'], "编辑节点", "节点管理", audit_msg)
     return ResponseJson({
         "status": 1,
         "msg": "节点信息保存成功",

@@ -9,10 +9,10 @@ from apps.user_manager.models import User
 
 # Create your models here.
 
-class file_distribution_task(models.Model):
+class File_DistributionTask(models.Model):
     uuid = models.UUIDField("节点UUID", primary_key=True, unique=True, default=uuid.uuid4, editable=False)
     group = models.ForeignKey(Node_Group, on_delete=models.CASCADE)  # 分发集群
-    files = models.ManyToManyField("file_list", related_name='files')
+    files = models.ManyToManyField("FileDistribution_FileList", related_name='files')
     receive_directory = models.CharField("文件接收目录", max_length=1024, null=True)
     creation_time = models.DateTimeField("分发任务创建时间", auto_now_add=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -37,7 +37,7 @@ class file_distribution_task(models.Model):
             db_table_comment = "文件分发任务 - 进度"
 
 
-class file_list(models.Model):
+class FileDistribution_FileList(models.Model):
     file_name = models.CharField("文件名", max_length=255, unique=True)
     file_hash = models.CharField("文件哈希", max_length=255, unique=True)
     upload_time = models.DateTimeField("文件上传时间", auto_now_add=True)

@@ -27,7 +27,7 @@ def get_group_list(req: HttpRequest):
     page = req_json.get("page", 1)
     pageSize = req_json.get("pageSize", 20)
     search = req_json.get("search", "")
-    result = Node_Group.objects.filter(name__icontains=search)
+    result = Node_Group.objects.filter(name__icontains=search if search else "")
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
         for item in pageQuery:
