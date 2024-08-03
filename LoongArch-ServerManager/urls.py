@@ -20,6 +20,7 @@ import apps.auth.api.auth.user_auth as user_auth
 import apps.auth.api.auth.node_auth as node_auth
 import apps.auth.api.otp.otp as otp
 import apps.auth.api.otp.otp_bind as otp_bind
+import apps.auth.api.otp.otp_unbind as otp_unbind
 import apps.user_manager.api.user_manager as user_manager
 import apps.user_manager.api.initUser as initUser
 import apps.user_manager.api.userInfo as userInfo
@@ -49,8 +50,10 @@ urlpatterns = [
     path('api/auth/nodeAuth', node_auth.node_auth),  # 节点认证（POST）
     path('api/auth/OTP/bind/sendEmailCode', otp_bind.send_email_code),  # 发送邮箱验证码
     path('api/auth/OTP/bind/verifyEmailCode', otp_bind.check_emali_code),  # 检查邮箱验证码
-    path('api/auth/OTP/bind/verifyOTP_Code', otp_bind.bind_otp_check),  # 检查
-    path('api/auth/OTP/verify/checkOTP', otp.check_otp_input),
+    path('api/auth/OTP/bind', otp_bind.bind_otp_check),  # 检查
+    path('api/auth/OTP/unbind/sendEmailCode', otp_unbind.send_email_code),  # 解绑 - 发送邮箱验证码
+    path('api/auth/OTP/unbind', otp_unbind.unbind_otp),  # 验证并解绑
+    path('api/auth/OTP/verify/checkOTP', otp.check_otp_input),  # 验证OTP令牌
     # 用户管理
     path('api/admin/userManager/getUserList', user_manager.getUserList),  # 获取用户列表（POST）
     path('api/admin/userManager/addUser', user_manager.addUser),  # 新增用户（POST）
