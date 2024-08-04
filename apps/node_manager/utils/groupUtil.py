@@ -20,6 +20,10 @@ def get_group_nodes(group):
     return Node.objects.filter(group=group)
 
 
+def get_group_by_node_uuid(node_uuid) -> Node_Group:
+    return Node.objects.filter(uuid=node_uuid).first().group
+
+
 def create_node_group_user_permission_rule(
         week: list,
         start_time: str,

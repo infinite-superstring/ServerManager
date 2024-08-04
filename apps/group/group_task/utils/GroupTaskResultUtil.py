@@ -41,18 +41,20 @@ class GroupTaskResultUtil:
         result_uuid = group_task_util.by_key_get_uuid(
             task_uuid + self.__node_uuid + process_id
         )
-        task: GroupTask = await GroupTask.objects.aget(uuid=task_uuid)
-        if task.exec_count:
-            if int(task.exec_count) <= 0:
-                task.enable = False
-                await task.asave()
-                Log.warning(f'任务:{task.name}执行次数为{task.exec_count},已执行完成,并关闭任务!')
-                return
-        audit = await Group_Task_Audit. \
-            objects. \
-            acreate(group_task=task,
-                    node=await Node.objects.aget(uuid=self.__node_uuid), statr_time=start_time,
-                    end_time=None, uuid=result_uuid, )
+        task: GroupTask = await GroupTask.objects.filter(uuid=task_uuid).afirst()
+        audit = None
+        if task:
+            if task.exec_count:
+                if int(task.exec_count) <= 0:
+                    task.enable = False
+                    await task.asave()
+                    Log.warning(f'任务:{task.name}执行次数为{task.exec_count},已执行完成,并关闭任务!')
+                    return
+            audit = await Group_Task_Audit. \
+                objects. \
+                acreate(group_task=task,
+                        node=await Node.objects.aget(uuid=self.__node_uuid), statr_time=start_time,
+                        end_time=None, uuid=result_uuid, )
         cache.set(f'group_task_executing_{task_uuid}_{self.__node_uuid}', start_time, 60)
         file_path = os.path.join(task_dir, str(result_uuid))
         file_stream = None
@@ -99,7 +101,8 @@ class GroupTaskResultUtil:
             group_task_util.write_file(m.file_path, f'\n执行命令时发生错误:{error}')
         # m.file_stream.write(f"[进程返回值:{code}]")
         # m.file_stream.close()
-        m.group_task_audit.status = code
-        m.group_task_audit.end_time = datetime.fromtimestamp(timestamp)
-        await m.group_task_audit.asave()
+        if m.group_task_audit:
+            m.group_task_audit.status = code
+            m.group_task_audit.end_time = datetime.fromtimestamp(timestamp)
+            await m.group_task_audit.asave()
         cache.delete(f'group_task_executing_{task_uuid}_{self.__node_uuid}')
