@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from apps.message.models import MessageBody
 from apps.message.utils.messageUtil import send
-from apps.group.manager.models import Node_Group, Node_MessageRecipientRule
+from apps.group.manager.models import Node_Group
 from apps.node_manager.utils.groupUtil import create_node_group_user_permission_rules
 from apps.user_manager.models import User
 from util.passwordUtils import encrypt_password
@@ -62,7 +62,7 @@ class MessageTest(TestCase):
         ng.user_permission.add(*rules)
         now = datetime.now()
         current_time = time(now.hour, now.minute)
-        a = Node_MessageRecipientRule.objects.filter(start_time__lte=current_time, end_time__gte=current_time)
+        # a = Node_MessageRecipientRule.objects.filter(start_time__lte=current_time, end_time__gte=current_time)
         send(MessageBody(title="test", content="test", name="test", node_groups=Node_Group.objects.filter()))
 
     def test3(self):
@@ -72,6 +72,9 @@ class MessageTest(TestCase):
         l = [1, 2, 3, 4, 5, 6, 7]
         handelList(l)
         print(l)
+
+    def test5(self):
+        print(not None)
 
 
 def handelList(l):

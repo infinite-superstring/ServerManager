@@ -24,7 +24,8 @@ class Cluster_Execute(models.Model):
 
 # 集群执行返回
 class Cluster_ExecuteResult(models.Model):
-    models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    result_uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    node_uuid = models.UUIDField(null=False)
     task = models.ForeignKey(Cluster_Execute, on_delete=models.CASCADE)
     status_code = models.IntegerField()
     timestamp = models.DateTimeField(auto_now_add=True)

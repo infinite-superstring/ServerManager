@@ -40,6 +40,7 @@ import apps.patrol.api.patrol as patrol
 import apps.task.api.task as task
 import apps.web_status.api.webStatus as webStatus
 import apps.group.group_task.api.group_task as group_task
+import apps.group.commandExecution.api.execute as execute
 from apps.group.file_distribution.api import upload as group_file_distribution__upload
 
 urlpatterns = [
@@ -162,4 +163,6 @@ urlpatterns = [
     # 文件分发
     path('api/file_distribution/upload', group_file_distribution__upload.upload_file_chunk),
     path('api/file_distribution/merge', group_file_distribution__upload.merge_file),
+    # 集群指令
+    path('api/execute/getList', execute.getResultList)
 ]

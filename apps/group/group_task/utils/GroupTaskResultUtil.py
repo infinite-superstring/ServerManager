@@ -4,6 +4,7 @@ from datetime import datetime
 from django.apps import apps
 from django.core.cache import cache
 
+from apps.group.commandExecution.models import Cluster_ExecuteResult, Cluster_Execute
 from apps.group.group_task.entity.TaskRuntime import TaskRuntime
 from apps.group.group_task.models import GroupTask, Group_Task_Audit
 from apps.group.group_task.utils import group_task_util
@@ -18,9 +19,11 @@ class GroupTaskResultUtil:
     __node_uuid = None
     __save_base_dir: str = 'data'
     __map: dict = {str: TaskRuntime}
+    __is_once_task = False
 
-    def __init__(self, node_uuid):
+    def __init__(self, node_uuid, is_once_task):
         self.__node_uuid = node_uuid
+        self.__is_once_task = is_once_task
 
     async def handle_task_start(self, data: dict):
         task_uuid = data.get('uuid')
@@ -43,7 +46,7 @@ class GroupTaskResultUtil:
         )
         task: GroupTask = await GroupTask.objects.filter(uuid=task_uuid).afirst()
         audit = None
-        if task:
+        if not self.__is_once_task:
             if task.exec_count:
                 if int(task.exec_count) <= 0:
                     task.enable = False
@@ -101,7 +104,16 @@ class GroupTaskResultUtil:
             group_task_util.write_file(m.file_path, f'\n执行命令时发生错误:{error}')
         # m.file_stream.write(f"[进程返回值:{code}]")
         # m.file_stream.close()
-        if m.group_task_audit:
+
+        if self.__is_once_task:
+            r = await Cluster_ExecuteResult.objects.acreate(
+                result_uuid=m.result_uuid,
+                node_uuid=self.__node_uuid,
+                task=await Cluster_Execute.objects.aget(uuid=task_uuid),
+                status_code=code,
+                timestamp=timestamp,
+            )
+        else:
             m.group_task_audit.status = code
             m.group_task_audit.end_time = datetime.fromtimestamp(timestamp)
             await m.group_task_audit.asave()

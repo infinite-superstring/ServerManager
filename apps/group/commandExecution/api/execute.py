@@ -71,8 +71,8 @@ def getResultList(request: HttpRequest) -> HttpResponse:
     获取Shell执行返回列表
     """
     PageContent: list = []
-    page = request.GET.get("page", 1)
-    pageSize = request.GET.get("pageSize", 20)
+    page = int(request.GET.get("page", 1))
+    pageSize = int(request.GET.get("pageSize", 20))
     result = Cluster_Execute.objects.all()
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
@@ -81,7 +81,7 @@ def getResultList(request: HttpRequest) -> HttpResponse:
                 'uuid': item.get("uuid"),
                 'user': get_user_by_id(item.get("user_id")).userName,
                 'group': get_node_group_by_id(item.get("group_id")).name,
-                'shell': item.get("shell"),
+                'shell': str(item.get("shell"))[:10] if len(item.get("shell")) > 10 else item.get("shell"),
                 'timestamp': item.get("timestamp"),
             })
     return success({

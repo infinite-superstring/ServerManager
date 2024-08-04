@@ -776,8 +776,11 @@ class node_client(AsyncBaseConsumer):
         """
         任务开始执行信号
         """
-        Log.debug(f'{data.get("uuid")}:任务开始执行信号')
-        self.__task_result_util = GroupTaskResultUtil(self.__node_uuid)
+        task_uuid = data.get("uuid")
+        task: GroupTask = GroupTask.objects.filter(uuid=task_uuid).aexists()
+        exists = not not await task
+        Log.debug(f'{task_uuid}:集群指令开始执行信号') if not exists else Log.debug(f'{task_uuid}:任务开始执行信号')
+        self.__task_result_util = GroupTaskResultUtil(self.__node_uuid, not exists)
         await self.__task_result_util.handle_task_start(data)
 
     @AsyncBaseConsumer.action_handler("task:process_output")
