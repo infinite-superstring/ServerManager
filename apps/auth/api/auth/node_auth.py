@@ -29,22 +29,36 @@ def node_auth(req: HttpRequest):
     if not Node.objects.filter(name=node_name).exists():
         return ResponseJson({"status": 0, "msg": "节点不存在"})
     node = Node.objects.get(name=node_name)
-    if (node and verify_node_token(node, node_token)):
-        req.session["node_uuid"] = str(node.uuid)
-        req.session["node_name"] = node.name
-        req.session["auth_method"] = "Node Auth"
-        req.session.set_expiry = 0
-        if not Node_BaseInfo.objects.filter(node=node).exists():
-            Node_BaseInfo.objects.create(node=node, node_version="")
-
-        hashed_token, salt = encrypt_password(config().base.server_token)
-
-        return ResponseJson({"status": 1, "data": {
-            'server_token': {
-                'hash': str(hashed_token),
-                'salt': salt
-            },
-            'server_name': config().base.website_name,
-        }})
-    else:
+    if not (node and verify_node_token(node, node_token)):
         return ResponseJson({"status": 0, "msg": "节点认证失败"})
+    if node.auth_restrictions_enable:
+        match node.auth_restrictions_method:
+            case 1:
+                import ipaddress
+                if ipaddress.ip_address('192.168.1.1').version != 4:
+                    return ResponseJson({"status": 0, "msg": "暂不支持验证IPV6网段"})
+                if str(ipaddress.ip_network(node_ip)) != node.auth_restrictions_value:
+                    Log.warning(f"节点{node.name}({node.uuid})认证失败：网段错误，目标网段为{node.auth_restrictions_value}实际网段{ipaddress.ip_network(node_ip)}")
+                    return ResponseJson({"status": 0, "msg": "节点认证失败"})
+            case 2:
+                if node_ip != node.auth_restrictions_value:
+                    Log.warning(f"节点{node.name}({node.uuid})认证失败：IP错误，目标IP为{node.auth_restrictions_value}实际IP{node_ip}")
+                    return ResponseJson({"status": 0, "msg": "节点认证失败"})
+            case 3:
+                # TODO MAC验证未实现
+                pass
+    req.session["node_uuid"] = str(node.uuid)
+    req.session["node_name"] = node.name
+    req.session["auth_method"] = "Node Auth"
+    req.session.set_expiry = 0
+    if not Node_BaseInfo.objects.filter(node=node).exists():
+        Node_BaseInfo.objects.create(node=node, node_version="")
+    hashed_token, salt = encrypt_password(config().base.server_token)
+    return ResponseJson({"status": 1, "data": {
+        'server_token': {
+            'hash': str(hashed_token),
+            'salt': salt
+        },
+        'server_name': config().base.website_name,
+    }})
+
