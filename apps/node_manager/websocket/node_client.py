@@ -11,6 +11,7 @@ from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
 
 from apps.group.commandExecution.utils import group_command_util
+from apps.group.commandExecution.utils.group_command_manager import GroupCommandManager
 from apps.group.group_task.api import group_task
 from apps.group.group_task.models import GroupTask
 from apps.group.group_task.utils.GroupTaskResultUtil import GroupTaskResultUtil
@@ -53,6 +54,7 @@ class node_client(AsyncBaseConsumer):
     __terminal_record_fd: dict[str: any] = {}
     __task: dict = []
     __task_result_util: GroupTaskResultUtil = None
+    __group_command_manager: GroupCommandManager = None
 
     async def connect(self):
         # 在建立连接时执行的操作
@@ -102,6 +104,8 @@ class node_client(AsyncBaseConsumer):
         threading.Thread(target=self.__check_node_timeout, args=()).start()
         await createEvent(node, "节点已连接", "", end_directly=True)
         Log.success(f"节点：{node_name}已连接")
+        self.__task_result_util = GroupTaskResultUtil(self.__node_uuid)
+        self.__group_command_manager = GroupCommandManager(self.__node_uuid)
 
     async def disconnect(self, close_code):
         """节点断开连接时"""
@@ -771,16 +775,31 @@ class node_client(AsyncBaseConsumer):
                 self.__alarm_status['disk'][disk]['event_end_time'] = None
 
     @Log.catch
+    async def run_shell(self, data):
+        """
+        执行集群命令
+        """
+        Log.debug("集群命令发送")
+        await self.send_action("execute:run_shell", data)
+
+    @Log.catch
+    @AsyncBaseConsumer.action_handler("execute:start")
+    async def __execute_start(self, data: dict):
+        """
+        集群命令开始信号
+        """
+        exec_uuid = data.get("uuid")
+        Log.debug(f'{exec_uuid}:集群命令开始信号')
+        await self.__group_command_manager.start(data)
+
+    @Log.catch
     @AsyncBaseConsumer.action_handler("task:process_start")
-    async def __task_process_statr(self, data: dict):
+    async def __task_process_start(self, data: dict):
         """
         任务开始执行信号
         """
         task_uuid = data.get("uuid")
-        task: GroupTask = GroupTask.objects.filter(uuid=task_uuid).aexists()
-        exists = not not await task
-        Log.debug(f'{task_uuid}:集群指令开始执行信号') if not exists else Log.debug(f'{task_uuid}:任务开始执行信号')
-        self.__task_result_util = GroupTaskResultUtil(self.__node_uuid, not exists)
+        Log.debug(f'{task_uuid}:任务开始执行信号')
         await self.__task_result_util.handle_task_start(data)
 
     @AsyncBaseConsumer.action_handler("task:process_output")

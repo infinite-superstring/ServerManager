@@ -1,3 +1,4 @@
+import os.path
 from typing import Callable
 
 from django.apps import apps
@@ -6,15 +7,19 @@ from django.http import HttpResponse
 from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit
-from apps.group.commandExecution.models import Cluster_Execute
+from apps.group.commandExecution.models import Cluster_Execute, Cluster_ExecuteResult
 from apps.group.commandExecution.utils.group_command_util import executeGroupCommand
 from apps.group.group_task.utils import group_task_util
+from apps.group.group_task.utils.group_task_util import is_uuid
+from apps.node_manager.models import Node
 from apps.node_manager.utils.groupUtil import get_node_group_by_id
 from apps.node_manager.utils.groupUtil import node_group_id_exists
 from apps.permission_manager.util.permission import groupPermission
 from apps.setting.entity.Config import config
 from apps.user_manager.util.userUtils import get_user_by_id
+from util import result, file_util
 from util.Request import RequestLoadJson
+from util.file_util import SizeType
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
 from util.result import api_error, error, success
@@ -96,3 +101,46 @@ def getResult(request: HttpRequest) -> HttpResponse:
     """
     获取Shell执行返回
     """
+
+    r_uuid = request.GET.get("uuid")
+    if not r_uuid:
+        return error("uuid不能为空")
+    if not is_uuid(r_uuid):
+        return error("参数错误")
+    save_dir = apps.get_app_config('node_manager').group_command_result_save_dir
+    file_path = os.path.join(save_dir, r_uuid)
+    too_big = file_util.file_to_size(str(file_path), SizeType.MB) > 3
+    lines = file_util.read_text_file(file_path=str(file_path),
+                                     encoding=file_util.file_encode(str(file_path)),
+                                     read_lines=4000, is_asc=False) if too_big else \
+        file_util.read_text_file(file_path=str(file_path), encoding=file_util.file_encode(str(file_path)))
+    return success({
+        "tooBig": too_big,
+        "lines": lines
+    })
+
+
+@require_GET
+def getNodeResultList(request: HttpRequest) -> HttpResponse:
+    """
+    根据指令UUID获取节点运行结果列表
+    """
+    uuid = request.GET.get("uuid")
+    if not uuid:
+        result.error("uuid不能为空")
+    cluster_execute: Cluster_Execute = Cluster_Execute.objects.filter(uuid=uuid).first()
+    if not cluster_execute:
+        return error("指令不存在")
+    group = cluster_execute.group
+    nodes = Node.objects.filter(group=group)
+    have_nodes = Cluster_ExecuteResult.objects.filter(node__uuid__in=[node.uuid for node in nodes])
+    result_list = []
+    for node in nodes:
+        is_success = node.uuid in [item.node.uuid for item in have_nodes]
+        have_node: Cluster_ExecuteResult = have_nodes.filter(node__uuid=node.uuid).first()
+        result_list.append({
+            "nodeName": node.name,
+            "success": is_success,
+            'resultUuid': have_node.result_uuid if have_node else False,
+        })
+    return result.success(result_list)

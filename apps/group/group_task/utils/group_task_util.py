@@ -191,3 +191,11 @@ def command_legal(command: str, command_list: list[str]):
         if c in command:
             return False
     return True
+
+
+def is_uuid(uuid_str: str):
+    try:
+        uuid.UUID(uuid_str)
+        return True
+    except ValueError:
+        return False

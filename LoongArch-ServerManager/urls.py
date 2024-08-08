@@ -164,5 +164,7 @@ urlpatterns = [
     path('api/file_distribution/upload', group_file_distribution__upload.upload_file_chunk),
     path('api/file_distribution/merge', group_file_distribution__upload.merge_file),
     # 集群指令
-    path('api/execute/getList', execute.getResultList)
+    path('api/execute/getList', execute.getResultList),  # 获取结果列表
+    path('api/execute/getNodeResultByUUID', execute.getNodeResultList),  # 获取节点运行结果列表
+    path('api/execute/getResultByUUID', execute.getResult),  # 获取结果
 ]

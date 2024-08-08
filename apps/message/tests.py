@@ -76,6 +76,9 @@ class MessageTest(TestCase):
     def test5(self):
         print(not None)
 
+    def test6(self):
+        print(1 in [2,3,4])
+
 
 def handelList(l):
     print(l)

@@ -1,4 +1,7 @@
+from django.http import HttpResponse
+
 from util.Response import ResponseJson
+from util.asgi_file import get_file_response
 
 
 def success(data='', msg='success', http_code=200, result_code=1):
@@ -29,3 +32,7 @@ def api_error(msg='error', http_code=200, result_code=-1):
             'data': ''
         }
     )
+
+
+def file(file_path: str):
+    return get_file_response(file_path)

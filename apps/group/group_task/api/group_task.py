@@ -18,8 +18,9 @@ from apps.permission_manager.util.api_permission import api_permission
 from apps.setting.entity.Config import config
 from apps.permission_manager.util.permission import groupPermission
 from apps.user_manager.util.userUtils import get_user_by_id
-from util import result, pageUtils
+from util import result, pageUtils, file_util
 from util.Request import RequestLoadJson
+from util.file_util import SizeType
 from util.logger import Log
 
 # 获取配置
@@ -207,27 +208,24 @@ def by_node_uuid_get_result(req: HttpRequest):
 
 @require_GET
 @api_permission('clusterTask')
-def get_result_detail(req: HttpRequest, char_set='utf-8'):
+def get_result_detail(req: HttpRequest):
     uuid = req.GET.get('uuid', '')
     node_uuid = req.GET.get('node_uuid', '')
     task_uuid = req.GET.get('task_uuid', '')
+    if not group_task_util.is_uuid(uuid) or \
+            not group_task_util.is_uuid(node_uuid) or \
+            not group_task_util.is_uuid(task_uuid):
+        return result.error('参数错误')
     save_dir = apps.get_app_config('node_manager').group_task_result_save_dir
     file_path = os.path.join(save_dir, task_uuid, node_uuid, uuid)
-    file_size = os.path.getsize(file_path)
-    # 大小超过3兆时
-    if file_size > 3 * 1024 * 1024:
+    # 文件大小大于 3 M 则提示下载
+    if file_util.file_to_size(file_path=str(file_path), size_type=SizeType.MB) > 3:
         return result.error(msg='文件过大，请下载查看')
-    commandLine = []
-    try:
-        with open(file_path, 'r+', encoding=char_set) as file_stream:
-            line = file_stream.readline()
-            while line:
-                commandLine.append(line)
-                line = file_stream.readline()
-    except UnicodeError as e:
-        Log.error("编码错误,尝试更换编码")
-        return get_result_detail(req, 'gbk')
-    return result.success(commandLine)
+    c = file_util.file_encode(file_path=str(file_path)) or 'utf-8'
+    commandLine = file_util.read_text_file(file_path=str(file_path), encoding=c)
+    if commandLine:
+        return result.success(commandLine)
+    return result.error(msg='文件读取失败')
 
 
 @require_http_methods("PUT")

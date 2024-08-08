@@ -11,16 +11,20 @@ class NodeManagerConfig(AppConfig):
     name = 'apps.node_manager'
     terminal_record_save_dir: str
     group_task_result_save_dir: str
+    group_command_result_save_dir: str
 
     def __init__(self, app_name, app_module):
         super().__init__(app_name, app_module)
         data_save_base_path = os.path.join(os.getcwd(), "data")
-        self.terminal_record_save_dir = os.path.join(data_save_base_path, 'terminal_session_record')
-        if not os.path.exists(self.terminal_record_save_dir):
-            os.mkdir(self.terminal_record_save_dir)
-        self.group_task_result_save_dir = os.path.join(data_save_base_path, 'group_task_run_result')
-        if not os.path.exists(self.group_task_result_save_dir):
-            os.mkdir(self.group_task_result_save_dir)
+
+        def __create_dir(dir_name) -> str:
+            if not os.path.exists(os.path.join(data_save_base_path, dir_name)):
+                os.mkdir(os.path.join(data_save_base_path, dir_name))
+            return str(os.path.join(data_save_base_path, dir_name))
+
+        self.terminal_record_save_dir = __create_dir('terminal_session_record')
+        self.group_task_result_save_dir = __create_dir('group_task_run_result')
+        self.group_command_result_save_dir = __create_dir('group_command_run_result')
         Log.info("Node Manager: Initializing start")
 
     def ready(self):
