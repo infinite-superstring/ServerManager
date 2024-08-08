@@ -163,19 +163,23 @@ def get_group_by_id(req: HttpRequest):
         "data": {
             "group_id": group.id,
             "group_name": group.name,
-            "group_leader": group.leader.userName,
+            "group_leader": {
+                "id": group.leader.id,
+                "userName": group.leader.userName
+            },
             "group_desc": group.description,
             "node_list": [{
                 'uuid': item.uuid,
                 'name': item.name,
-                'description': item.description,
-                'leader': item.group.leader.userName,
             } for item in get_group_nodes(group)],
             "rules": [{
                 'week': _get_week_list(item),
                 'start_time': item.start_time.strftime("%H:%M"),
                 'end_time': item.end_time.strftime("%H:%M"),
-                'user_list': [user.userName for user in item.user_list.all()]
+                'users': [{
+                    "id": user.id,
+                    "userName": user.userName
+                } for user in item.user_list.all()]
             } for item in group.user_permission.all()]
         }
     })

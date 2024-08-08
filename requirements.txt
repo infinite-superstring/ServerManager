@@ -13,6 +13,7 @@ hiredis
 pyotp
 qrcode
 requests
+openpyxl
 python-magic
 python-magic-bin;platform_system=="Windows"
 psycopg2; platform_system!="Windows"

@@ -4,7 +4,7 @@ from typing import Callable
 from django.apps import apps
 
 from django.db.models import Q
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit, write_access_log
 from apps.node_manager.entity.auth_restrictions import AuthRestrictions
@@ -372,3 +372,7 @@ def edit_node(req):
         #
         # }
     })
+
+@require_GET
+def download_node_table_template(req):
+    pass
