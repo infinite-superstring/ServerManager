@@ -2,6 +2,7 @@ from django.apps import apps
 
 from util.logger import Log
 from apps.setting.entity.Config import config as configObj
+from apps.audit.util.auditTools import write_system_log
 
 
 # 加载配置文件到对象
@@ -72,6 +73,7 @@ def dictToConfig(data: dict) -> configObj:
                     setattr(temp, key2, annotations.get(key2)(item.get(key2)))
                 else:
                     Log.warning(f"{key1}.{key2} Value Type Error! {type(item[key2])} != {annotations.get(key2)}")
+                    write_system_log(3, "系统设置", f"保存设置{key1}.{key2}数据类型错误，应为{type(item[key2])}实为{annotations.get(key2)}")
         else:
             continue
     return temp_config
