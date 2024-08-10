@@ -38,7 +38,8 @@ def send_email_code(request: HttpRequest) -> HttpResponse:
             'status': 1,
             'msg': '发件成功，请检查收件箱',
             'data': {
-                'code_len': config().security.auth_code_length
+                'code_len': config().security.auth_code_length,
+                'interval': config().security.auth_code_resend_interval
             }
         })
     return ResponseJson({
