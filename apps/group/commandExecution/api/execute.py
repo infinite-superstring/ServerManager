@@ -144,3 +144,22 @@ def getNodeResultList(request: HttpRequest) -> HttpResponse:
             'resultUuid': have_node.result_uuid if have_node else False,
         })
     return result.success(result_list)
+
+
+def getCommandInfo(request: HttpRequest):
+    """
+    获取指令信息
+    """
+    uuid = request.GET.get("uuid")
+    if not uuid:
+        return error("uuid不能为空")
+    if not is_uuid(uuid):
+        return error("参数错误")
+    cluster_execute: Cluster_Execute = Cluster_Execute.objects.filter(uuid=uuid).first()
+    if not cluster_execute:
+        return error("指令不存在")
+    return success({
+        "group": cluster_execute.group.id,
+        "shell": cluster_execute.shell,
+        "basePath": cluster_execute.base_path,
+    })
