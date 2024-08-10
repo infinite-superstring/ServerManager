@@ -12,6 +12,7 @@ from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_gro
 from apps.user_manager.models import User
 from apps.permission_manager.util.permission import groupPermission
 from util.passwordUtils import verify_password
+from util.excelUtils import *
 from util.logger import Log
 
 config = apps.get_app_config('setting').get_config
@@ -69,7 +70,8 @@ def get_user_node_online_count(user: User) -> int:
 
 def get_user_node_offline_count(user: User) -> int:
     """获取用户可用的离线节点数量"""
-    return get_user_node_count(user) - filter_user_available_nodes(user, Node.objects.filter(node_baseinfo__online=True)).count()
+    return get_user_node_count(user) - filter_user_available_nodes(user, Node.objects.filter(
+        node_baseinfo__online=True)).count()
 
 
 def get_user_node_warning_count(user: User) -> int:
@@ -297,6 +299,23 @@ def is_node_available_for_user(user, node):
     if node not in nodes:
         return False
     return True
+
+
+def get_import_node_list_excel_object():
+    """
+    获取导入节点列表ExcelUtils对象
+    """
+    cols = [
+        ExcelColumn("节点名", 'str', validate=ColumnValidate(max=30)),
+        ExcelColumn("节点标签列表（英文逗号分隔）", 'str', validate=ColumnValidate(max=256)),
+        ExcelColumn("节点备注", 'str', validate=ColumnValidate(max=256)),
+        ExcelColumn("集群", 'select',
+                    validate=ColumnValidate(select=[group.name for group in Node_Group.objects.all()])),
+        ExcelColumn("启用节点登录限制", 'bool', validate=ColumnValidate()),
+        ExcelColumn("节点登录限制方法", 'select', validate=ColumnValidate(select=["限制IP", "限制网段"])),
+        ExcelColumn("节点登录限制值", 'str'),
+    ]
+    return ExcelUtils({"节点列表": ExcelTable(cols)})
 
 
 async def a_load_node_alarm_setting(node: Node) -> AlarmSetting:

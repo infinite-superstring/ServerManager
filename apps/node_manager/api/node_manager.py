@@ -13,7 +13,7 @@ from apps.node_manager.entity.auth_restrictions import AuthRestrictions
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists
 from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists, node_name_exists, \
-    init_node_alarm_setting, filter_user_available_nodes, is_node_available_for_user
+    init_node_alarm_setting, filter_user_available_nodes, is_node_available_for_user, get_import_node_list_excel_object
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from apps.auth.utils.otpUtils import verify_otp_for_request
@@ -382,17 +382,7 @@ def edit_node(req):
 @require_GET
 def download_node_table_template(req):
     from tempfile import NamedTemporaryFile
-    cols = [
-        ExcelColumn("节点名", 'str', validate=ColumnValidate(max=30)),
-        ExcelColumn("节点标签列表（英文逗号分隔）", 'str', validate=ColumnValidate(max=256)),
-        ExcelColumn("节点备注", 'str', validate=ColumnValidate(max=256)),
-        ExcelColumn("集群", 'select',
-                    validate=ColumnValidate(select=[group.name for group in Node_Group.objects.all()])),
-        ExcelColumn("启用节点登录限制", 'bool', validate=ColumnValidate()),
-        ExcelColumn("节点登录限制方法", 'select', validate=ColumnValidate(select=["限制IP", "限制网段"])),
-        ExcelColumn("节点登录限制值", 'str'),
-    ]
-    eutils = ExcelUtils({"节点列表": ExcelTable(cols)})
+    eutils: ExcelUtils = get_import_node_list_excel_object()
     with NamedTemporaryFile(delete=False) as tmp:
         eutils.createExcelTemplate(tmp.name)
         return get_file_response(tmp.name, "节点导入模板.xlsx")

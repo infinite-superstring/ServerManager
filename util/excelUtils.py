@@ -79,13 +79,16 @@ class ExcelRow(object):
     data: list[any]
     # 校验错误，对应data列表，当错误时对应的bool为True
     error: list[bool]
+    # 校验错误提示信息
+    error_message: list[str | None]
 
-    def __init__(self, data: list[any] = [], error: list[bool] = []):
+    def __init__(self, data: list[any] = [], error: list[bool] = [], error_msg: list[str | None] = None):
         self.data = data
         self.error = error
+        self.error_message = error_msg
 
     def __str__(self):
-        return f"ExcelRow(\ndata={self.data}, \nerror={self.error}\n)"
+        return f"ExcelRow(\ndata={self.data}, \nerror={self.error}, \nerror_message={self.error_message}\n)"
 
 
 class ExcelTable(object):
@@ -216,6 +219,11 @@ class ExcelUtils(object):
                         selected_cell.value = column.default
 
         wb = openpyxl.Workbook()
+
+        # 删除默认工作表
+        default_sheet = wb.active
+        wb.remove(default_sheet)
+
         for table_name, table in self.tables.items():
             _handle_table(wb, table_name, table)
         if not return_wb_obj:
@@ -243,57 +251,74 @@ class ExcelUtils(object):
 
             # 读取每一行的数据
             for row_num in range(2, work_table.max_row + 1):
+
+                first_col_value = work_table.cell(row=row_num, column=1).value
+                if first_col_value is None:
+                    break  # 停止读取后续的行
+
                 data = []
                 error = []
+                error_msg = []
                 for col_num, col_obj in enumerate(table_obj.cols, start=1):
                     cell_value = work_table.cell(row=row_num, column=col_num).value
                     data.append(cell_value)
 
                     # 校验数据
-                    if col_obj.validate:
+                    if not col_obj.validate:
+                        error.append(False)  # 没有验证规则则默认无错误
+                    else:
                         # 根据类型进行校验
                         if col_obj.col_type == "str":
                             if col_obj.validate.min and len(str(cell_value)) < col_obj.validate.min:
                                 Log.error(f"第 {row_num} 行, 列 {col_num} 的字符串长度小于 {col_obj.validate.min}")
+                                error_msg.append(f"字符串长度小于 {col_obj.validate.min}")
                                 error.append(True)
                             elif col_obj.validate.max and len(str(cell_value)) > col_obj.validate.max:
                                 Log.error(f"第 {row_num} 行, 列 {col_num} 的字符串长度大于 {col_obj.validate.max}")
+                                error_msg.append(f"字符串长度大于 {col_obj.validate.max}")
                                 error.append(True)
                             else:
+                                error_msg.append(None)
                                 error.append(False)
                         elif col_obj.col_type in ["int", "float"]:
                             try:
                                 value = float(cell_value) if col_obj.col_type == "float" else int(cell_value)
                                 if col_obj.validate.min and value < col_obj.validate.min:
                                     Log.error(f"第 {row_num} 行, 列 {col_num} 的值小于 {col_obj.validate.min}")
+                                    error_msg.append(f"值小于 {col_obj.validate.min}")
                                     error.append(True)
                                 elif col_obj.validate.max and value > col_obj.validate.max:
                                     Log.error(f"第 {row_num} 行, 列 {col_num} 的值大于 {col_obj.validate.max}")
+                                    error_msg.append(f"值大于 {col_obj.validate.max}")
                                     error.append(True)
                                 else:
+                                    error_msg.append(None)
                                     error.append(False)
                             except (ValueError, TypeError):
                                 Log.error(f"第 {row_num} 行, 列 {col_num} 的值不是有效的数字")
+                                error_msg.append(f"值不是有效的数字")
                                 error.append(True)
                         elif col_obj.col_type == "bool":
-                            if cell_value not in ["True", "False", None]:
+                            if str(cell_value) not in ["True", "False", None]:
                                 Log.error(f"第 {row_num} 行, 列 {col_num} 的值不是有效的布尔值")
+                                error_msg.append(f"值不是有效的布尔值")
                                 error.append(True)
                             else:
+                                error_msg.append(None)
                                 error.append(False)
                         elif col_obj.col_type == "select":
-                            if cell_value not in col_obj.validate.select:
+                            if str(cell_value) not in col_obj.validate.select:
                                 Log.error(f"第 {row_num} 行, 列 {col_num} 的值不在有效选项中")
+                                error_msg.append(f"值不在有效选项中")
                                 error.append(True)
                             else:
+                                error_msg.append(None)
                                 error.append(False)
                         else:
+                            error_msg.append(None)
                             error.append(False)  # 默认无错误
-                    else:
-                        error.append(False)  # 没有验证规则则默认无错误
-                rows.append(ExcelRow(data=data, error=error))
+                rows.append(ExcelRow(data=data, error=error, error_msg=error_msg))
             table_obj.rows = rows
-
         wb.close()
 
 
@@ -301,14 +326,14 @@ if __name__ == '__main__':
     number = ColumnValidate(3, 10)
     string_length = ColumnValidate(3, 10)
     cols = [
-        ExcelColumn("A1", default="111", validate=string_length),
+        ExcelColumn("A1", validate=string_length),
         ExcelColumn("A2", 'int', validate=number),
         ExcelColumn("A3", 'float', validate=number),
         ExcelColumn("A4", 'bool', validate=ColumnValidate()),
         ExcelColumn("A5", 'select', validate=ColumnValidate(select=["测试1", "测试2", "测试3"])),
     ]
     eutils = ExcelUtils({"表1": ExcelTable(cols)})
-    eutils.createExcelTemplate("file.xlsx")
+    # eutils.createExcelTemplate("file.xlsx")
 
     eutils.loadExcel("file.xlsx")
     for tab_name, table in eutils.tables.items():
