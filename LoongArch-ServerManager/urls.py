@@ -72,6 +72,7 @@ urlpatterns = [
     path('api/admin/permissionManager/setPermissionGroup', permission_manager.setPermissionGroup),  # 设置权限组 （POST）
     # 节点管理器
     path('api/node_manager/addNode', node_manager.add_node),  # 添加节点(POST)
+    path('api/node_manager/download_node_list_template', node_manager.download_node_table_template),  # 下载节点列表模板
     path('api/node_manager/delNode', node_manager.del_node),  # 删除节点(POST)(OTP)
     path('api/node_manager/editNode', node_manager.edit_node),  # 编辑节点(POST)
     path('api/node_manager/resetToken', node_manager.reset_node_token),  # 重置节点Token(POST)(OTP)

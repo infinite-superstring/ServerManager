@@ -5,8 +5,10 @@ from django.apps import apps
 
 from django.db.models import Q
 from django.views.decorators.http import require_POST, require_GET
+from tempfile import NamedTemporaryFile
 
 from apps.audit.util.auditTools import write_audit, write_access_log
+from apps.group.manager.models import Node_Group
 from apps.node_manager.entity.auth_restrictions import AuthRestrictions
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.node_manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists
@@ -20,10 +22,12 @@ from apps.permission_manager.util.permission import groupPermission
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
+from util.asgi_file import get_file_response
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
 from util.passwordUtils import encrypt_password
 from apps.setting.entity.Config import config
+from util.excelUtils import *
 
 config: Callable[[], config] = apps.get_app_config('setting').get_config
 
@@ -373,6 +377,22 @@ def edit_node(req):
         # }
     })
 
+
+@api_permission("editNode")
 @require_GET
 def download_node_table_template(req):
-    pass
+    from tempfile import NamedTemporaryFile
+    cols = [
+        ExcelColumn("节点名", 'str', validate=ColumnValidate(max=30)),
+        ExcelColumn("节点标签列表（英文逗号分隔）", 'str', validate=ColumnValidate(max=256)),
+        ExcelColumn("节点备注", 'str', validate=ColumnValidate(max=256)),
+        ExcelColumn("集群", 'select',
+                    validate=ColumnValidate(select=[group.name for group in Node_Group.objects.all()])),
+        ExcelColumn("启用节点登录限制", 'bool', validate=ColumnValidate()),
+        ExcelColumn("节点登录限制方法", 'select', validate=ColumnValidate(select=["限制IP", "限制网段"])),
+        ExcelColumn("节点登录限制值", 'str'),
+    ]
+    eutils = ExcelUtils({"节点列表": ExcelTable(cols)})
+    with NamedTemporaryFile(delete=False) as tmp:
+        eutils.createExcelTemplate(tmp.name)
+        return get_file_response(tmp.name, "节点导入模板.xlsx")
