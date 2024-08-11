@@ -169,4 +169,6 @@ urlpatterns = [
     path('api/execute/getNodeResultByUUID', execute.getNodeResultList),  # 获取节点运行结果列表
     path('api/execute/getResultByUUID', execute.getResult),  # 获取结果
     path('api/execute/getCommandInfo', execute.getCommandInfo),  # 获取命令信息
+    path('api/execute/delete', execute.deleteByUUID),  # 删除结果
+    path('api/execute/downloadResult', execute.downloadResult),  # 创建任务
 ]

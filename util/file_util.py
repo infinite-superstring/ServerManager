@@ -120,3 +120,30 @@ def file_encode(file_path: str) -> str:
         detected = chardet.detect(raw_data)
         encoding = detected['encoding'] or 'utf-8'  # 如果无法检测出编码，默认使用utf-8
     return encoding
+
+
+def getFileName(file_path):
+    """
+    获取文件名
+    """
+    if not file_path: return None
+    return os.path.basename(file_path)
+
+
+def file_iterator(file_path: str, chunk_size: int = 8192):
+    """
+    文件迭代器
+    :param file_path: 文件路径
+    :param chunk_size: 读取大小
+    :return: 文件迭代器
+    """
+    if not file_path:
+        return None
+    if not is_file(file_path):
+        return None
+    with open(file_path, 'rb') as file:
+        while True:
+            chunk = file.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk

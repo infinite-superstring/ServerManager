@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit
+from apps.auth.utils.otpUtils import verify_otp_for_request
 from apps.group.commandExecution.models import Cluster_Execute, Cluster_ExecuteResult
 from apps.group.commandExecution.utils.group_command_util import executeGroupCommand
 from apps.group.group_task.utils import group_task_util
@@ -22,7 +23,7 @@ from util.Request import RequestLoadJson
 from util.file_util import SizeType
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
-from util.result import api_error, error, success
+from util.result import api_error, error, success, file
 
 config: Callable[[], config] = apps.get_app_config('setting').get_config
 
@@ -133,7 +134,8 @@ def getNodeResultList(request: HttpRequest) -> HttpResponse:
         return error("指令不存在")
     group = cluster_execute.group
     nodes = Node.objects.filter(group=group)
-    have_nodes = Cluster_ExecuteResult.objects.filter(node__uuid__in=[node.uuid for node in nodes])
+    have_nodes = Cluster_ExecuteResult.objects.filter(node__uuid__in=[node.uuid for node in nodes],
+                                                      task=cluster_execute)
     result_list = []
     for node in nodes:
         is_success = node.uuid in [item.node.uuid for item in have_nodes]
@@ -163,3 +165,29 @@ def getCommandInfo(request: HttpRequest):
         "shell": cluster_execute.shell,
         "basePath": cluster_execute.base_path,
     })
+
+
+def deleteByUUID(request: HttpRequest):
+    """
+    根据UUID删除指令
+    """
+    uuid = request.GET.get("uuid")
+    code = request.GET.get("code")
+    if not uuid:
+        return error("uuid不能为空")
+    if not is_uuid(uuid):
+        return error("参数错误")
+    if not verify_otp_for_request(request, code):
+        return error("操作验证失败，请检查您的手机令牌")
+    Cluster_Execute.objects.filter(uuid=uuid).delete()
+    write_audit(request.session['userID'], "删除执行器", "集群命令", f"指令UUID: {uuid}")
+    return success(msg="删除成功")
+
+
+def downloadResult(request: HttpRequest):
+    uuid = request.GET.get("uuid")
+    if not is_uuid(uuid):
+        return error("参数错误")
+    save_dir = apps.get_app_config('node_manager').group_command_result_save_dir
+    file_path = os.path.join(save_dir, uuid)
+    return file(str(file_path))

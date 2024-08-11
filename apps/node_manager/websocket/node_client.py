@@ -783,7 +783,7 @@ class node_client(AsyncBaseConsumer):
         await self.send_action("execute:run_shell", data)
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("run_shell:start")
+    @AsyncBaseConsumer.action_handler("execute:start")
     async def __execute_start(self, data: dict):
         """
         集群命令开始信号
@@ -793,8 +793,8 @@ class node_client(AsyncBaseConsumer):
         await self.__group_command_manager.start(data)
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("run_shell:output")
-    async def __execute_start(self, data: dict):
+    @AsyncBaseConsumer.action_handler("execute:output")
+    async def __execute_output(self, data: dict):
         """
         集群命令开始信号
         """
@@ -803,8 +803,8 @@ class node_client(AsyncBaseConsumer):
         await self.__group_command_manager.runtime(data)
 
     @Log.catch
-    @AsyncBaseConsumer.action_handler("run_shell:stop")
-    async def __execute_start(self, data: dict):
+    @AsyncBaseConsumer.action_handler("execute:stop")
+    async def __execute_stop(self, data: dict):
         """
         集群命令开始信号
         """

@@ -1,7 +1,9 @@
-from django.http import HttpResponse
+from urllib.parse import quote
 
+from django.http import StreamingHttpResponse
+
+from util import file_util
 from util.Response import ResponseJson
-from util.asgi_file import get_file_response
 
 
 def success(data='', msg='success', http_code=200, result_code=1):
@@ -34,5 +36,22 @@ def api_error(msg='error', http_code=403, result_code=-1):
     )
 
 
-def file(file_path: str):
-    return get_file_response(file_path)
+def file(file_path: str, file_name='', is_cors: bool = True):
+    """
+    返回一个下载文件
+    """
+    if not file_util.is_file(file_path):
+        return error(msg='文件不存在')
+
+    if not file_name:
+        file_name = file_util.getFileName(file_path)
+
+    file_name = quote(file_name)
+
+    response = StreamingHttpResponse(content_type='application/octet-stream')
+    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+    if is_cors:
+        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    response.streaming_content = file_util.file_iterator(file_path)
+
+    return response
