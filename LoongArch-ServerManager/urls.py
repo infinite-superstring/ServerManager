@@ -168,4 +168,5 @@ urlpatterns = [
     path('api/execute/getList', execute.getResultList),  # 获取结果列表
     path('api/execute/getNodeResultByUUID', execute.getNodeResultList),  # 获取节点运行结果列表
     path('api/execute/getResultByUUID', execute.getResult),  # 获取结果
+    path('api/execute/getCommandInfo', execute.getCommandInfo),  # 获取命令信息
 ]

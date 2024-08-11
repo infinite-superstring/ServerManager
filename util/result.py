@@ -23,7 +23,7 @@ def error(msg='error', http_code=200, result_code=0):
     )
 
 
-def api_error(msg='error', http_code=200, result_code=-1):
+def api_error(msg='error', http_code=403, result_code=-1):
     return ResponseJson(
         status=http_code,
         data={
