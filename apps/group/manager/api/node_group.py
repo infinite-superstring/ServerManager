@@ -138,19 +138,19 @@ def get_group_by_id(req: HttpRequest):
         """根据布尔值返回对应的星期列表"""
         week_list = []
         if item.monday:
-            week_list.append('星期一')
+            week_list.append({"title": "星期一", "value": "monday"})
         if item.tuesday:
-            week_list.append('星期二')
+            week_list.append({"title": "星期二", "value": "tuesday"})
         if item.wednesday:
-            week_list.append('星期三')
+            week_list.append({"title": "星期三", "value": "wednesday"})
         if item.thursday:
-            week_list.append('星期四')
+            week_list.append({"title": "星期四", "value": "thursday"})
         if item.friday:
-            week_list.append('星期五')
+            week_list.append({"title": "星期五", "value": "friday"})
         if item.saturday:
-            week_list.append('星期六')
+            week_list.append({"title": "星期六", "value": "saturday"})
         if item.sunday:
-            week_list.append('星期日')
+            week_list.append({"title": "星期日", "value": "sunday"})
         return week_list
 
     group_id: int = req.GET.get('group_id')
@@ -218,10 +218,12 @@ def editNodeGroup(req: HttpRequest):
     if group_nodes:
         for node in get_group_nodes(group):
             node_remove_group(node.uuid)
-        for node_uuid in group_nodes:
-            node_set_group(node_uuid, group.id)
+        for node in group_nodes:
+            node_set_group(node.get('uuid'), group.id)
     group.name = group_name
-    group.user_permission.remove()
-    group.user_permission.add(*create_node_group_user_permission_rules(rules))
+    group.user_permission.all().delete()
+    permission_rules = create_node_group_user_permission_rules(rules)
+    for rule in permission_rules:
+        group.user_permission.add(rule)
     group.save()
     return result.success(msg="编辑成功")

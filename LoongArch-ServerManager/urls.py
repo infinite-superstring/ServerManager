@@ -91,6 +91,7 @@ urlpatterns = [
     path('api/node_manager/node_info/save_alarm_setting', node_info.save_alarm_setting),  # 保存节点告警设置(POST)
     path('api/node_manager/node_event/get_node_events', node_event.get_node_events),  # 获取节点事件列表(POST)
     path('api/node_manager/node_event/get_event_info', node_event.get_event_info),  # 获取事件信息
+    path('api/node_manager/node_group/edit', node_group.editNodeGroup),  # 编辑节点组
     # 节点管理器 - 集群
     path('api/node_manager/cluster/execute/createTask', cluster_execute.createTask),  # 创建执行任务
     # path('event/node_manager/updateNodeList', include(django_eventstream.urls), {"channels": ["updateNodeList"]}),
