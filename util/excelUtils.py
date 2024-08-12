@@ -7,6 +7,8 @@ import os
 import tempfile
 
 class ColumnValidate(object):
+    # 必填
+    unique: bool | None
     # 最小值，select有值时不生效
     min: int | None
     # 最大值，select有值时不生效
@@ -18,7 +20,7 @@ class ColumnValidate(object):
     # 错误信息
     error_msg: str | None
 
-    def __init__(self, min: int | None = None, max: int | None = None, select: list[str] | None = None,
+    def __init__(self, unique: bool | None = None, min: int | None = None, max: int | None = None, select: list[str] | None = None,
                  error_title: str | None = None, error_msg: str | None = None):
         """
         :param min: 最小值
@@ -27,6 +29,7 @@ class ColumnValidate(object):
         :param error_title: 错误标题
         :param error_msg: 错误提示信息
         """
+        self.unique = unique
         self.min = min
         self.max = max
         self.select = select
@@ -264,7 +267,8 @@ class ExcelUtils(object):
                     data.append(cell_value)
 
                     # 校验数据
-                    if not col_obj.validate:
+                    if not col_obj.validate or (not col_obj.validate.unique and not cell_value):
+                        error_msg.append(None)
                         error.append(False)  # 没有验证规则则默认无错误
                     else:
                         # 根据类型进行校验
