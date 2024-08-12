@@ -277,11 +277,11 @@ def filter_user_available_nodes(user: User, base: Node = None):
     current_day_of_week = timezone.now().weekday()
     # 星期对应的字段名称
     weekday_field = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][current_day_of_week]
-    query = Q(**{f"time_slot_recipient__{weekday_field}": True})
+    query = Q(**{f"user_permission__{weekday_field}": True})
     node_group = Node_Group.objects.filter(
-        time_slot_recipient__start_time__lte=current_time,
-        time_slot_recipient__end_time__gte=current_time,
-        time_slot_recipient__recipients=user
+        user_permission__start_time__lte=current_time,
+        user_permission__end_time__gte=current_time,
+        user_permission__user_list=user
     ).filter(query)
     # 合并所有查询结果，去重
     return nodes_created_by_me.union(nodes_i_lead, result.filter(group__in=node_group))
