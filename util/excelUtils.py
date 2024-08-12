@@ -6,9 +6,10 @@ from util.logger import Log
 import os
 import tempfile
 
+
 class ColumnValidate(object):
     # 必填
-    unique: bool | None
+    null: bool | None
     # 最小值，select有值时不生效
     min: int | None
     # 最大值，select有值时不生效
@@ -20,7 +21,8 @@ class ColumnValidate(object):
     # 错误信息
     error_msg: str | None
 
-    def __init__(self, unique: bool | None = None, min: int | None = None, max: int | None = None, select: list[str] | None = None,
+    def __init__(self, null: bool | None = None, min: int | None = None,
+                 max: int | None = None, select: list[str] | None = None,
                  error_title: str | None = None, error_msg: str | None = None):
         """
         :param min: 最小值
@@ -29,7 +31,7 @@ class ColumnValidate(object):
         :param error_title: 错误标题
         :param error_msg: 错误提示信息
         """
-        self.unique = unique
+        self.null = null
         self.min = min
         self.max = max
         self.select = select
@@ -187,7 +189,7 @@ class ExcelUtils(object):
 
         return dv
 
-    def createExcelTemplate(self, save_path: str, return_wb_obj: bool=False):
+    def createExcelTemplate(self, save_path: str, return_wb_obj: bool = False):
         """
         创建Excel模板表格
         :param save_path: 输出文件路径
@@ -213,7 +215,7 @@ class ExcelUtils(object):
                 if column.validate:
                     data_rule = self._create_data_validation(column.col_type, column.validate)
                     work_table.add_data_validation(data_rule)
-                    data_rule.add(f"{col_letter}2:{col_letter}{column.template_length+1}")
+                    data_rule.add(f"{col_letter}2:{col_letter}{column.template_length + 1}")
 
                 for row in range(2, column.template_length + 1):
                     selected_cell = work_table[f"{col_letter}{row}"]
@@ -233,7 +235,6 @@ class ExcelUtils(object):
             wb.save(save_path)
             return
         return wb
-
 
     def loadExcel(self, file_path):
         """
@@ -267,9 +268,12 @@ class ExcelUtils(object):
                     data.append(cell_value)
 
                     # 校验数据
-                    if not col_obj.validate or (not col_obj.validate.unique and not cell_value):
+                    if not col_obj.validate or (not col_obj.validate.null and not cell_value):
                         error_msg.append(None)
                         error.append(False)  # 没有验证规则则默认无错误
+                    elif col_obj.validate.null and not cell_value:
+                        error_msg.append("必填项未填写")
+                        error.append(True)
                     else:
                         # 根据类型进行校验
                         if col_obj.col_type == "str":
@@ -343,4 +347,4 @@ if __name__ == '__main__':
     for tab_name, table in eutils.tables.items():
         print(tab_name)
         print(table)
-        print("="*10)
+        print("=" * 10)

@@ -24,6 +24,7 @@ from util import uploadFile
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.asgi_file import get_file_response
+from util.listUtil import is_exist_by_double_list_index
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
 from util.passwordUtils import encrypt_password
@@ -408,27 +409,39 @@ def merge_node_list_file(req):
     if not os.path.exists(FILE_SAVE_BASE_PATH):
         os.makedirs(FILE_SAVE_BASE_PATH)
     merge_status, hash256 = uploadFile.merge_chunks(req, FILE_SAVE_BASE_PATH)
-    if merge_status:
-        eutils: ExcelUtils = get_import_node_list_excel_object()
+    if not merge_status:
+        return ResponseJson({'status': 0, "msg": "文件上传失败"})
+    eutils: ExcelUtils = get_import_node_list_excel_object()
+    try:
         eutils.loadExcel(os.path.join(FILE_SAVE_BASE_PATH, hash256))
-        datas = []
-        errors = []
-        error_msgs = []
-        # cols = [col.column_name for col in eutils.tables.get("节点列表").cols]
-        node_list_table = eutils.tables.get("节点列表")
-        for index, row in enumerate(node_list_table.rows):
-            datas.append(row.data)
-            errors.append(row.error)
-            error_msgs.append(row.error_message)
-        Log.debug(datas)
-        Log.debug(errors)
-        Log.debug(error_msgs)
-        return ResponseJson({'status': 1, "data": {
-            "results": {
-                "col_names": [col.column_name for col in node_list_table.cols],
-                "datas": datas,
-                "errors": errors,
-                "error_msgs": error_msgs,
-            }
-        }})
-    return ResponseJson({'status': 0})
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({'status': 0, 'msg': '表格解析失败'})
+    datas = []
+    errors = []
+    error_msgs = []
+    node_list_table = eutils.tables.get("节点列表")
+    for index, row in enumerate(node_list_table.rows):
+        data = []
+        # 检查节点名
+        if not row.error[0]:
+            if node_name_exists(row.data[0]):
+                row.error[0] = True
+                row.error_message[0] = f"节点 {row.data[0]} 已存在"
+            elif is_exist_by_double_list_index(datas, 0, row.data[0]):
+                row.error[0] = True
+                row.error_message[0] = f"节点 {row.data[0]} 已重复"
+        # 切分节点tag
+        if not row.error[1] and row.data[1]:
+            row.data[1] = str(row.data[1]).split(",")
+        datas.append(row.data)
+        errors.append(row.error)
+        error_msgs.append(row.error_message)
+    return ResponseJson({'status': 1, "data": {
+        "results": {
+            "col_names": [col.column_name for col in node_list_table.cols],
+            "datas": datas,
+            "errors": errors,
+            "error_msgs": error_msgs,
+        }
+    }})
