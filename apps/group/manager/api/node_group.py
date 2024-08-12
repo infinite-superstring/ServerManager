@@ -1,13 +1,14 @@
-from django.views.decorators.http import require_POST, require_GET
+from django.views.decorators.http import require_POST, require_GET, require_http_methods
 
 from apps.audit.util.auditTools import write_audit, write_access_log
 from apps.group.manager.models import Node_Group, Group_User_Permission
 from apps.node_manager.utils.groupUtil import create_node_group_user_permission_rules, node_group_id_exists, \
     get_node_group_by_id, get_group_nodes
-from apps.node_manager.utils.nodeUtil import node_uuid_exists, node_set_group
+from apps.node_manager.utils.nodeUtil import node_uuid_exists, node_set_group, node_remove_group
 from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import uid_exists, get_user_by_id
 from apps.auth.utils.otpUtils import verify_otp_for_request
+from util import result
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.logger import Log
@@ -37,7 +38,8 @@ def get_group_list(req: HttpRequest):
                 "group_leader": get_user_by_id(item.get("leader_id")).userName,
                 "group_desc": item.get("description"),
             })
-    write_access_log(req.session["userID"], req, "集群管理", f"获取集群列表(搜索条件: {search if search else '无'} 页码: {page} 页大小: {pageSize})")
+    write_access_log(req.session["userID"], req, "集群管理",
+                     f"获取集群列表(搜索条件: {search if search else '无'} 页码: {page} 页大小: {pageSize})")
     return ResponseJson({
         "status": 1,
         "data": {
@@ -158,28 +160,68 @@ def get_group_by_id(req: HttpRequest):
         return ResponseJson({'status': 0, 'msg': '节点组不存在'})
     group = get_node_group_by_id(group_id)
     write_access_log(req.session["userID"], req, "集群管理", f"获取集群信息：{group.name}(gid: {group.id})")
-    return ResponseJson({
-        "status": 1,
-        "data": {
-            "group_id": group.id,
-            "group_name": group.name,
-            "group_leader": {
-                "id": group.leader.id,
-                "userName": group.leader.userName
-            },
-            "group_desc": group.description,
-            "node_list": [{
-                'uuid': item.uuid,
-                'name': item.name,
-            } for item in get_group_nodes(group)],
-            "rules": [{
-                'week': _get_week_list(item),
-                'start_time': item.start_time.strftime("%H:%M"),
-                'end_time': item.end_time.strftime("%H:%M"),
-                'users': [{
-                    "id": user.id,
-                    "userName": user.userName
-                } for user in item.user_list.all()]
-            } for item in group.user_permission.all()]
-        }
-    })
+    r = {
+        "group_id": group.id,
+        "group_name": group.name,
+        "group_leader": {
+            "id": group.leader.id,
+            "userName": group.leader.userName
+        },
+        "group_desc": group.description,
+        "node_list": [{
+            'uuid': item.uuid,
+            'name': item.name,
+        } for item in get_group_nodes(group)],
+        "rules": [{
+            'week': _get_week_list(item),
+            'start_time': item.start_time.strftime("%H:%M"),
+            'end_time': item.end_time.strftime("%H:%M"),
+            'users': [{
+                "id": user.id,
+                "userName": user.userName
+            } for user in item.user_list.all()]
+        } for item in group.user_permission.all()]
+    }
+    return result.success(r)
+
+
+@require_POST
+@api_permission("editNodeGroup")
+def editNodeGroup(req: HttpRequest):
+    """编辑组"""
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return result.api_error("JSON解析失败")
+    group_id: int = req_json.get('group_id')
+    group_name: str = req_json.get('group_name')
+    group_desc: str = req_json.get('group_desc')
+    group_leader: int = req_json.get('group_leader')
+    group_nodes: list = req_json.get('group_nodes')
+    rules: list = req_json.get('rules')
+    if not (group_id and group_name and group_leader):
+        return result.api_error("参数不完整")
+    if not node_group_id_exists(group_id):
+        return result.api_error("集群不存在")
+    if not uid_exists(group_leader):
+        return result.api_error("负责人不存在")
+    group = get_node_group_by_id(group_id)
+    if group.name != group_name:
+        group.name = group_name
+    if group.description != group_desc:
+        group.description = group_desc
+    if group.leader.id != group_leader:
+        group.leader = get_user_by_id(group_leader)
+    if not group_nodes:
+        return result.api_error("节点列表不能为空")
+    if group_nodes:
+        for node in get_group_nodes(group):
+            node_remove_group(node.uuid)
+        for node_uuid in group_nodes:
+            node_set_group(node_uuid, group.id)
+    group.name = group_name
+    group.user_permission.remove()
+    group.user_permission.add(*create_node_group_user_permission_rules(rules))
+    group.save()
+    return result.success(msg="编辑成功")

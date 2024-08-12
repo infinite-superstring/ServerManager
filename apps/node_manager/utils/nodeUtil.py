@@ -95,6 +95,16 @@ def node_set_group(node_uuid, group_id) -> bool:
     return True
 
 
+def node_remove_group(node_uuid) -> bool:
+    if not node_uuid_exists(node_uuid):
+        Log.error("节点UUID不存在")
+        return False
+    node = Node.objects.get(uuid=node_uuid)
+    node.group = None
+    node.save()
+    return True
+
+
 def verify_node_token(node: Node, token) -> bool:
     """
     验证节点Token
