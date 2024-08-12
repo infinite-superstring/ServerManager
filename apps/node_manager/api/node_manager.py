@@ -24,7 +24,7 @@ from util import uploadFile
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.asgi_file import get_file_response
-from util.listUtil import is_exist_by_double_list_index
+from util.listUtil import is_exist_by_double_list_index, is_exist_by_list_index
 from util.logger import Log
 from util.pageUtils import get_page_content, get_max_page
 from util.passwordUtils import encrypt_password
@@ -428,7 +428,7 @@ def merge_node_list_file(req):
             if node_name_exists(row.data[0]):
                 row.error[0] = True
                 row.error_message[0] = f"节点 {row.data[0]} 已存在"
-            elif is_exist_by_double_list_index(datas, 0, row.data[0]):
+            elif is_exist_by_list_index(datas, 0, row.data[0]):
                 row.error[0] = True
                 row.error_message[0] = f"节点 {row.data[0]} 已重复"
         # 切分节点tag
