@@ -20,6 +20,7 @@ from apps.auth.utils.otpUtils import verify_otp_for_request
 from apps.permission_manager.util.api_permission import api_permission
 from apps.permission_manager.util.permission import groupPermission
 from apps.user_manager.util.userUtils import get_user_by_id
+from util import uploadFile
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.asgi_file import get_file_response
@@ -30,7 +31,7 @@ from apps.setting.entity.Config import config
 from util.excelUtils import *
 
 config: Callable[[], config] = apps.get_app_config('setting').get_config
-
+FILE_SAVE_BASE_PATH = os.path.join(os.getcwd(), "data", "temp", "import_node_list")
 
 def __advanced_search(search: str):
     """
@@ -386,3 +387,48 @@ def download_node_table_template(req):
     with NamedTemporaryFile(delete=False) as tmp:
         eutils.createExcelTemplate(tmp.name)
         return get_file_response(tmp.name, "节点导入模板.xlsx")
+
+
+@api_permission("editNode")
+@require_POST
+def upload_node_list_file_chunk(req):
+    """
+    上传节点列表文件块
+    """
+    return uploadFile.upload_chunk(req)
+
+
+@api_permission("editNode")
+@require_POST
+def merge_node_list_file(req):
+    """
+    合并节点列表文件块并解析
+    """
+    user = get_user_by_id(req.session["userID"])
+    if not os.path.exists(FILE_SAVE_BASE_PATH):
+        os.makedirs(FILE_SAVE_BASE_PATH)
+    merge_status, hash256 = uploadFile.merge_chunks(req, FILE_SAVE_BASE_PATH)
+    if merge_status:
+        eutils: ExcelUtils = get_import_node_list_excel_object()
+        eutils.loadExcel(os.path.join(FILE_SAVE_BASE_PATH, hash256))
+        datas = []
+        errors = []
+        error_msgs = []
+        # cols = [col.column_name for col in eutils.tables.get("节点列表").cols]
+        node_list_table = eutils.tables.get("节点列表")
+        for index, row in enumerate(node_list_table.rows):
+            datas.append(row.data)
+            errors.append(row.error)
+            error_msgs.append(row.error_message)
+        Log.debug(datas)
+        Log.debug(errors)
+        Log.debug(error_msgs)
+        return ResponseJson({'status': 1, "data": {
+            "results": {
+                "col_names": [col.column_name for col in node_list_table.cols],
+                "datas": datas,
+                "errors": errors,
+                "error_msgs": error_msgs,
+            }
+        }})
+    return ResponseJson({'status': 0})

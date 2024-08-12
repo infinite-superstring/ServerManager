@@ -317,13 +317,13 @@ def get_import_node_list_excel_object():
     """
     cols = [
         ExcelColumn("节点名", 'str', validate=ColumnValidate(max=30)),
-        ExcelColumn("节点标签列表（英文逗号分隔）", 'str', validate=ColumnValidate(max=256)),
-        ExcelColumn("节点备注", 'str', validate=ColumnValidate(max=256)),
+        ExcelColumn("节点标签列表（英文逗号分隔）", 'str', validate=ColumnValidate(unique=False, max=256)),
+        ExcelColumn("节点备注", 'str', validate=ColumnValidate(unique=False, max=256)),
         ExcelColumn("集群", 'select',
-                    validate=ColumnValidate(select=[group.name for group in Node_Group.objects.all()])),
-        ExcelColumn("启用节点登录限制", 'bool', validate=ColumnValidate()),
-        ExcelColumn("节点登录限制方法", 'select', validate=ColumnValidate(select=["限制IP", "限制网段"])),
-        ExcelColumn("节点登录限制值", 'str'),
+                    validate=ColumnValidate(unique=False, select=[group.name for group in Node_Group.objects.all()])),
+        ExcelColumn("启用节点登录限制", 'bool', validate=ColumnValidate(unique=False)),
+        ExcelColumn("节点登录限制方法", 'select', validate=ColumnValidate(unique=False, select=["限制IP", "限制网段"])),
+        ExcelColumn("节点登录限制值", 'str', validate=ColumnValidate(unique=False)),
     ]
     return ExcelUtils({"节点列表": ExcelTable(cols)})
 
