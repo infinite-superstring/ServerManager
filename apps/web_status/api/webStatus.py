@@ -1,6 +1,7 @@
 from django.core.cache import cache
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.http import HttpRequest
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 import util.result as R
@@ -135,7 +136,17 @@ def getLog(req: HttpRequest):
     host = req.GET.get('host', '')
     page = req.GET.get('page', 1)
     pageSize = req.GET.get('pageSize', 20)
+    search = req.GET.get('search', '')
+    date_range_start = req.GET.get('date[start]', '')
+    date_range_end = req.GET.get('date[end]', '')
     logs = Web_Site_Abnormal_Log.objects.filter(web__host=host).order_by('-start_time')
+    if search:
+        logs = logs.filter(
+            Q(error_info__icontains=search) |
+            Q(error_type__icontains=search) |
+            Q(status__icontains=search))
+    if date_range_start and date_range_end:
+        logs = logs.filter(start_time__gte=parse_datetime(date_range_end), end_time__lte=parse_datetime(date_range_end))
     page_list: list[dict] = pageUtils.get_page_content(logs, int(page), int(pageSize))
     max_page = pageUtils.get_max_page(logs.count(), int(pageSize))
     result_list = []

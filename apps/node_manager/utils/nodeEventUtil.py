@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from asgiref.sync import sync_to_async
+from django.db.models import QuerySet, Q
+from django.utils.dateparse import parse_datetime
 
 from apps.node_manager.models import Node, Node_Event
 from util.logger import Log
@@ -74,6 +76,40 @@ class NodeEventUtil:
 def getNodeEvents(node: Node):
     """获取节点事件列表"""
     return Node_Event.objects.filter(node=node)
+
+
+def filterEventList(result: QuerySet[Node_Event], search: str = None, date_range: dict = None, level: list = None,
+                    status: bool = None):
+    """
+    过滤事件列表
+    """
+    # 根据搜索关键词过滤
+    if search:
+        result = result.filter(Q(type__icontains=search) | Q(description__icontains=search))
+
+    # 根据日期范围过滤
+    if date_range:
+        start_date = parse_datetime(date_range.get('start')) if date_range.get('start') else None
+        end_date = parse_datetime(date_range.get('end')) if date_range.get('end') else None
+        if start_date and end_date:
+            result = result.filter(start_time__range=(start_date, end_date))
+        elif start_date:
+            result = result.filter(start_time__gte=start_date)
+        elif end_date:
+            result = result.filter(start_time__lte=end_date)
+
+    # 根据事件等级过滤
+    if level:
+        result = result.filter(level__in=level)
+
+    # 根据事件状态过滤（是否仍在进行中）
+    if status is not None:
+        if status:
+            result = result.filter(end_time__isnull=True)
+        else:
+            result = result.filter(end_time__isnull=False)
+
+    return result
 
 
 async def createEvent(node: Node, type: str, desc: str, level: str = 'Info', end_directly=False) -> Node_Event:

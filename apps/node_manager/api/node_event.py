@@ -3,7 +3,7 @@ from django.views.decorators.http import require_POST
 
 from apps.audit.util.auditTools import write_access_log
 from apps.node_manager.utils.nodeUtil import node_uuid_exists
-from apps.node_manager.utils.nodeEventUtil import getNodeEvents, event_id_exists, get_event_by_id
+from apps.node_manager.utils.nodeEventUtil import getNodeEvents, event_id_exists, get_event_by_id, filterEventList
 from apps.node_manager.models import Node_Event
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
@@ -26,7 +26,12 @@ def get_node_events(req: HttpRequest):
     PageContent: list = []
     page = req_json.get("page", 1)
     pageSize = req_json.get("pageSize", 20)
+    dateRange: dict = req_json.get("dateRange")
+    level: list = req_json.get("level")
+    status: bool = req_json.get("status")
+    search: str = req_json.get("search")
     result = getNodeEvents(node).order_by('-id')
+    result = filterEventList(result, search, dateRange, level, status)
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
         for item in pageQuery:
