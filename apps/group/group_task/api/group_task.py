@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods, require_POST, req
 from apps.audit.util.auditTools import write_audit
 from apps.group.group_task.models import GroupTask, Group_Task_Audit
 from apps.group.group_task.utils import group_task_util
+from apps.group.group_task.utils.group_task_util import filer_page_result
 from apps.node_manager.models import Node
 from apps.group.manager.models import Node_Group
 from apps.group.manager.utils.groupUtil import get_node_group_by_id
@@ -114,7 +115,14 @@ def get_list(req: HttpRequest):
     page = req.GET.get('page', 1)
     page_size = req.GET.get('pageSize', 20)
     search = req.GET.get('search', "")
+    enable: int | None = req.GET.get('enable', None)
+    exec_type: str | None = req.GET.get('execType', None)
+    node_group: int | None = req.GET.get('node_group', None)
     query_results = GroupTask.objects.filter(name__contains=search)
+    query_results = filer_page_result(r_l=query_results,
+                                      enable=int(enable) if enable is not None else None,
+                                      exec_type=exec_type,
+                                      node_group=node_group)
     page_result = pageUtils.get_page_content(query_results, int(page), int(page_size))
     max_page = pageUtils.get_max_page(int(query_results.count()), int(page_size))
     r_list = []
