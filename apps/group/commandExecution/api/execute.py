@@ -87,7 +87,7 @@ def getResultList(request: HttpRequest) -> HttpResponse:
                 'uuid': item.get("uuid"),
                 'user': get_user_by_id(item.get("user_id")).userName,
                 'group': get_node_group_by_id(item.get("group_id")).name,
-                'shell': str(item.get("shell"))[:10] if len(item.get("shell")) > 10 else item.get("shell"),
+                'shell': str(item.get("shell")),
                 'timestamp': item.get("timestamp"),
             })
     return success({

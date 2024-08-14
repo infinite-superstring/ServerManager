@@ -14,7 +14,8 @@ from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
 from apps.group.manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists, node_group_name_exists, \
     get_node_group_by_name
 from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists, node_name_exists, \
-    init_node_alarm_setting, filter_user_available_nodes, is_node_available_for_user, get_import_node_list_excel_object
+    init_node_alarm_setting, filter_user_available_nodes, is_node_available_for_user, get_import_node_list_excel_object, \
+    filter_node
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from apps.auth.utils.otpUtils import verify_otp_for_request
@@ -204,12 +205,17 @@ def get_node_list(req):
     page = req_json.get("page", 1)
     pageSize = req_json.get("pageSize", 20)
     search = req_json.get("search", "")
+    status: list[str] = req_json.get("status", [])
+    auth_restriction: bool | None = req_json.get("auth_restriction", None)
+    warning: bool | None = req_json.get("warning", None)
     uid = req.session['userID']
     user = get_user_by_id(uid)
     group_utils = groupPermission(user.permission)
     result = __advanced_search(search)
     if not group_utils.check_group_permission("viewAllNode"):
         result = filter_user_available_nodes(user, result)
+    result = filter_node(result, status, auth_restriction,warning)
+
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
         for item in pageQuery:
