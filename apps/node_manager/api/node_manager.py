@@ -1,17 +1,18 @@
 import secrets
+import uuid
 from typing import Callable
 
 from django.apps import apps
+from django.core.cache import cache
 
 from django.db.models import Q
 from django.views.decorators.http import require_POST, require_GET
-from tempfile import NamedTemporaryFile
 
 from apps.audit.util.auditTools import write_audit, write_access_log
-from apps.group.manager.models import Node_Group
 from apps.node_manager.entity.auth_restrictions import AuthRestrictions
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
-from apps.node_manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists
+from apps.group.manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists, node_group_name_exists, \
+    get_node_group_by_name
 from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists, node_name_exists, \
     init_node_alarm_setting, filter_user_available_nodes, is_node_available_for_user, get_import_node_list_excel_object
 from apps.node_manager.utils.searchUtil import extract_search_info
@@ -24,8 +25,7 @@ from util import uploadFile
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.asgi_file import get_file_response
-from util.listUtil import is_exist_by_double_list_index, is_exist_by_list_index
-from util.logger import Log
+from util.listUtil import is_exist_by_list_index, is_exist_by_double_list
 from util.pageUtils import get_page_content, get_max_page
 from util.passwordUtils import encrypt_password
 from apps.setting.entity.Config import config
@@ -33,6 +33,7 @@ from util.excelUtils import *
 
 config: Callable[[], config] = apps.get_app_config('setting').get_config
 FILE_SAVE_BASE_PATH = os.path.join(os.getcwd(), "data", "temp", "import_node_list")
+
 
 def __advanced_search(search: str):
     """
@@ -422,7 +423,6 @@ def merge_node_list_file(req):
     error_msgs = []
     node_list_table = eutils.tables.get("节点列表")
     for index, row in enumerate(node_list_table.rows):
-        data = []
         # 检查节点名
         if not row.error[0]:
             if node_name_exists(row.data[0]):
@@ -437,11 +437,99 @@ def merge_node_list_file(req):
         datas.append(row.data)
         errors.append(row.error)
         error_msgs.append(row.error_message)
+    table_exist_error = is_exist_by_double_list(errors, True)
+    results = {
+        "col_names": [col.column_name for col in node_list_table.cols],
+        "datas": datas,
+        "errors": errors,
+        "error_msgs": error_msgs,
+    }
+    session: str = ""
+    if not table_exist_error:
+        # 无错误，保存到缓存中等待用户保存
+        session = str(uuid.uuid4())
+        cache.set(f"import_node_list__{session}", datas)
     return ResponseJson({'status': 1, "data": {
-        "results": {
-            "col_names": [col.column_name for col in node_list_table.cols],
-            "datas": datas,
-            "errors": errors,
-            "error_msgs": error_msgs,
-        }
+        "error": table_exist_error,
+        "session": None if table_exist_error else session,
+        "results": results
     }})
+
+
+@api_permission("editNode")
+@require_POST
+def save_import_node_list(req):
+    """
+    保存节点列表导入
+    """
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
+    session = req_json.get("session")
+    cache_key = f"import_node_list__{session}"
+    if not session or not cache.has(cache_key):
+        return ResponseJson({"status": -1, "msg": "导入列表不存在"})
+    user = get_user_by_id(req.session["userID"])
+    session_data: list = cache.get(cache_key)
+    success = 0
+    failure = 0
+    for index, row in enumerate(session_data):
+        # 检查节点名
+        if node_name_exists(row[0]):
+            failure+=1
+            continue
+        elif is_exist_by_list_index(session_data, 0, row[0]):
+            failure += 1
+            continue
+        node_name: str = row[0]
+        # 切分节点tag
+        if not row[1] and row[1]:
+            row[1] = str(row[1]).split(",")
+        node_tags: list = add_tags(row[1])
+        node_desc = row[2]
+        if row[3] and not node_group_name_exists(row[3]):
+            failure += 1
+            continue
+        node_group = get_node_group_by_name(row[3])
+        enable_auth_restrictions = row[4]
+        auth_restrictions_method: int | str | None = None
+        auth_restrictions_value: str | None = None
+        if enable_auth_restrictions:
+            auth_restrictions_method = row[5]
+            match auth_restrictions_method:
+                case "限制网段":
+                    auth_restrictions_method = 1
+                case "限制IP":
+                    auth_restrictions_method = 2
+                case "限制MAC":
+                    auth_restrictions_method = 3
+                case _:
+                    failure += 1
+                    continue
+            if auth_restrictions_value:
+                auth_restrictions_value = row[6]
+        token = secrets.token_hex(32)
+        hashed_token, salt = encrypt_password(token)
+        node = Node.objects.create(
+            name=node_name,
+            description=node_desc,
+            group=node_group,
+            token_hash=hashed_token,
+            token_salt=salt,
+            creator=user,
+            auth_restrictions_enable=enable_auth_restrictions,
+            auth_restrictions_method=auth_restrictions_method,
+            auth_restrictions_value=auth_restrictions_value,
+        )
+        if node_group:
+            node.group = get_node_group_by_id(node_group)
+        if node_tags is not None:
+            tags = add_tags(node_tags)
+            for tag in tags:
+                node.tags.add(tag)
+        success += 1
+    if failure:
+        return ResponseJson({'status': 1, 'msg': f"成功{success} 失败{failure}"})
+    return ResponseJson({'status': 1, 'msg': "操作成功"})

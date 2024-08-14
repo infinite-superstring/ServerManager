@@ -1,5 +1,5 @@
 from apps.group.commandExecution.models import Cluster_Execute
-from apps.node_manager.utils.groupUtil import GroupUtil
+from apps.group.manager.utils.groupUtil import GroupUtil
 
 
 def getCluster_Execute_by_uuid(uuid) -> Cluster_Execute:

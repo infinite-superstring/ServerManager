@@ -13,7 +13,7 @@ from apps.group.group_task.models import GroupTask, Group_Task_Audit
 from apps.group.group_task.utils import group_task_util
 from apps.node_manager.models import Node
 from apps.group.manager.models import Node_Group
-from apps.node_manager.utils.groupUtil import get_node_group_by_id
+from apps.group.manager.utils.groupUtil import get_node_group_by_id
 from apps.permission_manager.util.api_permission import api_permission
 from apps.setting.entity.Config import config
 from apps.permission_manager.util.permission import groupPermission
@@ -21,7 +21,6 @@ from apps.user_manager.util.userUtils import get_user_by_id
 from util import result, pageUtils, file_util
 from util.Request import RequestLoadJson
 from util.file_util import SizeType
-from util.logger import Log
 
 # 获取配置
 config: Callable[[], config] = apps.get_app_config('setting').get_config

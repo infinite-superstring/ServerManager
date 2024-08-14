@@ -13,8 +13,8 @@ from apps.group.commandExecution.utils.group_command_util import executeGroupCom
 from apps.group.group_task.utils import group_task_util
 from apps.group.group_task.utils.group_task_util import is_uuid
 from apps.node_manager.models import Node
-from apps.node_manager.utils.groupUtil import get_node_group_by_id
-from apps.node_manager.utils.groupUtil import node_group_id_exists
+from apps.group.manager.utils.groupUtil import get_node_group_by_id
+from apps.group.manager.utils.groupUtil import node_group_id_exists
 from apps.permission_manager.util.permission import groupPermission
 from apps.setting.entity.Config import config
 from apps.user_manager.util.userUtils import get_user_by_id
