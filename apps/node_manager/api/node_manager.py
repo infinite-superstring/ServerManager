@@ -227,6 +227,7 @@ def get_node_list(req):
                 "description": item.get("description"),
                 "group": get_node_group_by_id(item.get("group_id")).name if item.get("group_id") else None,
                 "tags": get_node_tags(item.get("uuid")),
+                'enable_auth_restrictions': item.get("auth_restrictions_enable"),
                 "creator": get_user_by_id(item.get("creator_id")).userName if item.get("creator_id") else None,
                 "baseData": {
                     "platform": node_base_info.system if node_base_info else "未知",
@@ -336,10 +337,20 @@ def edit_node(req):
     node_description = req_json.get("node_desc")
     node_group = req_json.get("node_group")
     node_tags = req_json.get("node_tags")
-    if node_id is None:
+    auth_restrictions: dict = req_json.get('node_auth_restrictions')
+    if not node_id or not auth_restrictions:
         return ResponseJson({"status": -1, "msg": "参数不完整"})
     if not node_uuid_exists(node_id):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
+    auth_restrictions: AuthRestrictions = AuthRestrictions(
+        auth_restrictions.get("enable"),
+        auth_restrictions.get("method"),
+        auth_restrictions.get("value")
+    )
+    if auth_restrictions.enable and (not auth_restrictions.method or not auth_restrictions.value):
+        if not auth_restrictions.method: return ResponseJson({"status": 0, 'msg': "认证限制类型未填写"})
+        if not auth_restrictions.value: return ResponseJson({"status": 0, "msg": "认证限制值未填写"})
+        return ResponseJson({"status": 0, "msg": "未知错误"})
     uid = req.session['userID']
     user = get_user_by_id(uid)
     group_utils = groupPermission(user.permission)
@@ -361,6 +372,14 @@ def edit_node(req):
         tags_obj = add_tags(node_tags)
         node.tags.clear()
         node.tags.add(*tags_obj)
+    if auth_restrictions.enable is True:
+        node.auth_restrictions_enable = True
+        node.auth_restrictions_method = auth_restrictions.method
+        node.auth_restrictions_value = auth_restrictions.value
+    elif auth_restrictions.enable is False or not auth_restrictions.enable:
+        node.auth_restrictions_enable = False
+        auth_restrictions.method = None
+        auth_restrictions.value = None
     node.save()
     audit_msg = f"节点名：{node.name}({node.uuid})"
     if node.group:
@@ -368,16 +387,7 @@ def edit_node(req):
     write_audit(req.session['userID'], "编辑节点", "节点管理", audit_msg)
     return ResponseJson({
         "status": 1,
-        "msg": "节点信息保存成功",
-        # "data": {
-        #     "uuid": node.uuid,
-        #     "name": node.name,
-        #     "description": node.description,
-        #     "group": node.group.id if node.group else None,
-        #     "group_name": node.group.name if node.group else None,
-        #     "tags": list(get_node_tags(node.uuid)),
-        #
-        # }
+        "msg": "节点信息保存成功"
     })
 
 
@@ -444,14 +454,8 @@ def merge_node_list_file(req):
         "errors": errors,
         "error_msgs": error_msgs,
     }
-    session: str = ""
-    if not table_exist_error:
-        # 无错误，保存到缓存中等待用户保存
-        session = str(uuid.uuid4())
-        cache.set(f"import_node_list__{session}", datas)
     return ResponseJson({'status': 1, "data": {
         "error": table_exist_error,
-        "session": None if table_exist_error else session,
         "results": results
     }})
 
@@ -467,32 +471,24 @@ def save_import_node_list(req):
     except Exception as e:
         Log.error(e)
         return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
-    session = req_json.get("session")
-    cache_key = f"import_node_list__{session}"
-    if not session or not cache.has(cache_key):
-        return ResponseJson({"status": -1, "msg": "导入列表不存在"})
+    # session = req_json.get("session")
+    node_import_list: list = req_json.get("node_list")
     user = get_user_by_id(req.session["userID"])
-    session_data: list = cache.get(cache_key)
-    success = 0
-    failure = 0
-    for index, row in enumerate(session_data):
+    success_node_list: list[Node] = []
+    success_node_tokens: list[str] = []
+    failure: int = 0
+    for index, row in enumerate(node_import_list):
         # 检查节点名
         if node_name_exists(row[0]):
-            failure+=1
-            continue
-        elif is_exist_by_list_index(session_data, 0, row[0]):
             failure += 1
             continue
         node_name: str = row[0]
         # 切分节点tag
+        node_tags: list[str] = []
         if not row[1] and row[1]:
-            row[1] = str(row[1]).split(",")
-        node_tags: list = add_tags(row[1])
+            node_tags = str(row[1]).split(",")
         node_desc = row[2]
-        if row[3] and not node_group_name_exists(row[3]):
-            failure += 1
-            continue
-        node_group = get_node_group_by_name(row[3])
+        # node_group = get_node_group_by_name(row[3])
         enable_auth_restrictions = row[4]
         auth_restrictions_method: int | str | None = None
         auth_restrictions_value: str | None = None
@@ -515,21 +511,42 @@ def save_import_node_list(req):
         node = Node.objects.create(
             name=node_name,
             description=node_desc,
-            group=node_group,
             token_hash=hashed_token,
             token_salt=salt,
             creator=user,
-            auth_restrictions_enable=enable_auth_restrictions,
-            auth_restrictions_method=auth_restrictions_method,
-            auth_restrictions_value=auth_restrictions_value,
+            auth_restrictions_enable=enable_auth_restrictions if enable_auth_restrictions else False,
+            auth_restrictions_method=auth_restrictions_method if enable_auth_restrictions else None,
+            auth_restrictions_value=auth_restrictions_value if enable_auth_restrictions else None,
         )
-        if node_group:
-            node.group = get_node_group_by_id(node_group)
+        if row[3]:
+            node.group = get_node_group_by_name(row[3])
         if node_tags is not None:
             tags = add_tags(node_tags)
             for tag in tags:
                 node.tags.add(tag)
-        success += 1
+        node.save()
+        success_node_tokens.append(token)
+        success_node_list.append(node)
+    node_data = [{
+        'node_name': node.name,
+        'node_token': success_node_tokens[index]
+    } for index, node in enumerate(success_node_list)]
     if failure:
-        return ResponseJson({'status': 1, 'msg': f"成功{success} 失败{failure}"})
-    return ResponseJson({'status': 1, 'msg': "操作成功"})
+        return ResponseJson({
+            'status': 1,
+            'msg': f"成功{len(success_node_list)} 失败{failure}",
+            'data': {
+                'server_host': config().base.website_url,
+                'server_token': config().base.server_token,
+                'node_data_list': node_data
+            }
+        })
+    return ResponseJson({
+        'status': 1,
+        'msg': "操作成功",
+        'data': {
+            'server_host': config().base.website_url,
+            'server_token': config().base.server_token,
+            'node_data_list': node_data
+        }
+    })

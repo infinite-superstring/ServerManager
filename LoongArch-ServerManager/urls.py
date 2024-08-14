@@ -75,6 +75,7 @@ urlpatterns = [
     path('api/node_manager/import_node/download_template', node_manager.download_node_table_template),  # 下载节点列表模板,
     path('api/node_manager/import_node/upload', node_manager.upload_node_list_file_chunk),  # 上传节点列表文件块,
     path('api/node_manager/import_node/merge', node_manager.merge_node_list_file),  # 合并节点列表文件块并解析,
+    path('api/node_manager/import_node/save', node_manager.save_import_node_list),  # 保存节点列表,
     path('api/node_manager/delNode', node_manager.del_node),  # 删除节点(POST)(OTP)
     path('api/node_manager/editNode', node_manager.edit_node),  # 编辑节点(POST)
     path('api/node_manager/resetToken', node_manager.reset_node_token),  # 重置节点Token(POST)(OTP)

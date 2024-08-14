@@ -6,7 +6,6 @@ def is_exist_by_list_index(target: list, index: int, element: any) -> bool:
     :param element: 目标元素
     """
     for i in target:
-        print(i)
         if element == i[index]:
             return True
     return False
@@ -32,7 +31,6 @@ def is_exist_by_double_list_index(target: list, index: int, element: any) -> boo
     :param element: 目标元素
     """
     for i in target:
-        print(i)
         if element in i[index]:
             return True
     return False
