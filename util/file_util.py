@@ -147,3 +147,4 @@ def file_iterator(file_path: str, chunk_size: int = 8192):
             if not chunk:
                 break
             yield chunk
+

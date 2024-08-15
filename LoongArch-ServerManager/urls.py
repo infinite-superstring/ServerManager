@@ -14,35 +14,38 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path
 
-import apps.auth.api.auth.user_auth as user_auth
+import django_eventstream
+from django.urls import path, include
+
+import apps.audit.api.auditAndLogger as auditAndLogger
 import apps.auth.api.auth.node_auth as node_auth
+import apps.auth.api.auth.user_auth as user_auth
 import apps.auth.api.otp.otp as otp
 import apps.auth.api.otp.otp_bind as otp_bind
 import apps.auth.api.otp.otp_unbind as otp_unbind
-import apps.user_manager.api.user_manager as user_manager
-import apps.user_manager.api.initUser as initUser
-import apps.user_manager.api.userInfo as userInfo
-import apps.permission_manager.api.permission as permission_manager
+import apps.dashboard.api.dashboard as dashboard
+import apps.group.commandExecution.api.execute as cluster_execute
+import apps.group.commandExecution.api.execute as execute
+import apps.group.group_task.api.group_task as group_task
+import apps.group.manager.api.node_group as node_group
+import apps.message.api.message as message
+import apps.node_manager.api.node_event as node_event
+import apps.node_manager.api.node_info as node_info
 import apps.node_manager.api.node_manager as node_manager
 import apps.node_manager.api.node_tag as node_tag
-import apps.group.manager.api.node_group as node_group
-import apps.node_manager.api.node_info as node_info
-import apps.node_manager.api.node_event as node_event
-import apps.group.commandExecution.api.execute as cluster_execute
 import apps.node_manager.api.terminal_record as terminal_record
-import apps.audit.api.auditAndLogger as auditAndLogger
-import apps.setting.api.settings as setting
-import apps.message.api.message as message
-import apps.dashboard.api.dashboard as dashboard
 import apps.patrol.api.patrol as patrol
+import apps.permission_manager.api.permission as permission_manager
+import apps.setting.api.settings as setting
 import apps.task.api.task as task
+import apps.user_manager.api.initUser as initUser
+import apps.user_manager.api.userInfo as userInfo
+import apps.user_manager.api.user_manager as user_manager
 import apps.web_status.api.webStatus as webStatus
-import apps.group.group_task.api.group_task as group_task
-import apps.group.commandExecution.api.execute as execute
-from apps.group.file_send.api import upload as group_file_distribution__upload
 from apps.group.file_send.api import manager as group_file_distribution__manager
+from apps.group.file_send.api import upload as group_file_distribution__upload
+from apps.screen.api import screen
 
 urlpatterns = [
     # 认证
@@ -178,4 +181,6 @@ urlpatterns = [
     path('api/execute/getCommandInfo', execute.getCommandInfo),  # 获取命令信息
     path('api/execute/delete', execute.deleteByUUID),  # 删除结果
     path('api/execute/downloadResult', execute.downloadResult),  # 创建任务
+    # 大屏 sse
+    path('api/screen/sse/get_data', screen.view_data),  # 获取大屏数据(GET | SSE)
 ]

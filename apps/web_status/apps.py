@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 
 import requests
@@ -14,9 +15,11 @@ class WebStatusConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.web_status'
     error_host: list[int] = []
+    __thread_pool: ThreadPoolExecutor = None
 
     def __init__(self, *args, **kwargs):
         Log.info("Web Status: Initializing start")
+        self.__thread_pool = ThreadPoolExecutor(max_workers=5)  # 线程池
         super().__init__(*args, **kwargs)
 
     def ready(self):
@@ -37,9 +40,12 @@ class WebStatusConfig(AppConfig):
     def __start_monitor(self):
         from apps.web_status.models import Web_Site
         web_list = Web_Site.objects.all()
+        # with ThreadPoolExecutor(max_workers=5) as pool:
+        #     futures = [pool.submit(self.__getWebStatus, web) for web in web_list]
         for web in web_list:
-            t = Thread(target=self.__getWebStatus, args=(web,))
-            t.start()
+            # self.__thread_pool.submit(self.__getWebStatus, web, )
+            # self.__thread_pool.shutdown()
+            Thread(target=self.__getWebStatus, args=(web,)).start()
 
     def __getWebStatus(self, web):
         from apps.web_status.utils import webUtil

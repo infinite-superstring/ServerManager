@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "apps.group.group_task",  # 集群任务
     "apps.group.commandExecution",  # 集群执行
     "apps.group.file_send",  # 集群文件分发
+    "apps.screen",
     'django.contrib.contenttypes',
 ]
 
@@ -189,5 +190,3 @@ LOGGING = {
 # 禁用所有默认的日志记录器
 for logger_name in logging.root.manager.loggerDict.keys():
     logging.getLogger(logger_name).disabled = True
-
-

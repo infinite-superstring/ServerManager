@@ -60,7 +60,7 @@ def _filterResult(
 
             # 根据日志等级过滤（适用于 System_Log）
     if level is not None and isinstance(result.first(), System_Log):
-        result = result.filter(level=level)
+        result = result.filter(level__in=level)
 
     # 根据动作过滤（适用于 Audit、FileChange_Log、User_Session_Log 和 Node_Session_Log）
     if action is not None:

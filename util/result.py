@@ -55,3 +55,14 @@ def file(file_path: str, file_name='', is_cors: bool = True):
     response.streaming_content = file_util.file_iterator(file_path)
 
     return response
+
+
+def stream_data(generator, file_name='', is_cors: bool = True):
+    """
+    返回一个流式传输的数据
+    """
+    response = StreamingHttpResponse(generator(), content_type='text/event-stream')
+    # response['Content-Disposition'] = f'attachment; filename="{quote(file_name)}"'
+    if is_cors:
+        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    return response
