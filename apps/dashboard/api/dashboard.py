@@ -24,7 +24,7 @@ def get_overview(req: HttpRequest):
         node_bases = Node_BaseInfo.objects.filter(node_id__in=node_uuids)
         node_events = Node_Event.objects.filter(node_id__in=node_uuids)
         node_online_count = node_bases.filter(online=True).count()
-        node_warning_count = node_events.filter(type__in=['Warning', 'Error']).count()
+        node_warning_count = nodes.filter(uuid__in=[node.node_id for node in node_events.filter(type__in=['Warning', 'Error'])])
 
         node_count = nodes.count()
         node_offline_count = nodes.count() - node_online_count
