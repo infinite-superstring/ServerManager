@@ -136,6 +136,7 @@ urlpatterns = [
     path('api/message/getUnread', message.get_unread),  # 获取未读消息数量
     # 巡检记录
     path('api/patrol/addARecord', patrol.addARecord),  # 添加巡检记录(POST)
+    path('api/patrol/upload_image', patrol.upload_image),  # 添加巡检记录(POST)
     path('api/patrol/getList', patrol.getList),  # 获取巡检记录列表(POST)
     path('api/patrol/updateARecord', patrol.updateRecord),  # 更新巡检记录(PUT)
     path('api/patrol/deleteRecord', patrol.deleteRecord),  # 删除巡检记录(DELETE)

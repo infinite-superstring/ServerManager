@@ -1,13 +1,19 @@
-from django.http import HttpRequest
+import base64
+import os
+
+from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 
 from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
+from util.asgi_file import get_file_response
 from util.logger import Log
-from apps.patrol.models import Patrol
+from apps.patrol.models import Patrol, UploadedImage
 from util.pageUtils import get_page_content, get_max_page
+
+img_save_path = os.path.join(os.getcwd(),"uploads")
 
 
 @require_POST
@@ -23,10 +29,23 @@ def addARecord(req: HttpRequest):
         content = data.get("content")
         status = data.get("status")
         title = data.get("title")
+        image_id = data.get("image_id")  # 假设前端传递了图片ID
         if content is None or status is None or title is None:
             return ResponseJson({"status": -1, "msg": "参数错误"}, 400)
-        Patrol.objects.create(user_id=user_id, content=content, status=status, title=title)
+        Patrol.objects.create(user_id=user_id, content=content, status=status, title=title, img_id=image_id)
     return ResponseJson({"status": 1, "msg": "添加成功"})
+
+
+@require_POST
+@api_permission("viewPatrol")
+def upload_image(request):
+    if request.method == 'POST':
+        if 'image' in request.FILES:
+            image = request.FILES['image']
+            uploaded_image = UploadedImage.objects.create(image=image)
+            return JsonResponse({"message": "Image uploaded successfully!", "image_id": uploaded_image.id})
+        return JsonResponse({"error": "No image provided"}, status=400)
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 @require_POST
@@ -45,6 +64,11 @@ def getList(req: HttpRequest):
         pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
         if pageQuery:
             for item in pageQuery:
+                img=UploadedImage.objects.get(id=item.get("img_id"))
+                image_path = os.path.join(os.getcwd(), str(img.image))
+                with open(image_path, 'rb') as f:
+                    img_data = f.read()
+                    img64 = base64.b64encode(img_data).decode('utf-8')
                 PageContent.append({
                     "id": item.get("id"),
                     "user": get_user_by_id(item.get("user_id")).userName if item.get("user_id") else None,
@@ -52,7 +76,9 @@ def getList(req: HttpRequest):
                     "status": item.get("status"),
                     "title": item.get("title"),
                     "time": item.get("time"),
+                    "imgId": img64
                 })
+
         return ResponseJson({
             "status": 1,
             "data": {
@@ -61,6 +87,8 @@ def getList(req: HttpRequest):
                 "PageContent": PageContent
             }
         })
+
+
 
 
 @require_http_methods("PUT")

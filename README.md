@@ -55,7 +55,7 @@ Copyright © Infinite Superstring
     # 创建数据库文件 
     python manage.py migrate
     # 初始化数据库数据
-    python manage.py initial_data
+    python manage.py initial_data --force-init
     # ps: 忘记密码后可通过 python manage.py resetAdmin 重置密码
 ```
 
