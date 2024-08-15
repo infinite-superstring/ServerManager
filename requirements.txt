@@ -5,16 +5,15 @@ daphne
 channels==3.0.4
 channels_redis
 django-eventstream
-aiofiles
 dj-config-url
 apscheduler
 redis
 hiredis
 pyotp
-qrcode
+aiofile
 requests
 openpyxl
 python-magic
-python-magic-bin;platform_system=="Windows"
+python-magic-bin; platform_system=="Windows"
 psycopg2; platform_system!="Windows"
 psycopg2-binary; platform_system=="Windows"
