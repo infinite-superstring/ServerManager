@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     "apps.web_status",  # 网站监控
     "apps.group.group_task",  # 集群任务
     "apps.group.commandExecution",  # 集群执行
-    "apps.group.file_distribution",  # 集群文件分发
+    "apps.group.file_send",  # 集群文件分发
     'django.contrib.contenttypes',
 ]
 

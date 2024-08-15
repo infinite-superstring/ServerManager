@@ -38,7 +38,7 @@ class File_DistributionTask(models.Model):
 
 
 class FileDistribution_FileList(models.Model):
-    file_name = models.CharField("文件名", max_length=255, unique=True)
+    file_name = models.ManyToManyField('FileName')
     file_hash = models.CharField("文件哈希", max_length=255, unique=True)
     upload_time = models.DateTimeField("文件上传时间", auto_now_add=True)
     uploader = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -46,3 +46,11 @@ class FileDistribution_FileList(models.Model):
     class Meta:
         db_table = 'file_distribution:file_list'
         db_table_comment = "文件分发任务 - 文件列表"
+
+    class FileName(models.Model):
+        task = models.ForeignKey(File_DistributionTask, null=False, on_delete=models.CASCADE)
+        name = models.CharField(max_length=255)
+
+        class Meta:
+            db_table = 'file_distribution:file_name'
+            db_table_comment = '文件分发任务 - 文件名'
