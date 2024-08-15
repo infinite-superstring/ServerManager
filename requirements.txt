@@ -11,8 +11,6 @@ apscheduler
 redis
 hiredis
 pyotp
-Pillow
-chardet
 qrcode
 requests
 openpyxl

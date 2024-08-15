@@ -1,6 +1,6 @@
 from asgiref.sync import sync_to_async
 from django.apps import apps
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -8,7 +8,7 @@ from apps.node_manager.entity.alarm_setting import AlarmSetting, cpu, memory, ne
 from apps.node_manager.models import Node, Node_BaseInfo, Node_DiskPartition, Node_UsageData, Node_AlarmSetting, \
     Node_Event
 from apps.group.manager.models import Node_Group
-from apps.node_manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
+from apps.group.manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id
 from apps.user_manager.models import User
 from apps.permission_manager.util.permission import groupPermission
 from util.passwordUtils import verify_password
@@ -357,3 +357,31 @@ async def a_load_node_alarm_setting(node: Node) -> AlarmSetting:
         ) async for i in alarm_setting.disk_used_rules.all()]
     )
     return setting
+
+
+def filter_node(
+        result: QuerySet[Node], status: list[str] = None, auth_restriction: bool | None = None,
+        warning: bool | None = None):
+    q = Q()
+
+    if status is not None:
+        status_q = Q()
+        for s in status:
+            if s == "online":
+                status_q |= Q(node_baseinfo__online=True)
+            elif s == "offline":
+                status_q |= Q(node_baseinfo__online=False)
+            elif s == "uninitialized":
+                status_q |= Q(node_baseinfo__online=None)
+        q &= status_q
+
+    if warning is not None:
+        if warning:
+            q &= Q(node_event__level__in=["Warning", "Error"], node_event__end_time=None)
+        else:
+            q &= ~Q(node_event__level__in=["Warning", "Error"], node_event__end_time=None)
+
+    if auth_restriction is not None:
+        q &= Q(auth_restrictions_enable=auth_restriction)
+
+    return result.filter(q).distinct()

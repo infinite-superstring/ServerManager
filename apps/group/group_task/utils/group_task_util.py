@@ -5,10 +5,11 @@ from datetime import datetime
 from uuid import UUID
 
 from asgiref.sync import async_to_sync
+from django.db.models import QuerySet
 
 from apps.group.group_task.models import GroupTask_Cycle, GroupTask
 from apps.group.manager.models import Node_Group
-from apps.node_manager.utils.groupUtil import GroupUtil
+from apps.group.manager.utils.groupUtil import GroupUtil
 
 day_mapping = {
     1: 'monday',
@@ -199,3 +200,21 @@ def is_uuid(uuid_str: str):
         return True
     except ValueError:
         return False
+
+
+def filer_page_result(
+        r_l: QuerySet[GroupTask],
+        enable: bool | None = None,
+        exec_type: str | None = None,
+        node_group: int = None
+):
+    """
+    过滤结果
+    """
+    if enable is not None:
+        r_l = r_l.filter(enable=enable)
+    if exec_type:
+        r_l = r_l.filter(exec_type=exec_type)
+    if node_group:
+        r_l = r_l.filter(node_group__id=node_group)
+    return r_l

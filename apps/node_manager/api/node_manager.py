@@ -1,19 +1,21 @@
 import secrets
+import uuid
 from typing import Callable
 
 from django.apps import apps
+from django.core.cache import cache
 
 from django.db.models import Q
 from django.views.decorators.http import require_POST, require_GET
-from tempfile import NamedTemporaryFile
 
 from apps.audit.util.auditTools import write_audit, write_access_log
-from apps.group.manager.models import Node_Group
 from apps.node_manager.entity.auth_restrictions import AuthRestrictions
 from apps.node_manager.models import Node, Node_BaseInfo, Node_UsageData
-from apps.node_manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists
+from apps.group.manager.utils.groupUtil import get_node_group_by_id, node_group_id_exists, node_group_name_exists, \
+    get_node_group_by_name
 from apps.node_manager.utils.nodeUtil import get_node_by_uuid, node_uuid_exists, node_name_exists, \
-    init_node_alarm_setting, filter_user_available_nodes, is_node_available_for_user, get_import_node_list_excel_object
+    init_node_alarm_setting, filter_user_available_nodes, is_node_available_for_user, get_import_node_list_excel_object, \
+    filter_node
 from apps.node_manager.utils.searchUtil import extract_search_info
 from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from apps.auth.utils.otpUtils import verify_otp_for_request
@@ -24,8 +26,7 @@ from util import uploadFile
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.asgi_file import get_file_response
-from util.listUtil import is_exist_by_double_list_index, is_exist_by_list_index
-from util.logger import Log
+from util.listUtil import is_exist_by_list_index, is_exist_by_double_list
 from util.pageUtils import get_page_content, get_max_page
 from util.passwordUtils import encrypt_password
 from apps.setting.entity.Config import config
@@ -33,6 +34,7 @@ from util.excelUtils import *
 
 config: Callable[[], config] = apps.get_app_config('setting').get_config
 FILE_SAVE_BASE_PATH = os.path.join(os.getcwd(), "data", "temp", "import_node_list")
+
 
 def __advanced_search(search: str):
     """
@@ -203,12 +205,17 @@ def get_node_list(req):
     page = req_json.get("page", 1)
     pageSize = req_json.get("pageSize", 20)
     search = req_json.get("search", "")
+    status: list[str] = req_json.get("status", [])
+    auth_restriction: bool | None = req_json.get("auth_restriction", None)
+    warning: bool | None = req_json.get("warning", None)
     uid = req.session['userID']
     user = get_user_by_id(uid)
     group_utils = groupPermission(user.permission)
     result = __advanced_search(search)
     if not group_utils.check_group_permission("viewAllNode"):
         result = filter_user_available_nodes(user, result)
+    result = filter_node(result, status, auth_restriction,warning)
+
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:
         for item in pageQuery:
@@ -226,6 +233,7 @@ def get_node_list(req):
                 "description": item.get("description"),
                 "group": get_node_group_by_id(item.get("group_id")).name if item.get("group_id") else None,
                 "tags": get_node_tags(item.get("uuid")),
+                'enable_auth_restrictions': item.get("auth_restrictions_enable"),
                 "creator": get_user_by_id(item.get("creator_id")).userName if item.get("creator_id") else None,
                 "baseData": {
                     "platform": node_base_info.system if node_base_info else "未知",
@@ -335,10 +343,20 @@ def edit_node(req):
     node_description = req_json.get("node_desc")
     node_group = req_json.get("node_group")
     node_tags = req_json.get("node_tags")
-    if node_id is None:
+    auth_restrictions: dict = req_json.get('node_auth_restrictions')
+    if not node_id or not auth_restrictions:
         return ResponseJson({"status": -1, "msg": "参数不完整"})
     if not node_uuid_exists(node_id):
         return ResponseJson({"status": 0, "msg": "节点不存在"})
+    auth_restrictions: AuthRestrictions = AuthRestrictions(
+        auth_restrictions.get("enable"),
+        auth_restrictions.get("method"),
+        auth_restrictions.get("value")
+    )
+    if auth_restrictions.enable and (not auth_restrictions.method or not auth_restrictions.value):
+        if not auth_restrictions.method: return ResponseJson({"status": 0, 'msg': "认证限制类型未填写"})
+        if not auth_restrictions.value: return ResponseJson({"status": 0, "msg": "认证限制值未填写"})
+        return ResponseJson({"status": 0, "msg": "未知错误"})
     uid = req.session['userID']
     user = get_user_by_id(uid)
     group_utils = groupPermission(user.permission)
@@ -360,6 +378,14 @@ def edit_node(req):
         tags_obj = add_tags(node_tags)
         node.tags.clear()
         node.tags.add(*tags_obj)
+    if auth_restrictions.enable is True:
+        node.auth_restrictions_enable = True
+        node.auth_restrictions_method = auth_restrictions.method
+        node.auth_restrictions_value = auth_restrictions.value
+    elif auth_restrictions.enable is False or not auth_restrictions.enable:
+        node.auth_restrictions_enable = False
+        auth_restrictions.method = None
+        auth_restrictions.value = None
     node.save()
     audit_msg = f"节点名：{node.name}({node.uuid})"
     if node.group:
@@ -367,16 +393,7 @@ def edit_node(req):
     write_audit(req.session['userID'], "编辑节点", "节点管理", audit_msg)
     return ResponseJson({
         "status": 1,
-        "msg": "节点信息保存成功",
-        # "data": {
-        #     "uuid": node.uuid,
-        #     "name": node.name,
-        #     "description": node.description,
-        #     "group": node.group.id if node.group else None,
-        #     "group_name": node.group.name if node.group else None,
-        #     "tags": list(get_node_tags(node.uuid)),
-        #
-        # }
+        "msg": "节点信息保存成功"
     })
 
 
@@ -422,7 +439,6 @@ def merge_node_list_file(req):
     error_msgs = []
     node_list_table = eutils.tables.get("节点列表")
     for index, row in enumerate(node_list_table.rows):
-        data = []
         # 检查节点名
         if not row.error[0]:
             if node_name_exists(row.data[0]):
@@ -437,11 +453,106 @@ def merge_node_list_file(req):
         datas.append(row.data)
         errors.append(row.error)
         error_msgs.append(row.error_message)
+    table_exist_error = is_exist_by_double_list(errors, True)
+    results = {
+        "col_names": [col.column_name for col in node_list_table.cols],
+        "datas": datas,
+        "errors": errors,
+        "error_msgs": error_msgs,
+    }
     return ResponseJson({'status': 1, "data": {
-        "results": {
-            "col_names": [col.column_name for col in node_list_table.cols],
-            "datas": datas,
-            "errors": errors,
-            "error_msgs": error_msgs,
-        }
+        "error": table_exist_error,
+        "results": results
     }})
+
+
+@api_permission("editNode")
+@require_POST
+def save_import_node_list(req):
+    """
+    保存节点列表导入
+    """
+    try:
+        req_json = RequestLoadJson(req)
+    except Exception as e:
+        Log.error(e)
+        return ResponseJson({"status": -1, "msg": "JSON解析失败"}, 400)
+    # session = req_json.get("session")
+    node_import_list: list = req_json.get("node_list")
+    user = get_user_by_id(req.session["userID"])
+    success_node_list: list[Node] = []
+    success_node_tokens: list[str] = []
+    failure: int = 0
+    for index, row in enumerate(node_import_list):
+        # 检查节点名
+        if node_name_exists(row[0]):
+            failure += 1
+            continue
+        node_name: str = row[0]
+        # 切分节点tag
+        node_tags: list[str] = []
+        if not row[1] and row[1]:
+            node_tags = str(row[1]).split(",")
+        node_desc = row[2]
+        # node_group = get_node_group_by_name(row[3])
+        enable_auth_restrictions = row[4]
+        auth_restrictions_method: int | str | None = None
+        auth_restrictions_value: str | None = None
+        if enable_auth_restrictions:
+            auth_restrictions_method = row[5]
+            match auth_restrictions_method:
+                case "限制网段":
+                    auth_restrictions_method = 1
+                case "限制IP":
+                    auth_restrictions_method = 2
+                case "限制MAC":
+                    auth_restrictions_method = 3
+                case _:
+                    failure += 1
+                    continue
+            if auth_restrictions_value:
+                auth_restrictions_value = row[6]
+        token = secrets.token_hex(32)
+        hashed_token, salt = encrypt_password(token)
+        node = Node.objects.create(
+            name=node_name,
+            description=node_desc,
+            token_hash=hashed_token,
+            token_salt=salt,
+            creator=user,
+            auth_restrictions_enable=enable_auth_restrictions if enable_auth_restrictions else False,
+            auth_restrictions_method=auth_restrictions_method if enable_auth_restrictions else None,
+            auth_restrictions_value=auth_restrictions_value if enable_auth_restrictions else None,
+        )
+        if row[3]:
+            node.group = get_node_group_by_name(row[3])
+        if node_tags is not None:
+            tags = add_tags(node_tags)
+            for tag in tags:
+                node.tags.add(tag)
+        node.save()
+        success_node_tokens.append(token)
+        success_node_list.append(node)
+    node_data = [{
+        'node_name': node.name,
+        'node_token': success_node_tokens[index]
+    } for index, node in enumerate(success_node_list)]
+    if failure:
+        return ResponseJson({
+            'status': 1,
+            'msg': f"成功{len(success_node_list)} 失败{failure}",
+            'data': {
+                'server_host': config().base.website_url,
+                'server_token': config().base.server_token,
+                'node_data_list': node_data
+            }
+        })
+    return ResponseJson({
+        'status': 1,
+        'msg': "操作成功",
+        'data': {
+            'server_host': config().base.website_url,
+            'server_token': config().base.server_token,
+            'node_data_list': node_data
+        }
+    })

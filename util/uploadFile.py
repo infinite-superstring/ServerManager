@@ -61,7 +61,9 @@ def upload_chunk(request: HttpRequest):
 
     SAVE_FILE = os.path.join(TEMP_DIR, f"{chunk_hash}.tmp")
 
-    if os.path.exists(SAVE_FILE):
+    if not os.path.exists(TEMP_DIR):
+        os.makedirs(TEMP_DIR)
+    elif os.path.exists(SAVE_FILE):
         return JsonResponse({"status": 1, "data": {
             "pass": True,
             "index": chunk_index,
@@ -97,6 +99,8 @@ def merge_chunks(request, save_path, rename_to_hash=False, remove_chunks=False) 
         Log.warning("参数不完整")
         return False, None
     # 创建一个单独的文件来存储合并后的文件
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     output_file_path = os.path.join(save_path, file_name)
     with open(output_file_path, 'wb+') as output_file:
         for chunk_hash in chunk_hash_list:
@@ -110,7 +114,10 @@ def merge_chunks(request, save_path, rename_to_hash=False, remove_chunks=False) 
     # 如有需求，计算文件哈希并重命名文件
     if rename_to_hash:
         output_hash = calculate_file_hash(output_file_path)
-        os.rename(output_file_path, os.path.join(save_path, f"{output_hash}.file"))
+        if not os.path.exists(output_file_path):
+            os.rename(output_file_path, os.path.join(save_path, f"{output_hash}.file"))
+        else:
+            os.remove(output_file_path)
         output_file_path = os.path.join(save_path, f"{output_hash}.file")
     if remove_chunks:
         for chunk_hash in chunk_hash_list:

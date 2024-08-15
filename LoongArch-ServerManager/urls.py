@@ -41,7 +41,8 @@ import apps.task.api.task as task
 import apps.web_status.api.webStatus as webStatus
 import apps.group.group_task.api.group_task as group_task
 import apps.group.commandExecution.api.execute as execute
-from apps.group.file_distribution.api import upload as group_file_distribution__upload
+from apps.group.file_send.api import upload as group_file_distribution__upload
+from apps.group.file_send.api import manager as group_file_distribution__manager
 
 urlpatterns = [
     # 认证
@@ -75,6 +76,7 @@ urlpatterns = [
     path('api/node_manager/import_node/download_template', node_manager.download_node_table_template),  # 下载节点列表模板,
     path('api/node_manager/import_node/upload', node_manager.upload_node_list_file_chunk),  # 上传节点列表文件块,
     path('api/node_manager/import_node/merge', node_manager.merge_node_list_file),  # 合并节点列表文件块并解析,
+    path('api/node_manager/import_node/save', node_manager.save_import_node_list),  # 保存节点列表,
     path('api/node_manager/delNode', node_manager.del_node),  # 删除节点(POST)(OTP)
     path('api/node_manager/editNode', node_manager.edit_node),  # 编辑节点(POST)
     path('api/node_manager/resetToken', node_manager.reset_node_token),  # 重置节点Token(POST)(OTP)
@@ -166,8 +168,9 @@ urlpatterns = [
     path('api/group_task/get_task_by_uuid', group_task.get_task_by_uuid),  # 获取任务详细信息(GET))
     path('api/group_task/command_legal', group_task.command_legal),  # 命令是否合法(POST)
     # 文件分发
-    path('api/file_distribution/upload', group_file_distribution__upload.upload_file_chunk),
-    path('api/file_distribution/merge', group_file_distribution__upload.merge_file),
+    path('api/file_distribution/upload', group_file_distribution__upload.upload_file_chunk),  # 上传文件块
+    path('api/file_distribution/merge', group_file_distribution__upload.merge_file),  # 合并上传文件块
+    path('api/file_distribution/create_task', group_file_distribution__manager.create_distribution_task),  # 创建文件分发任务
     # 集群指令
     path('api/execute/getList', execute.getResultList),  # 获取结果列表
     path('api/execute/getNodeResultByUUID', execute.getNodeResultList),  # 获取节点运行结果列表

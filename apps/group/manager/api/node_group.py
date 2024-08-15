@@ -1,8 +1,8 @@
-from django.views.decorators.http import require_POST, require_GET, require_http_methods
+from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_audit, write_access_log
 from apps.group.manager.models import Node_Group, Group_User_Permission
-from apps.node_manager.utils.groupUtil import create_node_group_user_permission_rules, node_group_id_exists, \
+from apps.group.manager.utils.groupUtil import create_node_group_user_permission_rules, node_group_id_exists, \
     get_node_group_by_id, get_group_nodes
 from apps.node_manager.utils.nodeUtil import node_uuid_exists, node_set_group, node_remove_group
 from apps.permission_manager.util.api_permission import api_permission

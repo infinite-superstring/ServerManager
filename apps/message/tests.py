@@ -5,7 +5,7 @@ from django.test import TestCase
 from apps.message.models import MessageBody
 from apps.message.utils.messageUtil import send
 from apps.group.manager.models import Node_Group
-from apps.node_manager.utils.groupUtil import create_node_group_user_permission_rules
+from apps.group.manager.utils.groupUtil import create_node_group_user_permission_rules
 from apps.user_manager.models import User
 from util.passwordUtils import encrypt_password
 

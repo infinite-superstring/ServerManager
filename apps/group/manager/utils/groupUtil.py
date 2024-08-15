@@ -12,8 +12,16 @@ def node_group_id_exists(group_id):
     return Node_Group.objects.filter(id=group_id).exists()
 
 
+def node_group_name_exists(group_name):
+    return Node_Group.objects.filter(name=group_name).exists()
+
+
 def get_node_group_by_id(group_id):
     return Node_Group.objects.get(id=group_id)
+
+
+def get_node_group_by_name(group_name):
+    return Node_Group.objects.get(name=group_name)
 
 
 def get_group_nodes(group):
