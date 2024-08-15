@@ -41,7 +41,8 @@ import apps.task.api.task as task
 import apps.web_status.api.webStatus as webStatus
 import apps.group.group_task.api.group_task as group_task
 import apps.group.commandExecution.api.execute as execute
-from apps.group.file_distribution.api import upload as group_file_distribution__upload
+from apps.group.file_send.api import upload as group_file_distribution__upload
+from apps.group.file_send.api import manager as group_file_distribution__manager
 
 urlpatterns = [
     # 认证
@@ -137,6 +138,7 @@ urlpatterns = [
     path('api/message/getUnread', message.get_unread),  # 获取未读消息数量
     # 巡检记录
     path('api/patrol/addARecord', patrol.addARecord),  # 添加巡检记录(POST)
+    path('api/patrol/upload_image', patrol.upload_image),  # 添加巡检记录(POST)
     path('api/patrol/getList', patrol.getList),  # 获取巡检记录列表(POST)
     path('api/patrol/updateARecord', patrol.updateRecord),  # 更新巡检记录(PUT)
     path('api/patrol/deleteRecord', patrol.deleteRecord),  # 删除巡检记录(DELETE)
@@ -166,8 +168,9 @@ urlpatterns = [
     path('api/group_task/get_task_by_uuid', group_task.get_task_by_uuid),  # 获取任务详细信息(GET))
     path('api/group_task/command_legal', group_task.command_legal),  # 命令是否合法(POST)
     # 文件分发
-    path('api/file_distribution/upload', group_file_distribution__upload.upload_file_chunk),
-    path('api/file_distribution/merge', group_file_distribution__upload.merge_file),
+    path('api/file_distribution/upload', group_file_distribution__upload.upload_file_chunk),  # 上传文件块
+    path('api/file_distribution/merge', group_file_distribution__upload.merge_file),  # 合并上传文件块
+    path('api/file_distribution/create_task', group_file_distribution__manager.create_distribution_task),  # 创建文件分发任务
     # 集群指令
     path('api/execute/getList', execute.getResultList),  # 获取结果列表
     path('api/execute/getNodeResultByUUID', execute.getNodeResultList),  # 获取节点运行结果列表
