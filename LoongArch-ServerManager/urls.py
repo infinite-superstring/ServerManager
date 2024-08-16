@@ -145,6 +145,7 @@ urlpatterns = [
     path('api/patrol/getList', patrol.getList),  # 获取巡检记录列表(POST)
     path('api/patrol/updateARecord', patrol.updateRecord),  # 更新巡检记录(PUT)
     path('api/patrol/deleteRecord', patrol.deleteRecord),  # 删除巡检记录(DELETE)
+    path('api/patrol/get_image', patrol.get_image),  # 获取图片内容 (GET)'),# 获取图片内容 (GET)
     # 仪表盘
     path('api/dashboard/getOverview', dashboard.get_overview),  # 获取总览(ALL)
     path('api/dashboard/getNodeList', dashboard.get_node_list),  # 获取节点列表(POST)
