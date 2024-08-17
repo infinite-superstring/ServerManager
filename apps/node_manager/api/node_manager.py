@@ -214,7 +214,7 @@ def get_node_list(req):
     result = __advanced_search(search)
     if not group_utils.check_group_permission("viewAllNode"):
         result = filter_user_available_nodes(user, result)
-    result = filter_node(result, status, auth_restriction,warning)
+    result = filter_node(result, status, auth_restriction, warning)
 
     pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
     if pageQuery:

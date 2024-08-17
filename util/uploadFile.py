@@ -114,11 +114,12 @@ def merge_chunks(request, save_path, rename_to_hash=False, remove_chunks=False) 
     # 如有需求，计算文件哈希并重命名文件
     if rename_to_hash:
         output_hash = calculate_file_hash(output_file_path)
-        if not os.path.exists(output_file_path):
-            os.rename(output_file_path, os.path.join(save_path, f"{output_hash}.file"))
+        new_file_name = os.path.join(save_path, output_hash)
+        if not os.path.exists(new_file_name):
+            os.rename(output_file_path, new_file_name)
         else:
             os.remove(output_file_path)
-        output_file_path = os.path.join(save_path, f"{output_hash}.file")
+        output_file_path = new_file_name
     if remove_chunks:
         for chunk_hash in chunk_hash_list:
             os.remove(os.path.join(TEMP_DIR, f"{chunk_hash}.tmp"))

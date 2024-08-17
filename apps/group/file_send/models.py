@@ -24,13 +24,19 @@ class File_DistributionTask(models.Model):
 
     class Progress(models.Model):
         PROGRESS_CHOICES = [
+            ('Activity', 'Activity'),
             ('Success', 'Success'),
             ('Failure', 'Failure'),
             ('Offline', 'Offline'),
         ]
-        task = models.ForeignKey(Task, on_delete=models.CASCADE)
+        # 节点实例
         node = models.ForeignKey(Node, on_delete=models.CASCADE)
-        status = models.CharField("节点分发状态", max_length=10, choices=PROGRESS_CHOICES)
+        # 总体状态
+        status = models.CharField("节点分发状态", max_length=15, choices=PROGRESS_CHOICES)
+        # 成功的文件
+        success_files = models.ManyToManyField("FileDistribution_FileList", related_name='success_files')
+        # 失败的文件
+        failure_files = models.ManyToManyField("FileDistribution_FileList", related_name='failure_files')
 
         class Meta:
             db_table = 'file_distribution:progress'

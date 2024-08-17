@@ -174,6 +174,9 @@ urlpatterns = [
     path('api/file_distribution/upload', group_file_distribution__upload.upload_file_chunk),  # 上传文件块
     path('api/file_distribution/merge', group_file_distribution__upload.merge_file),  # 合并上传文件块
     path('api/file_distribution/create_task', group_file_distribution__manager.create_distribution_task),  # 创建文件分发任务
+    path('api/file_distribution/task_list', group_file_distribution__manager.get_distribution_tasks),  # 获取文件分发任务列表
+    path('api/file_distribution/task_info', group_file_distribution__manager.get_distribution_task_info),  # 获取任务信息
+    path('api/file_distribution/download', group_file_distribution__manager.download_file),
     # 集群指令
     path('api/execute/getList', execute.getResultList),  # 获取结果列表
     path('api/execute/getNodeResultByUUID', execute.getNodeResultList),  # 获取节点运行结果列表
