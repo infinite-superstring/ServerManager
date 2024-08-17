@@ -5,7 +5,7 @@ from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_access_log, write_audit
 from apps.group.file_send.models import File_DistributionTask, FileDistribution_FileList
-from apps.group.file_send.utils.taskUtils import exists_task_by_uuid, get_task_by_uuid
+from apps.group.file_send.utils.taskUtils import exists_task_by_uuid, get_task_by_uuid, exists_file_by_task
 from apps.group.manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id, GroupUtil
 from apps.node_manager.models import Node_BaseInfo
 from apps.user_manager.util.userUtils import get_user_by_id
@@ -179,7 +179,7 @@ def download_file(request: HttpRequest) -> HttpResponse:
     Log.debug(file.exists())
     Log.debug(save_path)
     Log.debug(os.path.exists(save_path))
-    if not file.exists() or not os.path.exists(save_path):
+    if not file.exists() or not exists_file_by_task(task, file_id) or not os.path.exists(save_path):
         return ResponseJson({'status': 0, 'msg': '文件不存在'})
     file = file.first()
     return get_file_response(save_path, file.file_name.all().filter(task=task).first().name)

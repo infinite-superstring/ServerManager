@@ -19,7 +19,7 @@ from django.core.cache import cache
 
 from apps.audit.util.auditTools import write_node_session_log
 from apps.node_manager.entity.alarm_setting import AlarmSetting
-from apps.node_manager.models import Node, Node_BaseInfo, Node_AlarmSetting
+from apps.node_manager.models import Node, Node_BaseInfo, Node_AlarmSetting, Node_Event
 from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database, \
     a_load_node_alarm_setting
 from apps.message.models import MessageBody
@@ -38,7 +38,7 @@ class node_client(AsyncBaseConsumer):
     __auth: bool = False
     __alarm: bool = False
     __alarm_setting: AlarmSetting
-    __alarm_status: dict
+    __alarm_status: dict = None
     __get_process_list: bool = False
     __check_get_process_list_activity_thread: Thread
     __config: Config
@@ -68,13 +68,16 @@ class node_client(AsyncBaseConsumer):
             return await self.close(-1)
         node = await Node.objects.filter(uuid=self.__node_uuid, name=node_name).afirst()
         self.__config = apps.get_app_config('setting').get_config()
+        # 检查节点是否已在线，如果已在线则将其踢掉
         if cache.get(f"node_client_online_{self.__node_uuid}") is not None:
             Log.warning(f"Node {node.name} has been online, unable to connect")
             return await self.close(1000)
         self.__node = node
         self.__node_base_info = await Node_BaseInfo.objects.aget(node=node)
+        # 标记节点状态
         self.__node_base_info.online = True
         await self.__node_base_info.asave()
+        # 同意节点连接到服务器
         await self.accept()
         self.__auth = True
         self.__node_terminal_record_dir = os.path.join(save_dir_base, str(self.__node.uuid))
@@ -93,7 +96,9 @@ class node_client(AsyncBaseConsumer):
                 'task': self.__task
             }
         })
+        # 向浏览器发送节点上线消息
         await self.__node_online()
+        # 加载节点告警数组
         await self.__load_alarm_setting()
         clientIP = self.scope['client'][0]
         loop = asyncio.get_event_loop()
@@ -122,6 +127,7 @@ class node_client(AsyncBaseConsumer):
             loop.run_in_executor(None, write_node_session_log, self.__node.uuid, 1, clientIP)
             await self.__node_offline()
             await createEvent(self.__node, "节点已断开", "", end_directly=True)
+            await Node_Event.objects.filter(node=self.__node, end_time=None).aupdate(end_time=datetime.now())
             Log.success(f"节点：{node_name}已断开({close_code})")
         raise StopConsumer
 
@@ -439,6 +445,7 @@ class node_client(AsyncBaseConsumer):
     async def __load_alarm_setting(self):
         """加载节点告警设置"""
         setting = await Node_AlarmSetting.objects.filter(node=self.__node).afirst()
+        await self.__clean_all_activity_alarm_events()
         if setting and setting.enable:
             Log.debug(f"节点{self.__node.name}已启用告警")
             self.__alarm = True
@@ -474,6 +481,26 @@ class node_client(AsyncBaseConsumer):
             self.__alarm_setting = await a_load_node_alarm_setting(self.__node)
         else:
             self.__alarm = False
+
+    @Log.catch
+    async def __clean_all_activity_alarm_events(self):
+        """清理正在活动的告警事件"""
+        event: Node_Event
+        if not self.__alarm_status:
+            return
+        if event := self.__alarm_status.get('cpu').get('event'):
+            await stopEvent(event)
+        if event := self.__alarm_status.get('memory').get('event'):
+            await stopEvent(event)
+        network_status = self.__alarm_status['network']
+        if event := network_status.get('send').get('event'):
+            await stopEvent(event)
+        if event := network_status.get('recv').get('event'):
+            await stopEvent(event)
+        for item in self.__alarm_status.get('disk').items():
+            if item.get('event'):
+                await stopEvent(item)
+
 
     @Log.catch
     async def __handle_alarm_event(self, data):
@@ -834,6 +861,21 @@ class node_client(AsyncBaseConsumer):
         """
         Log.debug(f'{data.get("uuid")}:任务结束信号')
         await self.__task_result_util.handle_task_stop(data)
+
+    @AsyncBaseConsumer.action_handler("file_download:success")
+    async def __file_download_success(self, data: dict):
+        """
+        文件下载 - 成功
+        """
+
+
+    @AsyncBaseConsumer.action_handler("file_download:failure")
+    async def __file_download_failure(self, data: dict):
+        """
+        文件下载 - 失败
+        """
+
+
 
     @Log.catch
     def __check_get_process_list_activity(self):
