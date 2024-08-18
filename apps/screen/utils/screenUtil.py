@@ -156,6 +156,7 @@ def pack_node_data():
     network: list = []
     memory: list = []
     cpu: list = []
+    disk: list = []
     for node_uuid in node_online_info:
         node_name = node_online_info.get(node_uuid).get('name')
         node_use: dict = cache.get(f"NodeUsageData_{node_uuid}")
@@ -192,6 +193,13 @@ def pack_node_data():
             'name': node_name,
             'data': max(cpu_usage_rate_list)
         })
+
+        disk_total: int = 0
+        disk_used: int = 0
+        for disk_item in node_use.get('disk_space'):
+            disk_total += disk_item.get('total')
+            disk_used += disk_item.get('used')
+
     base_status['host_status'] = _handle_host_status(node_online_info)
     base_status['average_load'] = _handle_top(average_load)
     base_status['network'] = _handle_top(network, top=3, lm=lambda x: x['data']['send'] + x['data']['recv'])

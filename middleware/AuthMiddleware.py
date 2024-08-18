@@ -23,6 +23,7 @@ class AuthMiddleware(MiddlewareMixin):
             if not url_pu.is_node_path():
                 request.session.clear()
                 return ResponseJson({'status': -1, "msg": "非法访问"}, 403)
+            return
 
         if not request.session.get("user") or not request.session.get("userID"):
             return ResponseJson({'status': -1, 'msg': '账户未登录'}, 403)
