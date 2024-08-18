@@ -13,6 +13,7 @@ from channels.exceptions import StopConsumer
 from apps.group.commandExecution.utils.group_command_manager import GroupCommandManager
 from apps.group.group_task.api import group_task
 from apps.group.group_task.utils.GroupTaskResultUtil import GroupTaskResultUtil
+from apps.screen.utils import screenUtil
 from consumers.AsyncConsumer import AsyncBaseConsumer
 from django.apps import apps
 from django.core.cache import cache
@@ -20,7 +21,10 @@ from django.core.cache import cache
 from apps.audit.util.auditTools import write_node_session_log
 from apps.node_manager.entity.alarm_setting import AlarmSetting
 from apps.node_manager.models import Node, Node_BaseInfo, Node_AlarmSetting, Node_Event
-from apps.node_manager.utils.nodeUtil import update_disk_partition, refresh_node_info, save_node_usage_to_database, \
+from apps.node_manager.utils.nodeUtil import \
+    update_disk_partition, \
+    refresh_node_info, \
+    save_node_usage_to_database, \
     a_load_node_alarm_setting
 from apps.message.models import MessageBody
 from apps.message.api.message import send_email
@@ -53,10 +57,14 @@ class node_client(AsyncBaseConsumer):
     __task_result_util: GroupTaskResultUtil = None
     __group_command_manager: GroupCommandManager = None
 
+    __name: str = None
+    __ip: str = None
+
     async def connect(self):
         # 在建立连接时执行的操作
         self.__node_uuid = self.scope["session"].get("node_uuid")
         node_name = self.scope["session"].get("node_name")
+        self.__name = node_name
         if not (self.scope["session"]["node_uuid"] or self.scope["session"]["node_name"]):
             Log.warning("node未认证")
             return await self.close(-1)
@@ -101,11 +109,18 @@ class node_client(AsyncBaseConsumer):
         # 加载节点告警数组
         await self.__load_alarm_setting()
         clientIP = self.scope['client'][0]
+        self.__ip = clientIP
         loop = asyncio.get_event_loop()
         loop.run_in_executor(None, write_node_session_log, self.__node.uuid, 0, clientIP)
         threading.Thread(target=self.__check_node_timeout, args=()).start()
         await createEvent(node, "节点已连接", "", end_directly=True)
         Log.success(f"节点：{node_name}已连接")
+        screenUtil.node_go_online({
+            'uuid': str(self.__node_uuid),
+            'ip': self.__ip,
+            'name': self.__name,
+            'baseInfo': self.__node_base_info
+        })
         self.__task_result_util = GroupTaskResultUtil(self.__node_uuid)
         self.__group_command_manager = GroupCommandManager(self.__node_uuid)
 
@@ -129,6 +144,8 @@ class node_client(AsyncBaseConsumer):
             await createEvent(self.__node, "节点已断开", "", end_directly=True)
             await Node_Event.objects.filter(node=self.__node, end_time=None).aupdate(end_time=datetime.now())
             Log.success(f"节点：{node_name}已断开({close_code})")
+            screenUtil.node_go_offline(self.__node_uuid)
+            screenUtil.remove_alarming(self.__node.uuid)
         raise StopConsumer
 
     async def receive(self, *args, **kwargs):
@@ -264,6 +281,12 @@ class node_client(AsyncBaseConsumer):
 
     @AsyncBaseConsumer.action_handler("node:upload_running_data")
     async def __save_running_data(self, payload=None):
+        screenUtil.node_go_online({
+            'uuid': str(self.__node_uuid),
+            'ip': self.__ip,
+            'name': self.__name,
+            'baseInfo': self.__node_base_info
+        })
         """上传节点数据"""
         cpu_data = payload.get('cpu')
         memory_data = payload.get('memory')
@@ -480,6 +503,7 @@ class node_client(AsyncBaseConsumer):
             }
             self.__alarm_setting = await a_load_node_alarm_setting(self.__node)
         else:
+            screenUtil.remove_alarming(self.__node_uuid)
             self.__alarm = False
 
     @Log.catch
@@ -500,7 +524,6 @@ class node_client(AsyncBaseConsumer):
         for item in self.__alarm_status.get('disk').items():
             if item.get('event'):
                 await stopEvent(item)
-
 
     @Log.catch
     async def __handle_alarm_event(self, data):
@@ -592,6 +615,7 @@ class node_client(AsyncBaseConsumer):
                         self.__alarm_status['disk'][disk_rule.device]['event_end_time'] = datetime.now().timestamp()
                     await self.__disk_send_alarm_event(disk_rule.device,
                                                        calculate_percentage(disk['used'], disk['total']), end=True)
+        screenUtil.new_alarming(self.__node_uuid, self.__alarm_status)
 
     @Log.catch
     async def __general_send_alarm_event(self, device, value: int = 0, end: bool = False):
@@ -844,6 +868,7 @@ class node_client(AsyncBaseConsumer):
         """
         task_uuid = data.get("uuid")
         Log.debug(f'{task_uuid}:任务开始执行信号')
+        screenUtil.task_runtime(self.__node_uuid, data.get('timestamp'))
         await self.__task_result_util.handle_task_start(data)
 
     @AsyncBaseConsumer.action_handler("task:process_output")
@@ -852,6 +877,7 @@ class node_client(AsyncBaseConsumer):
         任务执行时输出
         """
         Log.debug(f'{data.get("uuid")}:任务输出')
+        screenUtil.task_runtime(self.__node_uuid, data.get('timestamp'))
         await self.__task_result_util.handle_task_output(data)
 
     @AsyncBaseConsumer.action_handler("task:process_stop")
@@ -860,6 +886,7 @@ class node_client(AsyncBaseConsumer):
         任务执行结束信号
         """
         Log.debug(f'{data.get("uuid")}:任务结束信号')
+        screenUtil.task_stop(self.__node_uuid)
         await self.__task_result_util.handle_task_stop(data)
 
     @AsyncBaseConsumer.action_handler("file_download:success")
@@ -868,14 +895,11 @@ class node_client(AsyncBaseConsumer):
         文件下载 - 成功
         """
 
-
     @AsyncBaseConsumer.action_handler("file_download:failure")
     async def __file_download_failure(self, data: dict):
         """
         文件下载 - 失败
         """
-
-
 
     @Log.catch
     def __check_get_process_list_activity(self):

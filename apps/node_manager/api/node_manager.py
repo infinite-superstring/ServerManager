@@ -21,6 +21,7 @@ from apps.node_manager.utils.tagUtil import add_tags, get_node_tags
 from apps.auth.utils.otpUtils import verify_otp_for_request
 from apps.permission_manager.util.api_permission import api_permission
 from apps.permission_manager.util.permission import groupPermission
+from apps.screen.utils import screenUtil
 from apps.user_manager.util.userUtils import get_user_by_id
 from util import uploadFile
 from util.Request import RequestLoadJson
@@ -114,6 +115,7 @@ def add_node(req):
     init_node_alarm_setting(node)
     server_token = config().base.server_token
     write_audit(req.session['userID'], "创建节点", "节点管理", f"UUID: {node.uuid} 节点名：{node.name}")
+    screenUtil.reset_cache()
     return ResponseJson({
         "status": 1,
         "msg": "节点创建成功",
@@ -148,6 +150,7 @@ def del_node(req):
             return ResponseJson({'status': 0, 'msg': "当前无权限操作该节点"})
         node.delete()
         write_audit(req.session['userID'], "删除节点", "节点管理", f"UUID: {node_id}")
+        screenUtil.reset_cache()
         return ResponseJson({"status": 1, "msg": "节点已删除"})
     else:
         return ResponseJson({"status": 0, "msg": "节点不存在"})

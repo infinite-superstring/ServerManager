@@ -77,7 +77,27 @@ class MessageTest(TestCase):
         print(not None)
 
     def test6(self):
-        print(1 in [2,3,4])
+        print(1 in [2, 3, 4])
+
+    def test7(self):
+        m: dict = {
+            '1': '一',
+            '2': '二',
+            '3': '三',
+            '4': '四',
+            '5': '五',
+            '6': '六',
+            '7': '七',
+            '8': '八',
+            '9': '九',
+            '10': '十',
+        }
+        for i in m:
+            print(i)
+
+    def test8(self):
+
+        print(type(lambda x: x))
 
 
 def handelList(l):

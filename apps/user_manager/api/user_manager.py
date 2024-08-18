@@ -4,6 +4,7 @@ from django.views.decorators.http import require_POST
 
 from apps.permission_manager.util.api_permission import api_permission
 from apps.permission_manager.util.permissionGroupUtils import group_id_exists, get_group_by_id
+from apps.screen.utils import screenUtil
 from apps.user_manager.models import User
 from apps.user_manager.util.userUtils import get_user_by_id, write_user_new_password_to_database, username_exists, \
     real_name_exists, email_exists, uid_exists
@@ -122,6 +123,7 @@ def addUser(req: HttpRequest):
         f"用户名:{userName} 真实姓名: {realName} 邮箱: {email} 禁用: {disable}"
     )
     if disable: apps.get_app_config("user_manager").disable_user_list.append(createUser.id)
+    screenUtil.new_user()
     return ResponseJson({"status": 1, "msg": "用户创建成功"})
 
 
@@ -157,6 +159,7 @@ def delUser(req: HttpRequest):
     query.delete()
     if userId in apps.get_app_config("user_manager").disable_user_list:
         apps.get_app_config("user_manager").disable_user_list.remove(userId)
+    screenUtil.remove_user()
     return ResponseJson({"status": 1, "msg": "用户已删除"})
 
 
