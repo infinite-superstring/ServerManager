@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 
 from apps.node_manager.models import Node, Node_BaseInfo
 from apps.screen.entity.ScreenCacheKey import ScreenCacheKey
@@ -149,7 +150,7 @@ def _remove_timeout_task(tasking: dict) -> dict:
 
 
 def pack_node_data():
-    node_online_info: dict | None = cache.get(keys.on_line_count)
+    node_online_info: dict = cache.get(keys.on_line_count)
     base_status: dict = {}
 
     average_load: list = []
@@ -157,6 +158,7 @@ def pack_node_data():
     memory: list = []
     cpu: list = []
     disk: list = []
+    alarm_trend: dict = {}
     for node_uuid in node_online_info:
         node_name = node_online_info.get(node_uuid).get('name')
         node_use: dict = cache.get(f"NodeUsageData_{node_uuid}")
@@ -164,8 +166,11 @@ def pack_node_data():
             continue
         node_info: dict = node_online_info.get(node_uuid)
         base_info: Node_BaseInfo = node_info.get('baseInfo')
+        processor_count = base_info.processor_count
+        if processor_count is None:
+            continue
         one_minute = node_use.get('loadavg').get('one_minute')
-        load = (one_minute / base_info.processor_count) * 100
+        load = (one_minute / processor_count) * 100
         average_load.append({
             'name': node_name,
             'data': load
@@ -194,17 +199,32 @@ def pack_node_data():
             'data': max(cpu_usage_rate_list)
         })
 
-        disk_total: int = 0
-        disk_used: int = 0
-        for disk_item in node_use.get('disk_space'):
-            disk_total += disk_item.get('total')
-            disk_used += disk_item.get('used')
+        disk_list: list = node_use.get('disk_space')
+        disk_total: float = 0
+        disk_used: float = 0
+        for d in disk_list:
+            disk_total += d.get('total')
+            disk_used += d.get('used')
+
+        disk.append({
+            'name': node_name,
+            'data': {
+                'total': disk_total,
+                'used': disk_used / disk_total,
+                'free': (disk_total - disk_used) / disk_total,
+            }
+        })
+
+    alarm_trend['time'] = datetime.now().strftime('%H:%M:%S')
+    alarm_trend['data'] = len(cache.get(keys.alarm_count))
 
     base_status['host_status'] = _handle_host_status(node_online_info)
     base_status['average_load'] = _handle_top(average_load)
     base_status['network'] = _handle_top(network, top=3, lm=lambda x: x['data']['send'] + x['data']['recv'])
     base_status['memory'] = _handle_top(memory)
     base_status['cpu'] = _handle_top(cpu)
+    base_status['disk'] = _handle_top(disk, top=5, lm=lambda x: x['data']['used'] - x['data']['free'])
+    base_status['alarm_trend'] = alarm_trend
     return base_status
 
 
@@ -219,11 +239,11 @@ def _handle_host_status(node_online_info: dict) -> list:
     return [online - in_alarm, in_alarm, node_count - online]
 
 
-def _handle_top(data: list, top: int = 10, lm=lambda x: x['data']) -> list:
+def _handle_top(data: list, top: int = 10, lm=lambda x: x['data'], reverse: bool = True) -> list:
     """
     处理排序数据
     """
-    new_list = sorted(data, key=lm, reverse=True)
+    new_list = sorted(data, key=lm, reverse=reverse)
     return new_list[0:top]
 
 
