@@ -425,7 +425,6 @@ def merge_node_list_file(req):
     """
     合并节点列表文件块并解析
     """
-    user = get_user_by_id(req.session["userID"])
     if not os.path.exists(FILE_SAVE_BASE_PATH):
         os.makedirs(FILE_SAVE_BASE_PATH)
     merge_status, hash256 = uploadFile.merge_chunks(req, FILE_SAVE_BASE_PATH)

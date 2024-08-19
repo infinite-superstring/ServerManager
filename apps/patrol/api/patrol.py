@@ -7,15 +7,17 @@ from django.views.decorators.http import require_POST, require_http_methods
 from apps.audit.util.auditTools import write_audit, write_file_change_log
 from apps.permission_manager.util.api_permission import api_permission
 from apps.user_manager.util.userUtils import get_user_by_id
-from util import result, file_util
+from util import result, file_util, uploadFile
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
 from util.asgi_file import get_file_response
 from util.logger import Log
 from apps.patrol.models import Patrol
 from util.pageUtils import get_page_content, get_max_page
+from util.uploadFile import upload_chunk
 
-img_save_path = os.path.join(os.getcwd(), "data", "patrol")
+FILE_SAVE_BASE_PATH = os.path.join(os.getcwd(), "data", "patrol")
+
 
 
 @require_POST
@@ -31,52 +33,73 @@ def addARecord(req: HttpRequest):
         content = data.get("content")
         status = data.get("status")
         title = data.get("title")
-        image_id = data.get("image_id")  # 假设前端传递了图片ID
+        image_list = data.get("images")
         if content is None or status is None or title is None:
             return ResponseJson({"status": -1, "msg": "参数错误"}, 400)
-        Patrol.objects.create(user_id=user_id, content=content, status=status, title=title, img=image_id)
+        data = Patrol.objects.create(user_id=user_id, content=content, status=status, title=title)
+        for image in image_list:
+            if Patrol.Image.objects.filter(image_hash=image).exists():
+                image_obj = Patrol.Image.objects.filter(image_hash=image).first()
+            else:
+                image_obj = Patrol.Image.objects.create(image_hash=image)
+            data.image_list.add(image_obj)
+        if len(image_list) > 0:
+            data.save()
     return result.success()
 
 
 @require_POST
 @api_permission("viewPatrol")
-def upload_image(request: HttpRequest):
+def upload_image_chunk(request: HttpRequest):
     """
-    上传图片
+    上传图片文件块
     """
-    # if 'image' in request.FILES:
-    #     image = request.FILES['image']
-    #     uploaded_image = UploadedImage.objects.create(image=image)
-    #     return result.success(data=uploaded_image.id, msg='上传成功')
-    # return result.error()
-    user_id = request.session.get("userID")
-    try:
-        data = RequestLoadJson(request)
-    except Exception as e:
-        Log.error(e)
-        return result.api_error()
-    image_base64 = data.get("image")
-    if not image_base64:
-        return result.api_error()
-    image_hash = image_base64.split(',')[1]
-    image_hash_file_name = image_hash[:20]
-    file_path = os.path.join(img_save_path, image_hash_file_name)
-    if os.path.exists(file_path):
-        write_audit(
-            user_id,
-            "巡检记录图片上传",
-            "新增或修改巡检记录",
-            f"巡检图片md5: {image_hash_file_name}(文件已存在，跳过写入文件)"
-        )
-        return result.success(data=image_hash_file_name, msg='上传成功')
-    if not os.path.exists(img_save_path):
-        os.makedirs(img_save_path)
-    image_byte = base64.b64decode(image_hash)
-    with open(file_path, 'wb+') as f:
-        f.write(image_byte)
-        write_file_change_log(user_id, "用户上传巡检记录图片", file_path)
-        return result.success(data=image_hash_file_name, msg='上传成功')
+    return uploadFile.upload_chunk(request)
+    # try:
+    #     data = RequestLoadJson(request)
+    # except Exception as e:
+    #     Log.error(e)
+    #     return result.api_error()
+    # image_base64 = data.get("image")
+    # if not image_base64:
+    #     return result.api_error()
+    # image_hash = image_base64.split(',')[1]
+    # image_hash_file_name = image_hash[:20]
+    # file_path = os.path.join(img_save_path, image_hash_file_name)
+    # if os.path.exists(file_path):
+    #     write_audit(
+    #         user_id,
+    #         "巡检记录图片上传",
+    #         "新增或修改巡检记录",
+    #         f"巡检图片md5: {image_hash_file_name}(文件已存在，跳过写入文件)"
+    #     )
+    #     return result.success(data=image_hash_file_name, msg='上传成功')
+    # if not os.path.exists(img_save_path):
+    #     os.makedirs(img_save_path)
+    # image_byte = base64.b64decode(image_hash)
+    # with open(file_path, 'wb+') as f:
+    #     f.write(image_byte)
+    #     write_file_change_log(user_id, "用户上传巡检记录图片", file_path)
+    #     return result.success(data=image_hash_file_name, msg='上传成功')
 
+@require_POST
+@api_permission("viewPatrol")
+def merge_image(request: HttpRequest):
+    """
+    合并图片文件块并返回文件哈希
+    """
+    user = get_user_by_id(request.session["userID"])
+    file_name = request.POST.get("file_name")
+    if not os.path.exists(FILE_SAVE_BASE_PATH):
+        os.makedirs(FILE_SAVE_BASE_PATH)
+    merge_status, hash256 = uploadFile.merge_chunks(request, FILE_SAVE_BASE_PATH, True)
+    if merge_status:
+        write_audit(user, "上传图片", "巡检记录", f"{file_name} (hash256: {hash256})")
+        return JsonResponse({'status': 1, 'data': {
+            'file_name': file_name,
+            'hash': hash256,
+        }})
+    return JsonResponse({'status': 0})
 
 @require_POST
 @api_permission("viewPatrol")
@@ -90,16 +113,12 @@ def getList(req: HttpRequest):
         PageContent = []
         page = data.get("page", 1)
         pageSize = data.get("pageSize", 20)
-        result = Patrol.objects.filter()
+        result = Patrol.objects.all()
         pageQuery = get_page_content(result, page if page > 0 else 1, pageSize)
         if pageQuery:
             for item in pageQuery:
-                # img = UploadedImage.objects.get(id=item.get("img_id"))
-                # img = ''
-                # image_path = os.path.join(os.getcwd(), str(img.image))
-                # with open(image_path, 'rb') as f:
-                #     img_data = f.read()
-                #     img64 = base64.b64encode(img_data).decode('utf-8')
+                patrol = Patrol.objects.get(id=item.get('id'))
+                Log.debug(patrol.image_list.all())
                 PageContent.append({
                     "id": item.get("id"),
                     "user": get_user_by_id(item.get("user_id")).userName if item.get("user_id") else None,
@@ -107,7 +126,7 @@ def getList(req: HttpRequest):
                     "status": item.get("status"),
                     "title": item.get("title"),
                     "time": item.get("time"),
-                    "imgId": item.get("img"),
+                    "images": [img.image_hash for img in patrol.image_list.all()],
                 })
 
         return ResponseJson({
@@ -122,14 +141,13 @@ def getList(req: HttpRequest):
 
 @require_http_methods("GET")
 @api_permission("viewPatrol")
-def get_image(req: HttpRequest):
+def get_image(req: HttpRequest, image):
     """
     获取图片
     """
-    image_id = req.GET.get('imageId')
-    if not file_util.is_file(os.path.join(img_save_path, image_id)):
+    if not os.path.exists(os.path.join(FILE_SAVE_BASE_PATH, image)):
         return result.success()
-    return get_file_response(os.path.join(img_save_path, image_id), file_name=image_id)
+    return get_file_response(os.path.join(FILE_SAVE_BASE_PATH, image))
 
 
 @require_http_methods("PUT")
@@ -161,5 +179,14 @@ def deleteRecord(req: HttpRequest):
         return ResponseJson({"status": -1, "msg": "记录不存在"}, 400)
     if not req.session.get("userID") == Patrol.objects.get(id=id).user_id:
         return ResponseJson({"status": -1, "msg": "权限不足"})
-    Patrol.objects.filter(id=id).delete()
+    patrol = Patrol.objects.filter(id=id)
+    for image in patrol.image_list.all():
+        if not Patrol.objects.filter(image_list__in=image).exists(id=patrol.id).exists():
+            Log.debug(f"删除图片记录{image.image_hash}")
+            try:
+                os.remove(os.path.join(FILE_SAVE_BASE_PATH, image.image_hash))
+            except Exception:
+                pass
+            image.delete()
+    patrol.delete()
     return ResponseJson({"status": 1, "msg": "删除成功"})

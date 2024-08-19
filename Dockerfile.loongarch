@@ -17,7 +17,7 @@ RUN wget https://lib.storage.pigeon-server.cn/$RUST_INSTALL_PACKAGE
 
 RUN mkdir rust-install
 
-RUN tar xvf $RUST_INSTALL_PACKAGE rust-install
+RUN tar -xvf $RUST_INSTALL_PACKAGE -C rust-install
 
 RUN ./rust-install/install.sh
 

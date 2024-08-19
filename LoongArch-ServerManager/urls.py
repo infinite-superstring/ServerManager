@@ -141,11 +141,12 @@ urlpatterns = [
     path('api/message/getUnread', message.get_unread),  # 获取未读消息数量
     # 巡检记录
     path('api/patrol/addARecord', patrol.addARecord),  # 添加巡检记录(POST)
-    path('api/patrol/upload_image', patrol.upload_image),  # 添加巡检记录(POST)
+    path('api/patrol/upload', patrol.upload_image_chunk),  # 上传图片文件块(POST)
+    path('api/patrol/merge', patrol.merge_image),  # 合并图片并获取哈希(POST)
     path('api/patrol/getList', patrol.getList),  # 获取巡检记录列表(POST)
     path('api/patrol/updateARecord', patrol.updateRecord),  # 更新巡检记录(PUT)
     path('api/patrol/deleteRecord', patrol.deleteRecord),  # 删除巡检记录(DELETE)
-    path('api/patrol/get_image', patrol.get_image),  # 获取图片内容 (GET)'),# 获取图片内容 (GET)
+    path('api/patrol/image/<str:image>', patrol.get_image),  # 获取图片内容 (GET)'),# 获取图片内容 (GET)
     # 仪表盘
     path('api/dashboard/getOverview', dashboard.get_overview),  # 获取总览(ALL)
     path('api/dashboard/getNodeList', dashboard.get_node_list),  # 获取节点列表(POST)

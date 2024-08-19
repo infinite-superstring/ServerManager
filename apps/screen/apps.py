@@ -24,6 +24,7 @@ class ScreenConfig(AppConfig):
         # Log.success("Screen:Record InitializationInProgress")
         Log.success("Screen:Initialization complete")
 
+    @Log.catch
     def cache_init(self):
         #  告警 数量和类型 初始化
         from apps.screen.utils import screenUtil
