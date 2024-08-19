@@ -220,6 +220,6 @@ def getAvatar(req):
     User = get_user_by_id(userId)
     write_access_log(userId, req, "用户信息", "获取用户头像")
     if not User.avatar:
-        return get_file_response(os.path.join(avatar_save_path, "fff.png"))
+        return get_file_response('public/avatar.png')
     if os.path.exists(os.path.join(avatar_save_path, User.avatar)):
         return get_file_response(os.path.join(avatar_save_path, User.avatar))

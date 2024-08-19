@@ -122,7 +122,7 @@ def get_image(req: HttpRequest, image):
     获取图片
     """
     if not os.path.exists(os.path.join(FILE_SAVE_BASE_PATH, image)):
-        return result.success()
+        return get_file_response('public/no-image.png')
     return get_file_response(os.path.join(FILE_SAVE_BASE_PATH, image))
 
 
