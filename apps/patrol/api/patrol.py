@@ -38,6 +38,8 @@ def addARecord(req: HttpRequest):
             return ResponseJson({"status": -1, "msg": "参数错误"}, 400)
         data = Patrol.objects.create(user_id=user_id, content=content, status=status, title=title)
         for image in image_list:
+            if not os.path.exists(os.path.join(FILE_SAVE_BASE_PATH, image)):
+                continue
             if Patrol.Image.objects.filter(image_hash=image).exists():
                 image_obj = Patrol.Image.objects.filter(image_hash=image).first()
             else:
@@ -55,32 +57,6 @@ def upload_image_chunk(request: HttpRequest):
     上传图片文件块
     """
     return uploadFile.upload_chunk(request)
-    # try:
-    #     data = RequestLoadJson(request)
-    # except Exception as e:
-    #     Log.error(e)
-    #     return result.api_error()
-    # image_base64 = data.get("image")
-    # if not image_base64:
-    #     return result.api_error()
-    # image_hash = image_base64.split(',')[1]
-    # image_hash_file_name = image_hash[:20]
-    # file_path = os.path.join(img_save_path, image_hash_file_name)
-    # if os.path.exists(file_path):
-    #     write_audit(
-    #         user_id,
-    #         "巡检记录图片上传",
-    #         "新增或修改巡检记录",
-    #         f"巡检图片md5: {image_hash_file_name}(文件已存在，跳过写入文件)"
-    #     )
-    #     return result.success(data=image_hash_file_name, msg='上传成功')
-    # if not os.path.exists(img_save_path):
-    #     os.makedirs(img_save_path)
-    # image_byte = base64.b64decode(image_hash)
-    # with open(file_path, 'wb+') as f:
-    #     f.write(image_byte)
-    #     write_file_change_log(user_id, "用户上传巡检记录图片", file_path)
-    #     return result.success(data=image_hash_file_name, msg='上传成功')
 
 @require_POST
 @api_permission("viewPatrol")
