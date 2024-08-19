@@ -12,6 +12,7 @@ redis
 hiredis
 pyotp
 qrcode
+chardet
 requests
 openpyxl
 python-magic
