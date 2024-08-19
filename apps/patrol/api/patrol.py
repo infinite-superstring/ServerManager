@@ -155,14 +155,15 @@ def deleteRecord(req: HttpRequest):
         return ResponseJson({"status": -1, "msg": "记录不存在"}, 400)
     if not req.session.get("userID") == Patrol.objects.get(id=id).user_id:
         return ResponseJson({"status": -1, "msg": "权限不足"})
-    patrol = Patrol.objects.filter(id=id)
-    for image in patrol.image_list.all():
-        if not Patrol.objects.filter(image_list__in=image).exists(id=patrol.id).exists():
-            Log.debug(f"删除图片记录{image.image_hash}")
-            try:
-                os.remove(os.path.join(FILE_SAVE_BASE_PATH, image.image_hash))
-            except Exception:
-                pass
-            image.delete()
+    patrol:Patrol = Patrol.objects.filter(id=id).first()
+    if patrol:
+        for image in patrol.image_list.all():
+            if not Patrol.objects.filter(image_list=image).exists(id=patrol.id).exists():
+                Log.debug(f"删除图片记录{image.image_hash}")
+                try:
+                    os.remove(os.path.join(FILE_SAVE_BASE_PATH, image.image_hash))
+                except Exception:
+                    pass
+                image.delete()
     patrol.delete()
     return ResponseJson({"status": 1, "msg": "删除成功"})
