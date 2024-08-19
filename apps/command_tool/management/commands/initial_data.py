@@ -70,6 +70,16 @@ class Command(BaseCommand):
                 'translate': '集群任务'
             },
             {
+                'permission': 'clusterFileSend',
+                'description': '允许用户创建文件分发任务',
+                'translate': '文件分发',
+            },
+            {
+                'permission': 'viewDataScreen',
+                'description': '允许用户访问数据大屏',
+                'translate': '数据大屏',
+            },
+            {
                 'permission': 'viewWebStatus',
                 'description': '允许用户查看网站监控',
                 'translate': '查看网站监控'
@@ -130,10 +140,12 @@ class Command(BaseCommand):
                 'name': '超级管理员(super_admin)',
                 'permissions': [
                     'all',
+                    'viewDataScreen',
                     'viewAllNode',
                     'editNode',
                     'editNodeGroup',
                     'clusterTask',
+                    'clusterFileSend',
                     'viewWebStatus',
                     'editWebStatus',
                     'changeSettings',
@@ -148,10 +160,12 @@ class Command(BaseCommand):
             {
                 'name': '管理员(admin)',
                 'permissions': [
+                    'viewDataScreen',
                     'viewAllNode',
                     'editNode',
                     'editNodeGroup',
                     'clusterTask',
+                    'clusterFileSend',
                     'viewWebStatus',
                     'editWebStatus',
                     'viewAudit',
@@ -165,6 +179,7 @@ class Command(BaseCommand):
                 'permissions': [
                     'editNode',
                     'clusterTask',
+                    'clusterFileSend',
                     'viewWebStatus',
                     'viewPatrol',
                     'editPatrol'
