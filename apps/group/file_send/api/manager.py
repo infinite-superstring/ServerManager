@@ -5,9 +5,11 @@ from django.views.decorators.http import require_POST, require_GET
 
 from apps.audit.util.auditTools import write_access_log, write_audit
 from apps.group.file_send.models import File_DistributionTask, FileDistribution_FileList
-from apps.group.file_send.utils.taskUtils import exists_task_by_uuid, get_task_by_uuid, exists_file_by_task
+from apps.group.file_send.utils.taskUtils import exists_task_by_uuid, get_task_by_uuid, exists_file_by_task, \
+    exists_node_in_task
 from apps.group.manager.utils.groupUtil import node_group_id_exists, get_node_group_by_id, GroupUtil
 from apps.node_manager.models import Node_BaseInfo
+from apps.node_manager.utils.nodeUtil import get_node_by_uuid
 from apps.user_manager.util.userUtils import get_user_by_id
 from util.Request import RequestLoadJson
 from util.Response import ResponseJson
@@ -24,7 +26,7 @@ def get_distribution_tasks(request: HttpRequest) -> HttpResponse:
     """
     page_index = int(request.GET.get("page", 1))
     page_size = int(request.GET.get("page_size", 20))
-    result = File_DistributionTask.objects.all()
+    result = File_DistributionTask.objects.all().order_by('-creation_time')
     pageQuery = get_page_content(result, page_index if page_index > 0 else 1, page_size)
     PageContent: list = []
     if pageQuery:
@@ -88,11 +90,17 @@ def create_distribution_task(request: HttpRequest) -> HttpResponse:
         receive_directory=receive_directory,
         creator=user
     )
-    for node in GroupUtil(group).get_node_list():
+    gutil = GroupUtil(group)
+    for node in gutil.get_node_list():
         node_info = Node_BaseInfo.objects.filter(node=node)
+        status: str = 'Activity'
+        if not node_info.exists():
+            status = 'Failure'
+        elif not node_info.first().online:
+            status = 'Offline'
         task.progress.add(File_DistributionTask.Progress.objects.create(
             node=node,
-            status='Activity' if node_info.exists() and node_info.filter().online else 'Offline'
+            status=status
         ))
     for file in files:
         file_name = file.get('file_name')
@@ -119,6 +127,11 @@ def create_distribution_task(request: HttpRequest) -> HttpResponse:
         '集群文件分发',
         f'集群：{group.name} 任务uuid: {task.uuid}',
     )
+    gutil.send_event_to_all_nodes('download_files', {
+        'task': str(task.uuid),
+        'files': [file.get('hash') for file in files],
+        'save_path': receive_directory,
+    })
     return ResponseJson({
         "status": 1,
         "msg": "开始文件分发"
@@ -157,8 +170,8 @@ def get_distribution_task_info(request: HttpRequest) -> HttpResponse:
             "progress": {
                 progress.node.name: {
                     'status': progress.status,
-                    'success_files': [file.file_name for file in progress.success_files.all()],
-                    'failure_files': [file.file_name for file in progress.failure_files.all()]
+                    'success_files': [file.file_name.filter(task=task).first().name for file in progress.success_files.all()],
+                    'failure_files': [file.file_name.filter(task=task).first().name for file in progress.failure_files.all()]
                 } for progress in task.progress.all()
             }
         }
@@ -169,16 +182,16 @@ def get_distribution_task_info(request: HttpRequest) -> HttpResponse:
 def download_file(request: HttpRequest) -> HttpResponse:
     task_id = request.GET.get('task')
     file_id = request.GET.get('file')
+    node = get_node_by_uuid(request.session.get('node_uuid'))
     if not task_id or not file_id:
         return ResponseJson({'status': -1, 'msg': '参数不完整'})
     if not exists_task_by_uuid(task_id):
         return ResponseJson({'status': 0, 'msg': '分发任务不存在'})
     task = get_task_by_uuid(task_id)
+    if not exists_node_in_task(task, node):
+        return ResponseJson({'status': 0, 'msg': '非法访问：文件未分配到该节点'}, 403)
     file = task.files.all().filter(file_hash=file_id)
     save_path = os.path.join(UPLOAD_FILE_PATH, file_id)
-    Log.debug(file.exists())
-    Log.debug(save_path)
-    Log.debug(os.path.exists(save_path))
     if not file.exists() or not exists_file_by_task(task, file_id) or not os.path.exists(save_path):
         return ResponseJson({'status': 0, 'msg': '文件不存在'})
     file = file.first()

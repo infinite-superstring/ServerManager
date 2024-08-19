@@ -105,6 +105,10 @@ class GroupUtil:
         for group in groups:
             self.remove_node(group)
 
+    def node_exists(self, node: Node):
+        """检查一个节点是否存在于该组中"""
+        return node in self.get_node_list()
+
     def send_event_to_all_nodes(self, event: str, data: dict, exclude: list[Node] = None):
         """
         向所有节点实例发送事件

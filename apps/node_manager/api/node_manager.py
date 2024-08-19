@@ -550,6 +550,7 @@ def save_import_node_list(req):
                 'node_data_list': node_data
             }
         })
+    screenUtil.reset_cache()
     return ResponseJson({
         'status': 1,
         'msg': "操作成功",

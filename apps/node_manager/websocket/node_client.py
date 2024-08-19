@@ -11,6 +11,8 @@ from asgiref.sync import sync_to_async
 from channels.exceptions import StopConsumer
 
 from apps.group.commandExecution.utils.group_command_manager import GroupCommandManager
+from apps.group.file_send.utils.taskUtils import exists_task_by_uuid, get_task_by_uuid, aexists_task_by_uuid, \
+    exists_node_in_task, aget_task_by_uuid
 from apps.group.group_task.api import group_task
 from apps.group.group_task.utils.GroupTaskResultUtil import GroupTaskResultUtil
 from apps.screen.utils import screenUtil
@@ -831,6 +833,11 @@ class node_client(AsyncBaseConsumer):
         await self.send_action("execute:run_shell", data)
 
     @Log.catch
+    async def download_files(self, data):
+        Log.debug("新增下载文件任务")
+        await self.send_action("download_file:add_tasks", data)
+
+    @Log.catch
     @AsyncBaseConsumer.action_handler("execute:start")
     async def __execute_start(self, data: dict):
         """
@@ -894,12 +901,39 @@ class node_client(AsyncBaseConsumer):
         """
         文件下载 - 成功
         """
+        task_id = data.get("task")
+        file_id = data.get("file")
+        if not await aexists_task_by_uuid(task_id):
+            Log.error(f'文件分发任务 {task_id} 不存在')
+        task = await sync_to_async(get_task_by_uuid)(task_id)
+        if not await sync_to_async(exists_node_in_task)(task, self.__node):
+            Log.error(f'非法访问：文件 {file_id} 未分配到该节点')
+        file = await sync_to_async(task.files.all().get)(file_hash=file_id)
+        progres = await task.progress.aget(node=self.__node)
+        await sync_to_async(progres.success_files.add)(file)
+        await task.asave()
 
     @AsyncBaseConsumer.action_handler("file_download:failure")
     async def __file_download_failure(self, data: dict):
         """
         文件下载 - 失败
         """
+        task_id = data.get("task")
+        file_id = data.get("file")
+        error_type = data.get("error_type")
+        error_content = data.get("error_content")
+        if not await aexists_task_by_uuid(task_id):
+            Log.error(f'文件分发任务 {task_id} 不存在')
+        task = await sync_to_async(get_task_by_uuid)(task_id)
+        if not await sync_to_async(exists_node_in_task)(task, self.__node):
+            Log.error(f'非法访问：文件 {file_id} 未分配到该节点')
+        file = await sync_to_async(task.files.all().get)(file_hash=file_id)
+        progres = await task.progress.aget(node=self.__node)
+        await sync_to_async(progres.failure_files.add)(file)
+        await task.asave()
+        await createEvent(self.__node, f"文件下载失败（{error_type}）", error_content, 'Error', True)
+
+
 
     @Log.catch
     def __check_get_process_list_activity(self):
