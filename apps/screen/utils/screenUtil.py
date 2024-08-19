@@ -5,6 +5,7 @@ from apps.node_manager.models import Node, Node_BaseInfo
 from apps.screen.entity.ScreenCacheKey import ScreenCacheKey
 from apps.screen.utils.CacheUtil import CacheUtil
 from apps.user_manager.models import User
+from util.logger import Log
 
 cache = CacheUtil()
 keys = ScreenCacheKey()
@@ -168,7 +169,16 @@ def pack_node_data():
         base_info: Node_BaseInfo = node_info.get('baseInfo')
         processor_count = base_info.processor_count
         if processor_count is None:
-            continue
+            try:
+                base_info = Node_BaseInfo.objects.filter(node__uuid=node_uuid).first()
+                if base_info.processor_count:
+                    processor_count = base_info.processor_count
+                    node_info['baseInfo'] = base_info
+                    node_go_online(node_info)
+            except Exception as e:
+                Log.error(e)
+            if processor_count is None:
+                continue
         one_minute = node_use.get('loadavg').get('one_minute')
         load = (one_minute / processor_count) * 100
         average_load.append({
