@@ -1,9 +1,10 @@
-/group_task_run_result
+/venv
+/data
 /logs
-/terminal_record
+/docs
 /web_develop
-/apps/*/migrations/0*
 /static
+/nginx
 db.sqlite3.*
 docker-*
 Dockerfile
