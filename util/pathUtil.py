@@ -12,7 +12,7 @@ class URL_PathUtil:
 
     def is_node_path(self) -> bool:
         """节点"""
-        return re.match(r"^/node/.*", self.__path) is not None
+        return re.match(r".*/node/.*", self.__path) is not None
 
     def is_admin_path(self) -> bool:
         """管理"""
