@@ -55,7 +55,8 @@ def get_node_offline_count() -> int:
 
 def get_node_warning_count() -> int:
     """获取正在告警的节点数量"""
-    count = Node.objects.filter(Q(node_event__level__in=["Warning", "Error"])).distinct().count()
+    count = Node.objects.filter(
+        Q(node_event__level__in=["Warning", "Error"]) & Q(node_event__end_time=None)).distinct().count()
     return count
     # return Node_Event.objects.filter(level__in=["Warning", "Error"]).filter(end_time=None).count()
 
