@@ -32,7 +32,7 @@ services:
     restart: always
     environment:
       DEBUG: 'False'
-      DJANGO_SETTINGS_MODULE: 'LoongArch-ServerManager.settings'
+      DJANGO_SETTINGS_MODULE: 'ServerManager.settings'
       DATABASE_URL: 'postgres://ServerManager:ServerManager@postgres:5432/sm_sys_data'
       REDIS_URL: 'redis://redis:6379'
     volumes:

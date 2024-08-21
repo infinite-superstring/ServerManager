@@ -204,7 +204,7 @@ class Command(BaseCommand):
         defaultSetting = [
             {
                 'Settings': "base.website_name",
-                'value': 'LoongArch-ServerManage'
+                'value': 'ServerManage'
             },
             {
                 'Settings': "base.website_url",

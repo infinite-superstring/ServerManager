@@ -1,5 +1,5 @@
 """
-ASGI config for LoongArch-ServerManager project.
+ASGI config for ServerManager project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/howto/deployment/asgi/
 
 import os
 import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'LoongArch-ServerManager.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ServerManager.settings')
 django.setup()
 
 
