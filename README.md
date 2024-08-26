@@ -1,9 +1,12 @@
-# 面板端
-
-Copyright © Infinite Superstring
+<P align="center"><b>ServerManager</b>一个简单易用的服务器集群管理系统</P>
+<p align="center">
+  <a href="https://github.com/infinite-superstring/ServerManager-Panel/releases"><img src="https://img.shields.io/github/v/release/infinite-superstring/ServerManager-Panel" alt="GitHub release"></a>
+  <a href="https://github.com/infinite-superstring/ServerManager-Panel"><img src="https://img.shields.io/github/stars/infinite-superstring/ServerManager-Panel?color=%231890FF&style=flat-square" alt="GitHub Stars"></a>
+</p>
+<hr />
 
 ## 关于
-ServerManager 是一款由Python编写的开源服务器集群管理系统及解决方案，支持LoongArch64、X86平台，可在Windows与Linux上运行，您可以通过各种设备上的浏览器连接到管理平台，我们为该项目设计了一套方便好用的WebUI
+ServerManager 是一款由Python编写的开源服务器集群管理系统及解决方案，支持LoongArch64、X86等平台，可在Windows与Linux上运行，您可以通过各种设备上的浏览器连接到管理平台，允许用户批量导入多个节点并通过权限控制，将不同节点按时段分配给指定用户
 
 ## 主要功能
 
@@ -32,6 +35,7 @@ ServerManager 是一款由Python编写的开源服务器集群管理系统及解
 >- 值班记录
 >- 设备巡检记录
 
+## UI展示  
 ![主界面](docs/images/home_page.png)
 ![节点页](docs/images/node_page.png)
 ![数据大屏](docs/images/data_screen_page.png)
@@ -107,3 +111,12 @@ ServerManager 是一款由Python编写的开源服务器集群管理系统及解
 ```shell
     python manage.py runserver 0.0.0.0:8000
 ```
+
+## License
+Copyright (c) 2023-2024 Infinite Superstring, All rights reserved.
+
+Licensed under The GNU General Public License version 3 (GPLv3) (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+https://www.gnu.org/licenses/gpl-3.0.html
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
