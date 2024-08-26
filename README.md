@@ -1,4 +1,4 @@
-<P align="center"><b>ServerManager</b>一个简单易用的服务器集群管理系统</P>
+<P align="center"><b>ServerManager</b>  一个简单易用的服务器集群管理系统</P>
 <p align="center">
   <a href="https://github.com/infinite-superstring/ServerManager-Panel/releases"><img src="https://img.shields.io/github/v/release/infinite-superstring/ServerManager-Panel" alt="GitHub release"></a>
   <a href="https://github.com/infinite-superstring/ServerManager-Panel"><img src="https://img.shields.io/github/stars/infinite-superstring/ServerManager-Panel?color=%231890FF&style=flat-square" alt="GitHub Stars"></a>
