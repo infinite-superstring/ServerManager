@@ -1,10 +1,4 @@
 <P align="center"><img src="https://socialify.git.ci/infinite-superstring/ServerManager-Panel/image?description=1&font=Inter&forks=1&issues=1&language=1&name=1&owner=1&pattern=Plus&stargazers=1&theme=Light" alt="ServerManager-Panel" width="640" height="320" /></P>
-<P align="center"><b>ServerManager</b>  一个简单易用的服务器集群管理系统</P>
-<p align="center">
-  <a href="https://github.com/infinite-superstring/ServerManager-Panel/releases"><img src="https://img.shields.io/github/v/release/infinite-superstring/ServerManager-Panel" alt="GitHub release"></a>
-  <a href="https://github.com/infinite-superstring/ServerManager-Panel"><img src="https://img.shields.io/github/stars/infinite-superstring/ServerManager-Panel?color=%231890FF&style=flat-square" alt="GitHub Stars"></a>
-</p>
-<hr />
 
 ## 关于
 ServerManager 是一款由Python编写的开源服务器集群管理系统及解决方案，支持LoongArch64、X86等平台，可在Windows与Linux上运行，您可以通过各种设备上的浏览器连接到管理平台，允许用户批量导入多个节点并通过权限控制，将不同节点按时段分配给指定用户
