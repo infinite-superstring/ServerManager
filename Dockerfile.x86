@@ -5,9 +5,15 @@ EXPOSE 8000
 
 USER root
 
+RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian stable main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian stable-updates main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb https://mirrors.tuna.tsinghua.edu.cn/debian-security stable-security main contrib non-free" >> /etc/apt/sources.list
+
 RUN apt update
 
 RUN apt install -y gcc libpq-dev libmagic1
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY . /app
 
@@ -15,6 +21,6 @@ WORKDIR /app
 
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
-RUN pip install -r ./requirements.txt
+RUN pip install --no-cache-dir -r ./requirements.txt
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000", "--noreload"]

@@ -38,8 +38,8 @@ WORKDIR /app
 
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
-RUN pip install cryptography==42.0.8
+RUN pip install --no-cache-dir cryptography==42.0.8
 
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000", "--noreload"]
