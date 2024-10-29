@@ -19,8 +19,6 @@ COPY . /app
 
 WORKDIR /app
 
-RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-
-RUN pip install --no-cache-dir -r ./requirements.txt
+RUN pip install --no-cache-dir -r ./requirements.txt --index-url https://pypi.tuna.tsinghua.edu.cn/simple --extra-index-url https://pypi.org/simple
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000", "--noreload"]
